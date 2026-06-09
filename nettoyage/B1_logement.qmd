@@ -1,0 +1,503 @@
+---
+title: "Logement"
+format: html
+---
+
+
+```{r setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
+
+# 1. Correction des doublons et autres
+
+## 1.1 Identifier les variables exclusives au logement
+En les isolant, je peux savoir sur lesquelles travailler pour ajuster la cohérence entre les données d'identité et les variables générées automatiquement.
+
+```{r M5_B0}
+
+# 1.1.1 Importer M5_b0 et M1_B0 ---
+M5_b0 <- haven::read_sas("../raw_data/gb_ddb_logement_05.sas7bdat")
+M1_B0 <- haven::read_sas("../raw_data/gb_ddb_identite_01.sas7bdat")
+
+# 1.1.2 Unir l'ensemble des variables de base ---
+v_M1B_M5b <- dplyr::union(names(M5_b0), names(M1_B0))
+
+# 1.1.3 Importer M5_B0 ---
+M5_B0 <- haven::read_sas("../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
+
+# 1.1.4 Identifer les variables exclusives au logement ---
+v_M5x <- dplyr::setdiff(names(M5_B0), v_M1B_M5b)
+
+## Nettoyage
+rm(list = c("M5_b0", "v_M1B_M5b", "M1_B0"))
+
+v_M5x
+```
+
+## 1.2 Importer les variables d'identité
+
+```{r M1_C1}
+
+## 1.2.1 Importer M1_C0 ---
+M1_C0 <- readr::read_csv("../clean_data/thoa_M1_L1.csv", show_col_types = FALSE)
+
+## 1.2.2 Réduire aux variables essentielles ---
+M1_C1 <- M1_C0 %>% 
+  select(id_keep, id_doub, id_lieu_nais, id_dep_nais, 
+         id_centre_suivi, id_centre1)
+
+## Nettoyage
+rm(M1_C0)
+```
+
+## 1.3 Préparer M5_B0 pour corriger les doublons
+
+```{r Reserve de fonctions}
+remake_id_mult <- function(df){
+  df %>% 
+    mutate(
+      aa_dbl = case_when(
+        is.na(id_date_creation) ~ 1,
+        TRUE ~ 0),
+      id_keep = if_else(
+        is.na(id_date_creation), str_sub(id_sep, 7, 11), id_anonymat),
+      id_doub = case_when(
+        !is.na(id_date_creation) & id_sep != "" ~ as.character(str_sub(id_sep, 7, 11)),
+        is.na(id_date_creation) ~ as.character(id_anonymat),
+        TRUE ~ NA_character_)
+    ) %>%
+    relocate(c("id_keep", "id_doub", "aa_dbl"), .after = id_anonymat) %>% 
+    select(-id_sep)
+}
+```
+
+
+```{r M5_B0 to M5_B1}
+
+## 1.3.1 Décomposer id_sep et réduire les variables ---
+M5_B1 <- M5_B0 %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  remake_id_mult() %>% 
+  select(-starts_with("id_"), id_date_creation, id_keep, id_anonymat,
+         -c("fa_amenag", "lo_type", "tab_db")) %>% 
+  left_join(M1_C1, by = "id_keep") %>% 
+  relocate(c("lo_date_creation", "id_date_creation", "id_keep", "id_doub", 
+            "id_anonymat", "aa_dbl", "id_lieu_nais", "id_dep_nais", 
+             "id_centre_suivi", "id_centre1", "dep_centre1", "la_situ_dep", 
+             "dep_la_situ_centre1"), .before = commentaires_loge)
+
+## Nettoyage
+rm(M5_B0)
+
+```
+
+## 1.4 Corriger les doublons
+
+```{r M5_dbl1}
+
+## 1.4.1 Vérifier si les vars TLA ont changé ---
+varsTLA <- dplyr::intersect(v_M5x, names(M5_B1))
+
+## 1.4.2 Isoler les doublons ---
+M5_dbl0 <- M5_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(n() > 1) %>%
+  ungroup()
+
+## 1.4.3 Corriger les doublons ---
+M5_dbl1 <- M5_dbl0 %>% 
+  mutate(
+    dep_centre1 = 63
+  ) %>% 
+  filter(!is.na(lo_date_creation))
+
+## Nettoyage
+rm(list = c("varsTLA", "v_M5x", "M5_dbl0"))
+
+```
+
+
+## 1.5 Rajouter les doublons corrigés à la base
+
+```{r M5_B1 to M5_B2}
+
+M5_B2 <- M5_B1 %>% 
+  filter(!id_keep %in% M5_dbl1$id_keep) %>% 
+  bind_rows(M5_dbl1) %>% 
+  arrange(id_keep) %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+  select(-c("id_date_creation", "id_doub", "id_anonymat", "aa_dbl"))
+
+## Nettoyage
+rm(list = c("remake_id_mult", "M5_dbl1", "M5_B1"))
+
+```
+
+## 1.6 Corriger les variables dépendantes
+
+```{r M5_B2 to M5_B3}
+
+M5_B3 <- M5_B2 %>% 
+  mutate(
+    lo_dep_situ_centre1 = case_when(
+      is.na(lo_date_creation) | id_keep == "BUQJD" ~ NA_integer_,
+      id_dep_nais == dep_centre1 & dep_centre1 == la_situ_dep ~ 1L,
+      (id_dep_nais != dep_centre1 & dep_centre1 == la_situ_dep) |
+        (is.na(id_dep_nais) & dep_centre1 == la_situ_dep) ~ 2L,
+      (id_dep_nais == dep_centre1 & dep_centre1 != la_situ_dep) |
+        (id_dep_nais == dep_centre1 & is.na(la_situ_dep)) ~ 3L,
+      id_centre_suivi == 0 ~ 4L,
+      TRUE ~ 5L
+    )
+  ) %>% 
+  relocate(lo_dep_situ_centre1, .before = dep_la_situ_centre1) %>% 
+  relocate(la_situ_logement, .before = la_situ_dep) %>% 
+  relocate(la_situ_pays, .after = la_situ_dep) %>% 
+  select(-dep_la_situ_centre1)
+
+# rm(M5_B2)
+```
+
+# 2. Renommer les variables
+
+```{r M5_B3 to M5_C0}
+
+vars_sub_la <- M5_B3 %>% 
+  select(all_of(starts_with("la_"))) %>% 
+  colnames()
+
+M5_C0 <- M5_B3 %>% 
+  rename_with(~ gsub("^la_", "lo_", .x), all_of(vars_sub_la)) %>% 
+  rename("lo_commentaires" = "commentaires_loge",
+         "lo_dep_centre1" = "dep_centre1",
+         "lo_statut_occup" = "lo_occup_logement",
+         "lo_statut_occup_autre" = "lo_occup_logement_autre") %>% 
+  relocate(c("lo_an_logement", "lo_situ_logement", "lo_situ_dep", "lo_situ_pays",
+             "id_lieu_nais", "id_dep_nais", "id_centre_suivi", "id_centre1", "lo_dep_centre1",
+             "lo_dep_situ_centre1"), .after = id_keep)
+
+
+
+```
+
+
+# 3. Recoder la non réponse
+
+
+```{r fonctions de non réponse}
+
+
+rcd_vars <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          is.na(.x) & {{complet}} == 1 ~ "555",
+          TRUE ~ as.character(.x)
+        ))
+      )
+    ) %>% 
+    mutate(
+      across(
+        {{vars}}, ~ as.factor(.x)
+      )
+    )
+}
+
+rcd_qcm2 <- function(df, complet, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          {{complet}} == 1 & all_na_vars ~ "555",
+          {{complet}} == 1 & is.na(.x) ~ "0",
+          TRUE ~ as.character(.x)                            
+        ))
+      )
+    ) %>% 
+    mutate(
+      across(
+        {{vars}}, ~ as.factor(.x)
+      )
+    ) %>% 
+    select(-all_na_vars)
+}
+
+rcd_qcm3 <- function(df, complet, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          {{complet}} == 1 & {{borne}} == 0 & all_na_vars ~ "777",
+          {{complet}} == 1 & {{borne}} == 0 & !all_na_vars ~ "ERROR1",
+          {{complet}} == 1 & {{borne}} == 1 & all_na_vars ~ "555",
+          {{complet}} == 1 & {{borne}} == 1 & is.na(.x) ~ "0",
+          {{complet}} == 1 & {{borne}} == 555 & all_na_vars ~ "555",
+          {{complet}} == 1 & {{borne}} == 555 & !all_na_vars ~ "ERROR2",
+          TRUE ~ as.character(.x)                            
+        ))
+      )
+    ) %>% 
+    mutate(
+      across(
+        {{vars}}, ~ as.factor(.x)
+      )
+    ) %>% 
+    select(-all_na_vars)
+}
+
+
+```
+
+## 3.1 Identifier les personnes qui ont répondu à aucune réponse
+
+
+```{r M5_C0 to M5_C1}
+
+# 3.1.1 Les variables pour lesquelles la non-réponse n'est pas importante
+vars_exclues_na <- M5_C0 %>% 
+  select(contains("_autre"), contains("_precis"), starts_with("id_"), 
+         lo_commentaires,lo_date_creation, lo_dep_centre1, 
+         lo_dep_situ_centre1, lo_situ_pays) %>% 
+  colnames()
+
+# 3.1.2 Connaitre nombre de NA dans les colonnes de la version M5_C0
+M5_C0_na <- M5_C0 %>%
+  filter(!is.na(lo_date_creation)) %>% 
+  select(-all_of(vars_exclues_na)) %>% 
+  summarise(across(everything(), ~sum(is.na(.))))
+
+# 3.1.3 Isoler les variables pour lesquelles la non-réponse doit être corrigée
+vars_verif <- colnames(M5_C0_na)
+
+vars_to_factor <- M5_C0_na %>% 
+  select(-lo_an_logement, -lo_situ_dep) %>% 
+  colnames()
+
+# 3.1.4 Variable qui va nous permettre de savoir qui a complété le module
+M5_C1 <- M5_C0 %>%
+  mutate(
+    aa_verif = case_when(
+      is.na(lo_date_creation) ~ 0,
+      TRUE ~ rowSums(is.na(across(all_of(vars_verif))))
+    )
+  ) %>% 
+  relocate(aa_verif) %>% 
+  mutate(
+    complet_lo = case_when(
+      is.na(lo_date_creation) ~ 0L,
+      aa_verif == length(vars_verif) ~ 0L,
+      TRUE ~ 1L
+    )
+  ) %>% 
+  select(-aa_verif) %>% 
+  relocate(c("lo_type_logement", "lo_type_logement_autre", "lo_statut_occup",
+             "lo_statut_occup_autre", "lo_occup_cause_1", "lo_occup_cause_2",
+             "lo_occup_cause_3", "lo_occup_cause_999", "lo_occup_cause_autre",
+             "lo_amenag_logement", "lo_amenag_logement_precis", "lo_emprunt_1",
+             "lo_emprunt_2", "lo_emprunt_3", "lo_emprunt_4", "lo_emprunt_5",
+             "lo_emprunt_6", "lo_emprunt_precis", "lo_demenag", "lo_demenag_cause_1",
+             "lo_demenag_cause_2", "lo_demenag_cause_999", "lo_demenag_cause_autre"),
+           .after = lo_dep_situ_centre1) %>% 
+  relocate(lo_date_creation, complet_lo) %>% 
+  mutate(across(all_of(vars_to_factor), as.factor)) %>% 
+  mutate(across(all_of(c("complet_lo", "lo_situ_pays", "id_lieu_nais", "id_dep_nais", "id_centre_suivi",
+                       "id_centre1", "lo_dep_centre1", "lo_dep_situ_centre1")), as.factor))
+
+
+M5_C1_na <- M5_C1 %>%
+  filter(!is.na(lo_date_creation)) %>% 
+  select(-all_of(vars_exclues_na)) %>% 
+  summarise(across(everything(), ~sum(is.na(.))))
+
+```
+
+## 3.2 Appliquer le recodage sur variables pré-existantes
+
+```{r M5_C1 to M5_C3}
+
+# 3.2.1 Vecteurs de variables à traiter de la même manière
+
+vars_rcd <- M5_C1 %>% 
+  select(lo_situ_logement, lo_type_logement, lo_amenag_logement, lo_demenag) %>% 
+  colnames()
+
+QL5 <- M5_C1 %>% 
+  select(lo_occup_cause_1:lo_occup_cause_999) %>% 
+  colnames()
+
+QL8 <- M5_C1 %>% 
+  select(lo_emprunt_1:lo_emprunt_6) %>% 
+  colnames()
+
+QL11 <- M5_C1 %>% 
+  select(lo_demenag_cause_1:lo_demenag_cause_999) %>% 
+  colnames()
+
+# 3.2.2 Appliquer les correction
+M5_C2 <- M5_C1 %>%
+  rcd_vars(all_of(vars_rcd), complet_lo) %>%
+  mutate(
+    lo_an_logement = case_when(
+      is.na(lo_an_logement) & complet_lo == 1 ~ 5555L,
+      TRUE ~ as.integer(lo_an_logement)),
+    lo_situ_dep = case_when(
+      is.na(lo_situ_dep) & lo_situ_logement == 2 & complet_lo == 1 ~ 7777L,
+      is.na(lo_situ_dep) & lo_situ_logement == 1 & complet_lo == 1 ~ 5555L,
+      lo_situ_logement == 555 ~ 5555L,
+      TRUE ~ as.integer(lo_situ_dep))
+  ) %>%
+  rcd_qcm2(complet_lo, all_of(QL5)) %>% 
+  rcd_qcm2(complet_lo, all_of(QL8)) %>% 
+  rcd_qcm3(complet_lo, lo_demenag, all_of(QL11))
+
+# 3.2.3 Corriger les lignes avec erreurs.
+correction_QL11 <- M5_C2 %>% 
+  filter(lo_demenag_cause_1 == "ERROR1") %>% 
+  select(id_keep) %>% 
+  left_join(M5_C1,
+            by = "id_keep") %>% 
+  mutate(
+    lo_demenag = "1",
+    lo_demenag = as.factor(lo_demenag)
+  ) %>% 
+  rcd_vars(all_of(vars_rcd), complet_lo) %>% 
+  rcd_qcm2(complet_lo, all_of(QL5)) %>% 
+  rcd_qcm2(complet_lo, all_of(QL8)) %>% 
+  rcd_qcm3(complet_lo, lo_demenag, all_of(QL11))
+
+# 3.2.4 Joindre les lignes corrigées
+M5_C3 <- M5_C2 %>%
+  filter(!id_keep %in% correction_QL11$id_keep) %>% 
+  bind_rows(correction_QL11) %>% 
+  arrange(id_keep) %>% 
+  mutate(across(all_of(QL11), fct_drop))
+  
+# Nettoyage
+rm(list = c("vars_exclues_na", "vars_verif",
+            "M5_C0_na", "M5_C1_na", "QL11", "QL5", "QL8",
+            "vars_rcd", "vars_sub_la", "correction_QL11"))
+
+```
+
+
+## 3.3 Nouvelles variables
+
+```{r M5_C3 to M5_C4}
+
+
+# À déplacer plus loin
+
+M5_C4 <- M5_C3 %>% 
+  mutate(
+    lo_situ_pays_cat = case_when(
+      lo_situ_dep %in% c(1:96, 972, 974) | 
+        (lo_situ_logement == 1 & lo_situ_dep == 5555)  ~ "France",
+      lo_situ_pays == 405 ~ "Mexique",
+      lo_situ_pays == 131 ~ "Belgique",
+      lo_situ_pays == 136 ~ "Irlande",
+      lo_situ_logement == 555 ~ "Non renseigné"
+    ),
+    lo_situ_pays_cat = fct_infreq(lo_situ_pays_cat)) %>% 
+  relocate(lo_situ_pays_cat, .after = lo_situ_pays) %>% 
+  select(-c("lo_situ_pays", "id_lieu_nais", "id_dep_nais", "id_centre_suivi",
+            "id_centre1"))
+
+
+write.csv(M5_C4, "../clean_data/THOA_logement_V1.csv", row.names = FALSE)
+
+
+```
+
+# 4. Ajouter labels pour Peter.
+On hold pour le moment, je vais attendre de lui demander si c'est nécessaire.
+
+```{r M5_C4 to M5_P0}
+
+# M5_P0 <- M5_C4 %>%
+#   labelled::set_value_labels(
+#     lo_dep_situ_centre1 = c(
+#       "Le centre 1 se situe dans le même département que celui de la naissance et du logement" = 1,
+#       "Le centre 1 se situe dans le même département que celui du logement" = 2,
+#       "Le centre 1 se situe dans le même département que celui de la naissance" = 3,
+#       "L'individu n'a pas déclaré de centre" = 4,
+#       "Le centre 1 se situe dans un autre département que celui de la naissance ou du logement" = 5,
+#       "N'a pas participé au module" = 
+#     )
+#   )
+# 
+# labelled::var_label(M5_P0) <- list(
+#   lo_date_creation = "Date de participation au module",
+#   complet_lo = "Indicateur de participation au module",
+#   id_keep = "Identifiant unique",
+#   lo_an_logement = "L1 Depuis quelle année occupez-vous votre logement actuel? (résidence occupée à titre principal) ",
+#   lo_situ_logement = "L2 - Où se situe ce logement?",
+#   lo_situ_dep = "L2 - Département où se situe ce logement",
+#   lo_situ_pays_cat = "L2 - Pays où se situe ce logement",
+#   lo_dep_centre1 = "Département du premier centre de soin fréquenté",
+#   lo_dep_situ_centre1 = "Situation du logement par rapport au département de naissance et de traitement",
+#   lo_type_logement = "L3 - Quel est le type de ce logement?",
+#   lo_type_logement_autre = "L3 - Autre, précisez...",
+#   lo_statut_occup = "L4 - Quel est votre statut d’occupation dans ce logement?",
+#   lo_statut_occup_autre = "L4 - Autre, précisez...",
+#   lo_occup_cause_1 = "L5QCM - Vous avez choisi ce logement pour que votre habitation soit adaptée aux soins?",
+#   lo_occup_cause_2 = "L5QCM - Vous avez choisi ce logement pour vous rapprocher d'un centre de soins (type CRCM)?",
+#   lo_occup_cause_3 = "L5QCM - Vous n'avez pas spécialement choisi ce logement?",
+#   lo_occup_cause_999 = "L5 - Vous occupez ce logement pour une autre raison?",
+#   lo_occup_cause_autre = "L5 - Autre, précisez...",
+#   lo_amenag_logement = "L6 - La mucoviscidose vous a-t-elle amené(e) à réaliser des aménagements particuliers dans ce logement?",
+#   lo_amenag_logement_precis = "L7 - De quels aménagements s’agit-il?",
+#   lo_emprunt_1 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Oui, un refus de prêt",
+#   lo_emprunt_2 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Oui, un refus d'assurance",
+#   lo_emprunt_3 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Oui, une surprime d'assurance",
+#   lo_emprunt_4 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Oui, d'autres difficultés",
+#   lo_emprunt_5 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Non, aucune difficulté",
+#   lo_emprunt_6 = "L8QCM - Avez-vous déjà eu des difficultés pour emprunter en vue d’accéder à la propriété? Non concerné",
+#   lo_emprunt_precis = "L9 - De quelles difficultés s'agit-il?",
+#   lo_demenag = "L10 - Envisagez-vous de déménager?",
+#   lo_demenag_cause_1 = "L11qcm - Envisagez-vous de déménager pour que votre habitation soit adaptée aux soins?",
+#   lo_demenag_cause_2 = "L11qcm - Envisagez-vous de déménager pour vous rapprocher d'un centre de soins (type CRCM)?",
+#   lo_demenag_cause_999 = "L11qcm - Envisagez-vous de déménager pour d'autres raisons?",
+#   lo_demenag_cause_autre = "L11qcm - Autre, précisez...",
+#   lo_commentaires = "Vos commentaires sur le questionnaire logement"
+# )
+# 
+# 
+# 
+# M5_P0_cb <- codebookr::codebook(M5_P0)
+# 
+# print(M5_P0_cb, "../codebooks/M5_P0_codebookr.docx")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
