@@ -129,9 +129,6 @@ E4_T0 <- full_join(
   select(-enfants_sf_enfants, -sf_enfants) %>% 
   relocate(c("sf_enf_bio_nb", "sf_enf_adopte_nb"), .after = vrep_enfant)
 
-list_comm <- E4_T0 %>% 
-  filter_out(is.na(commentaires_fam)) %>% 
-  select(id_anonymat, commentaires_fam)
 
 ```
 
@@ -211,10 +208,16 @@ E4_T2 <- E4_T1 %>%
     (id_anonymat == "RICJW" & sf_enf_conjt_prenom == "Mm")
   ) %>% 
   arrange(id_anonymat) %>% 
-  mutate(sf_enf_conjt_prenom = replace_when(sf_enf_conjt_prenom,
+  mutate(
+    sf_enf_conjt_prenom = str_to_upper(sf_enf_conjt_prenom),
+    sf_enf_conjt_prenom = replace_when(sf_enf_conjt_prenom,
                                             sf_enf_conjt_prenom == "NA" ~ "NAA"),
-         sf_enf_conjt_prenom = str_to_upper(sf_enf_conjt_prenom),
-         sf_enf_prenom = str_to_upper(sf_enf_prenom))
+         sf_enf_prenom = str_to_upper(sf_enf_prenom)) %>% 
+  select(-c("nb_NA", "vrep_enfant"))
+
+rm(list = c("cas_verif", "correction_check", "Couple", "E4_B1", "E4_B2",
+            "Famille", "rep_enfants", "to_factor",
+            "vars_join", "vars_verif"))
 
 ```
 
@@ -228,7 +231,8 @@ case_when il y a un match entre le prénom du conjoint avec enfant et un conjoin
 case_when il y a un conjoint documenté avec enfant, mais pas dans les conjoints, garder l'info enfant
 case_when il n'y a pas de conjoint documenté dans les enfants, mais qu'il y en a un dans conjoint, ajouter le sexe?
 
- Identifier le rang des unions dans lesquelles il y a eu des enfants
+## 2.3 Infos Conjoint
+### 2.3.1 Rang des unions dans lesquelles il y a eu des enfants
 ```{r}
 load("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong_avecRang.RData")
 
@@ -250,14 +254,7 @@ C4_pour_kid0 <- C4_C3 %>%
   ) %>% 
   relocate(rang_conjt, rang_couple_enfant)
 
-check <- C4_pour_kid0 %>% 
-  filter_out(is.na(rang_couple_enfant)) %>% 
-  group_by(id_anonymat) %>% 
-  mutate(n = n()) %>% 
-  filter(n > 1)
-
-# Je dois garder que les infos de ceux qui sont dans le module pour les enfants
-
+# Isoler ceux qui ont documenté des enfants dans le module du couple
 kid_oui <- E4_T2 %>% 
   filter(complet_fa_en == "1")
 
@@ -269,16 +266,33 @@ C4_pour_kid1 <- C4_pour_kid0 %>%
          conjt_sexe, union_an, union_int, union_int_an, union_enf) %>% 
   filter(id_anonymat %in% kid_oui$id_anonymat) %>% 
   rename_with(~ paste0("fa_cp_", .x), all_of(add_fa_cp)) %>% 
-  mutate(fa_cp_conjt_prenom = replace_when(fa_cp_conjt_prenom,
-                                            fa_cp_conjt_prenom == "NA" ~ "NAA"),
-         fa_cp_conjt_prenom = str_to_upper(fa_cp_conjt_prenom))
+  mutate(
+    fa_cp_conjt_prenom = str_to_upper(fa_cp_conjt_prenom),
+    fa_cp_conjt_prenom = replace_when(fa_cp_conjt_prenom,
+                                            fa_cp_conjt_prenom == "NA" ~ "NAA"))
 
 
 ```
 
+Explorer ceux qui n'ont pas de rang, mais qui ont bien documenté des enfants
+```{r}
+
+rang_bug1 <- C4_pour_kid1 %>% 
+  filter(is.na(rang_couple_enfant) & fa_cp_union_enf != "0") %>% 
+  mutate(rang_couple_enfant = "Couple non renseigné")
+
+C4_pour_kid2 <- C4_pour_kid1 %>% 
+  filter_out(id_anonymat %in% rang_bug1$id_anonymat) %>% 
+  bind_rows(rang_bug1) %>% 
+  arrange(id_anonymat)
+
+```
+
+
+
 Avec les étapes du haut, j'ai le rang du couple pour l'arrivée de l'enfant.
 J'ai aussi le sexe du conjoint. Maintenant je vais joindre les infos à la base.
-
+### 2.3.2 Pas de prénom conjoint
 ```{r}
 
 E4_sans_conjt <- E4_T2 %>%
@@ -287,10 +301,9 @@ E4_sans_conjt <- E4_T2 %>%
   filter(complet_fa_en == "1" &
            na_prenom != 0)
 
-C4_info_conjt0 <- C4_pour_kid1 %>% 
+C4_info_conjt0 <- C4_pour_kid2 %>% 
   filter(id_anonymat %in% E4_sans_conjt$id_anonymat) %>% 
-  filter_out(id_anonymat == "KQQVZ" & fa_cp_conjt_prenom == "AL") %>%
-  filter_out(id_anonymat == "FFVSG")
+  filter_out(id_anonymat == "KQQVZ" & fa_cp_conjt_prenom == "AL")
 
 E4_sans_conjt_cor <- left_join(
   E4_sans_conjt,
@@ -298,144 +311,91 @@ E4_sans_conjt_cor <- left_join(
   by = "id_anonymat"
 ) %>% 
   relocate(starts_with("fa_cp"), .after = sf_enf_conjt_prenom) %>% 
-  replace_na(list(fa_cp_conjt_prenom = "CL")) %>% 
+  mutate(fa_cp_conjt_prenom = replace_when(fa_cp_conjt_prenom,
+                                           id_anonymat == "FFVSG" & sf_enf_prenom == "DO" ~ "CL",
+                                           id_anonymat == "FFVSG" & sf_enf_prenom != "DO" ~ NA_character_)) %>% 
   select(-sf_enf_conjt_prenom) %>% 
-  rename("sf_enf_conjt_prenom" = "fa_cp_conjt_prenom") %>% 
+  rename("conjt_prenom" = "fa_cp_conjt_prenom") %>% 
   mutate(fa_en_conjt_sexe = case_when(
-    !is.na(fa_cp_conjt_sexe) ~ fa_cp_conjt_sexe,
+    fa_cp_conjt_sexe %in% c("1", "2") ~ fa_cp_conjt_sexe,
     id_sexe == "1" & sf_enf_issu == "1" ~ "2",
     id_sexe == "2" & sf_enf_issu == "1" ~ "1"
   )) %>% 
   relocate(fa_en_conjt_sexe, .after = fa_cp_conjt_sexe) %>% 
   select(-fa_cp_conjt_sexe, -na_prenom) %>%
-  mutate(
-    across(starts_with("fa_cp_") & !where(is.integer), ~ replace_na(., "333")),
-    across(starts_with("fa_cp_") & where(is.integer), ~ replace_na(., 3333L))) %>% 
   select(-complet_fa_cp) %>% 
   relocate(rang_couple_enfant)
 
 ```
 
-
-
+### 2.3.3 Ajouter rang
 ```{r}
 
-sans_conjt <- E4_T2 %>%
-  group_by(id_anonymat) %>% 
-  mutate(na_prenom = sum(is.na(sf_enf_conjt_prenom))) %>% 
-  filter(complet_fa_en == "1" &
-           na_prenom != 0)
+C4_pour_kid3 <- C4_pour_kid2 %>%
+  filter_out(id_anonymat %in% E4_sans_conjt_cor$id_anonymat) %>% 
+  rename("conjt_prenom" = "fa_cp_conjt_prenom") %>% 
+  filter_out(
+    (id_anonymat == "JNDTO" & is.na(rang_couple_enfant))|
+      id_anonymat == "SSZGV" & is.na(rang_couple_enfant))
 
-load("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong.RData")
+non_rens <- C4_pour_kid3 %>% 
+  filter(rang_couple_enfant == "Couple non renseigné") %>% 
+  select(-conjt_prenom)
 
-info_conjt <- C4_C2 %>% 
-  filter(id_anonymat %in% sans_conjt$id_anonymat)
+for_join <- C4_pour_kid3 %>% 
+  filter_out(id_anonymat %in% non_rens$id_anonymat)
 
-# Pour vérifier quelles lignes vont ensemble (par exemple voir qui a été en couple
-# deux fois mais la première n'a pas eu d'enfant donc on retire ce couple pour
-# ne garder que celui qui a eu d'enfants)
-potentiel <- left_join(
-  info_conjt %>% select(id_anonymat, id_sexe, fa_cp_conjt_sexe, 
-                        fa_cp_conjt_prenom, fa_cp_union_an, fa_cp_union_int_an,
-                        fa_cp_union_enf
-                        ),
-  sans_conjt %>% select(id_anonymat, id_sexe, sf_enf_conjt_prenom,
-                        sf_enf_an_nais, sf_enf_sexe, sf_enf_prenom),
-  by = c("id_anonymat", "id_sexe"),
-  relationship = "many-to-many"
-)
+E4_non_rens <- E4_T2 %>% 
+  filter(id_anonymat %in% non_rens$id_anonymat) %>% 
+  left_join(
+    non_rens,
+    by = "id_anonymat",
+    relationship = "many-to-one"
+  ) %>% 
+  rename("conjt_prenom" = "sf_enf_conjt_prenom") %>% 
+  relocate(rang_couple_enfant:fa_cp_union_enf, .after = conjt_prenom) %>% 
+  select(-complet_fa_cp)
 
-# Juste les infos des conjoints à conserver
-info_conjt2 <- info_conjt %>% 
-  # Retirer la ligne d'un couple qui n'a pas eu d'enfant
-  filter_out(id_anonymat == "KQQVZ" & fa_cp_conjt_prenom == "AL") %>%
-  filter_out(id_anonymat == "FFVSG") %>% 
-  select(id_anonymat, fa_cp_conjt_prenom, fa_cp_conjt_sexe,
-         fa_cp_union_an, fa_cp_union_int_an, fa_cp_union_enf)
-# Admettons qu'ici c'est corrigé pour les prenoms manquants. J'ai apporté des modifs
-# que je veux aussi apporter à la base générale. Je ne sais pas dans quel ordre procéder.
-sans_conjt_cor <- left_join(
-  sans_conjt,
-  info_conjt2,
-  by = "id_anonymat"
-) %>% 
-  relocate(starts_with("fa_cp"), .after = sf_enf_conjt_prenom) %>% 
-  replace_na(list(fa_cp_conjt_prenom = "CL")) %>% 
-  select(-sf_enf_conjt_prenom) %>% 
-  mutate(fa_cp_conjt_prenom = str_to_upper(fa_cp_conjt_prenom)) %>% 
-  rename("sf_enf_conjt_prenom" = "fa_cp_conjt_prenom") %>% 
+
+E4_T3 <- E4_T2 %>%
+  filter_out(id_anonymat %in% E4_sans_conjt_cor$id_anonymat) %>%
+  filter_out(id_anonymat %in% E4_non_rens$id_anonymat) %>% 
+  rename("conjt_prenom" = "sf_enf_conjt_prenom") %>% 
+  left_join(
+    for_join,
+    by = c("id_anonymat", "conjt_prenom"),
+    relationship = "many-to-many"
+  ) %>%
+  relocate(rang_couple_enfant:fa_cp_union_enf, .after = conjt_prenom) %>% 
+  select(-complet_fa_cp) %>% 
+  bind_rows(E4_non_rens) %>% 
+  mutate(
+    rang_couple_enfant = 
+      replace_when(rang_couple_enfant,
+                   id_anonymat == "QFGMN" ~ "Couple non renseigné",
+                   id_anonymat == "LAIMN" ~ "Union 3 sur 3",
+                   complet_fa_en == "333" & is.na(rang_couple_enfant) ~ "333",
+                   complet_fa_en == "777" & is.na(rang_couple_enfant) ~ "777")) %>% 
+  # créer le sexe du conjoint
   mutate(fa_en_conjt_sexe = case_when(
-    !is.na(fa_cp_conjt_sexe) ~ fa_cp_conjt_sexe,
+    fa_cp_conjt_sexe %in% c("1", "2") ~ fa_cp_conjt_sexe,
+    complet_fa_en == "333" ~ "333",
+    complet_fa_en == "777" ~ "777",
+    fa_cp_conjt_sexe == "333" & sf_enf_issu == "2" ~ "999",
+    fa_cp_conjt_sexe == "555" & sf_enf_issu == "2" ~ "999",
     id_sexe == "1" & sf_enf_issu == "1" ~ "2",
-    id_sexe == "2" & sf_enf_issu == "1" ~ "1"
+    id_sexe == "2" & sf_enf_issu == "1" ~ "1",
+    is.na(fa_cp_conjt_sexe) & sf_enf_issu == "2" ~ "555",
+    complet_fa_en == "0" ~ NA_character_,
+    TRUE ~ "E"
   )) %>% 
   relocate(fa_en_conjt_sexe, .after = fa_cp_conjt_sexe) %>% 
-  select(-fa_cp_conjt_sexe, -na_prenom)
-
-
-
-```
-
-
-
-```{r}
-
-# Filtrer les personnes qui ont participé au module des enfants
-# Corriger les prénoms des conjoints pour les mettre en majuscules
-# Je ne sais pas si je devrais corriger les prénoms manquants. Peut-être pas 
-# tout de suite?
-E4_kid_unique <- E4_T2 %>% 
-  filter(complet_fa_en == 1) %>%
-  select(id_anonymat, conjt_prenom = sf_enf_conjt_prenom, sf_enf_an_nais,
-         sf_enf_mois_nais, sf_enf_prenom, sf_enf_sexe) %>% 
-  mutate(conjt_prenom = str_to_upper(conjt_prenom)) %>% 
-  distinct_all()
-
-# il n'y a que 6 lignes où le prenom du conjoint est na
-E4_kid_na_conjt <- E4_kid_unique %>% 
-  filter(is.na(conjt_prenom))
-
-load("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong.RData")
-
-
-C4_cjt_unique <- C4_C2 %>% 
-  select(id_anonymat, conjt_prenom = fa_cp_conjt_prenom,
-         fa_cp_conjt_sexe, fa_cp_union_an, fa_cp_union_enf) %>% 
-  filter(id_anonymat %in% E4_kid_unique$id_anonymat) %>%
-  filter_out(fa_cp_union_enf == "0") %>% 
-  mutate(conjt_prenom = str_to_upper(conjt_prenom)) %>% 
-  distinct_all()
-
-
-C4_cjt_info_na_cjt <- C4_cjt_unique %>% 
-  filter(id_anonymat %in% E4_kid_na_conjt$id_anonymat)
-
-vars_join <- c("id_anonymat", "conjt_prenom")
-
-verfi_join <- left_join(
-  E4_kid_unique,
-  C4_cjt_unique,
-  by = all_of(vars_join)
-) %>% 
-  rows_upsert(
-    C4_cjt_info_na_cjt,
-    by = "id_anonymat"
-  )
-
-qui_out <- anti_join(
-  E4_kid_unique,
-  C4_cjt_unique,
-  by = all_of(vars_join)
-)
-
-test <- rows_upsert(
-  E4_kid_unique,
-  C4_cjt_unique,
-  by = all_of(vars_join)
-)
+  select(-fa_cp_conjt_sexe) %>% 
+  bind_rows(E4_sans_conjt_cor)
 
 
 ```
+
 
 ## 2.3 Renommer les variables
 
@@ -447,7 +407,7 @@ E4_C0 <- E4_T2 %>%
     "fa_commentaires" = "commentaires_fam",
     "fa_sf_nb_enf_bio" = "sf_enf_bio_nb",
     "fa_sf_nb_enf_adp" = "sf_enf_adopte_nb",
-    "conjt_prenom" = "sf_enf_conjt_prenom",
+    "conjt_prenom" = "fa_en_conjt_prenom",
     "prenom" = "sf_enf_prenom",
     "sexe" = "sf_enf_sexe",
     "nais_mois" = "sf_enf_mois_nais",
@@ -459,8 +419,7 @@ E4_C0 <- E4_T2 %>%
     "muco" = "sf_enf_muco",
     "deces" = "sf_enf_decede",
     "deces_mois" = "sf_enf_mois_deces",
-    "deces_an" = "sf_enf_an_deces") %>% 
-  select(-vrep_enfant)
+    "deces_an" = "sf_enf_an_deces")
 
 E4_C1 <- E4_C0 %>% 
   arrange(id_anonymat, nais_an, nais_mois) %>%
