@@ -647,9 +647,16 @@ C4_C1 <- C4_C0 %>%
     is.na(fa_cp_conjt_prenom) & complet_fa_cp == "333" ~ "33",
     is.na(fa_cp_conjt_prenom) & complet_fa_cp == "777" ~ "77",
     !is.na(fa_cp_conjt_prenom) & complet_fa_cp == "1" ~ fa_cp_conjt_prenom,
-    TRUE ~ "99"))
+    TRUE ~ "99"),
+    fa_cp_conjt_prenom = replace_when(
+      fa_cp_conjt_prenom,
+      fa_cp_conjt_prenom == "Na" |
+        fa_cp_conjt_prenom == "na" |
+        fa_cp_conjt_prenom == "nA" |
+        fa_cp_conjt_prenom == "NA" ~ "NAA"),
+    fa_cp_conjt_prenom = str_to_upper(fa_cp_conjt_prenom))
 
-rm(list = c("vars_fct_up8", "vars_mois_up8", "vars_years_up8", "rcd_fct_L",
+ rm(list = c("vars_fct_up8", "vars_mois_up8", "vars_years_up8", "rcd_fct_L",
             "rcd_years_L"))
 ```
 
