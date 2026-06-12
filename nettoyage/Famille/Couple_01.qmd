@@ -21,7 +21,7 @@ library(questionr)
 ```{r M4_B0 to M4_B1}
 
 ### 1.1.1 Importer la base
-M4_B0 <- haven::read_sas("../../raw_data/gb_ddb_id_01_fa_04.sas7bdat")
+M4_B0 <- haven::read_sas("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bdat")
 
 ### 1.1.2 Identifier les colonnes vides
 empty_cols_M4_B0 <- M4_B0 %>%
@@ -63,7 +63,7 @@ Donc on va créer une base sans changer le nom des variables, dans laquelle il n
 ```{r M4_B1 to M4_B3}
 
 ## Importer les id_link et has_dbl
-reserve <- readr::read_csv("../../clean_data/THOA_reserve_1.csv", show_col_types = FALSE)
+reserve <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_reserve_1.csv", show_col_types = FALSE)
 
 ## Extraire les données à joindre à la base famille
 ajout_link <- reserve %>% 
@@ -142,7 +142,7 @@ library(tidyverse)
 library(questionr)
 
 # Importer la base
-C4_B0 <- haven::read_sas("../../raw_data/gb_ddb_fa_04_couple_04.sas7bdat")
+C4_B0 <- haven::read_sas("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/raw_data/gb_ddb_fa_04_couple_04.sas7bdat")
 
 # Identifier les colonnes vides
 empty_cols_C4_B0 <- C4_B0 %>%
@@ -203,7 +203,7 @@ Je commence par corriger les cas où ce n'est pas une question de doublons, mais
 #### I- Réponse couple, pas famille (URENG)
 ```{r Cas D}
 
-Famille <- readr::read_csv("../../clean_data/THOA_famille_1.csv", show_col_types = FALSE)
+Famille <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_famille_1.csv", show_col_types = FALSE)
 
 cas_D0 <- C4_B1 %>% 
   filter(id_anonymat == "URENG")
@@ -950,7 +950,7 @@ pour_pub <- C4_W2 %>%
 #            "rcd_years_B1W"))
 
 
-# Couple <- readr::read_csv("../../clean_data/THOA_couple_P1.csv", show_col_types = FALSE)
+# Couple <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_P1.csv", show_col_types = FALSE)
 
 
 ```
