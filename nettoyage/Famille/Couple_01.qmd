@@ -507,7 +507,7 @@ NA: N'a pas de date de participation au module, n'a donc pas répondu à la ques
 ### c) Renommer les variables
 Correction spéciale pour MMPBE parce qu'il n'a pas renseigné les années d'union pour ses deux relations et une des deux a été interrompue. Sans la modification, on indiquait que la première union n'avait jamais été interrompue alors que la seconde oui. Donc j'ai modifié l'ordre pour que la première union soit bien celle qui a été interrompue.
 Finalement j'ai juste ajouté sf_interromp à la liste des variables pour ordonnes les lignes
-```{r}
+```{r C4_B5 to C4_C0}
 C4_C0 <- C4_B5 %>% 
   mutate(sf_interromp = case_when(
     sf_interromp == "0" ~ 0L,
@@ -604,6 +604,29 @@ vars_mois_up8 <- C4_C0 %>%
 vars_years_up8 <- C4_C0 %>% 
   select(fa_cp_conjt_nais_an, fa_cp_union_an) %>% 
   colnames()
+
+test_celib <- C4_C0 %>%
+  group_by(id_anonymat) %>% 
+  mutate(
+    n_cpl = case_when(
+      complet_fa_cp %in% c("0", "333") ~ NA_integer_,
+      complet_fa_cp == "777" ~ 0L,
+      complet_fa_cp == "1" ~ n(),
+      TRUE ~ 999L),
+    nb_int = sum(fa_cp_union_int == "1")
+    ) %>% 
+  mutate(
+    fa_cp_celib = case_when(
+      complet_fa_cp %in% c("0", "333") ~ NA_character_,
+      complet_fa_cp == "777" ~ "777",
+      n_cpl == nb_int ~ "1",
+      !is.na(n_cpl) & is.na(nb_int) ~ "666",
+      n_cpl != nb_int ~ "2",
+      TRUE ~ "E"
+    )
+  ) %>% 
+  relocate(n_cpl, nb_int, fa_cp_celib) %>%
+  ungroup()
 
 C4_C1 <- C4_C0 %>%
   rcd_fct_L(all_of(vars_fct_up8), complet_fa_cp) %>%
