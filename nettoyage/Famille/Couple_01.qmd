@@ -559,22 +559,26 @@ cross_C4_C1 <- C4_C1 %>%
 
 
 #### I- Avant question borne
+
 ```{r}
+
+# Corriger les valeurs manquantes sur le long et avant les événements
+# d'après la borne: les interruptions du couple
 rcd_fct_L <- function(df, vars, complet){
-  df %>% 
+  df %>%
     mutate(
       across(
         {{vars}},
         ~ case_when(
+          !is.na(.x) & {{complet}} == "1" ~ as.character(.x),
           is.na(.x) & {{complet}} == "0" ~ NA_character_,
           is.na(.x) & {{complet}} == "1" ~ "555",
           is.na(.x) & {{complet}} == "333" ~ "333",
           is.na(.x) & {{complet}} == "777" ~ "777",
-          !is.na(.x) & {{complet}} == "1" ~ as.character(.x),
           TRUE ~ "E"
         )
       )
-    ) %>% 
+    ) %>%
     mutate(
       across(
         {{vars}}, ~ fct_relevel(.x, "333", "555", "777", after = Inf)
@@ -588,11 +592,11 @@ rcd_years_L <- function(df, vars, complet){
       across(
         {{vars}},
         ~ case_when(
+          !is.na(.x) ~ as.integer(.x),
           is.na(.x) & {{complet}} == "0" ~ NA_integer_,
           is.na(.x) & {{complet}} == "1" ~ 5555L,
           is.na(.x) & {{complet}} == "333" ~ 3333L,
           is.na(.x) & {{complet}} == "777" ~ 7777L,
-          !is.na(.x) & {{complet}} == "1" ~ as.integer(.x),
           TRUE ~ 9999L
         )
       )
@@ -600,8 +604,8 @@ rcd_years_L <- function(df, vars, complet){
 }
 ```
 
-```{r C4_C0 to C4_C1}
 
+```{r}
 vars_fct_up8 <- C4_C0 %>% 
   select(fa_cp_conjt_sexe, fa_cp_conjt_nais_mois, fa_cp_union_nature,
          fa_cp_union_mois, fa_cp_conjt_muco, fa_cp_union_int, fa_cp_union_enf) %>% 
@@ -644,125 +648,6 @@ C4_C1 <- C4_C0 %>%
   relocate(nb_cpl, nb_int, fa_cp_celib) %>%
   ungroup() %>% 
   rcd_fct_L(all_of(vars_fct_up8), complet_fa_cp) %>%
-  mutate(
-    fa_cp_union_int = as.character(fa_cp_union_int),
-    fa_cp_union_int = replace_when(fa_cp_union_int,
-                                   fa_cp_union_int == "555" ~ "666"),
-    fa_cp_union_int = factor(fa_cp_union_int,
-                             levels = c("0", "1", "333", "666", "777"))
-    ) %>% 
-  mutate(
-    across(all_of(vars_mois_up8),
-           ~ fct_relevel(.x, "10", "11", "12", after = 9))) %>% 
-  rcd_years_L(all_of(vars_years_up8), complet_fa_cp) %>% 
-  mutate(fa_cp_conjt_prenom = case_when(
-    is.na(fa_cp_conjt_prenom) & complet_fa_cp == "0" ~ NA_character_,
-    is.na(fa_cp_conjt_prenom) & complet_fa_cp == "1" ~ "55",
-    is.na(fa_cp_conjt_prenom) & complet_fa_cp == "333" ~ "33",
-    is.na(fa_cp_conjt_prenom) & complet_fa_cp == "777" ~ "77",
-    !is.na(fa_cp_conjt_prenom) & complet_fa_cp == "1" ~ fa_cp_conjt_prenom,
-    TRUE ~ "99"),
-    fa_cp_conjt_prenom = replace_when(
-      fa_cp_conjt_prenom,
-      fa_cp_conjt_prenom == "Na" |
-        fa_cp_conjt_prenom == "na" |
-        fa_cp_conjt_prenom == "nA" |
-        fa_cp_conjt_prenom == "NA" ~ "NAA"),
-    fa_cp_conjt_prenom = str_to_upper(fa_cp_conjt_prenom))
-
-# rm(list = c("vars_fct_up8", "vars_mois_up8", "vars_years_up8", "rcd_fct_L",
-#            "rcd_years_L"))
-```
-
-
-```{r}
-
-# Corriger les valeurs manquantes sur le long et avant les événements
-# après la borne: les interruptions du couple
-rcd_fct_L2 <- function(df, vars, complet){
-  df %>%
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) & {{complet}} == "1" ~ as.character(.x),
-          is.na(.x) & {{complet}} == "0" ~ NA_character_,
-          is.na(.x) & {{complet}} == "1" ~ "555",
-          is.na(.x) & {{complet}} == "333" ~ "333",
-          is.na(.x) & {{complet}} == "777" ~ "777",
-          TRUE ~ "E"
-        )
-      )
-    ) %>%
-    mutate(
-      across(
-        {{vars}}, ~ fct_relevel(.x, "333", "555", "777", after = Inf)
-      )
-    )
-}
-
-rcd_years_L2 <- function(df, vars, complet){
-  df %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) & {{complet}} == "1" ~ as.integer(.x),
-          is.na(.x) & {{complet}} == "0" ~ NA_integer_,
-          is.na(.x) & {{complet}} == "1" ~ 5555L,
-          is.na(.x) & {{complet}} == "333" ~ 3333L,
-          is.na(.x) & {{complet}} == "777" ~ 7777L,
-          TRUE ~ 9999L
-        )
-      )
-    )
-}
-```
-
-
-```{r}
-vars_fct_up8 <- C4_C0 %>% 
-  select(fa_cp_conjt_sexe, fa_cp_conjt_nais_mois, fa_cp_union_nature,
-         fa_cp_union_mois, fa_cp_conjt_muco, fa_cp_union_int, fa_cp_union_enf) %>% 
-  colnames()
-
-vars_mois_up8 <- C4_C0 %>% 
-  select(fa_cp_conjt_nais_mois, fa_cp_union_mois) %>% 
-  colnames()
-
-vars_years_up8 <- C4_C0 %>% 
-  select(fa_cp_conjt_nais_an, fa_cp_union_an) %>% 
-  colnames()
-
-tC4_C1 <- C4_C0 %>%
-  group_by(id_anonymat) %>% 
-  mutate(
-    nb_cpl = case_when(
-      complet_fa_cp %in% c("0", "333") ~ NA_integer_,
-      complet_fa_cp == "777" ~ 0L,
-      complet_fa_cp == "1" ~ n(),
-      TRUE ~ 999L),
-    nb_int = case_when(
-      complet_fa_cp %in% c("0", "333") ~ NA_integer_,
-      complet_fa_cp == "777" ~ 0L,
-      complet_fa_cp == "1" ~ sum(fa_cp_union_int == "1"),
-      TRUE ~ 999L)
-    ) %>% 
-  mutate(
-    fa_cp_celib = case_when(
-      complet_fa_cp == "0" ~ "0",
-      complet_fa_cp == "333" ~ "333",
-      complet_fa_cp == "777" ~ "777",
-      complet_fa_cp == "1" & nb_int == 0 ~ "1",
-      complet_fa_cp == "1" & nb_cpl == nb_int ~ "2",
-      complet_fa_cp == "1" & !is.na(nb_cpl) & is.na(nb_int) ~ "666",
-      complet_fa_cp == "1" & nb_cpl != nb_int ~ "3",
-      TRUE ~ "E"
-    )
-  ) %>% 
-  relocate(nb_cpl, nb_int, fa_cp_celib) %>%
-  ungroup() %>% 
-  rcd_fct_L2(all_of(vars_fct_up8), complet_fa_cp) %>%
   mutate(
     across(all_of(vars_mois_up8),
            ~ fct_relevel(.x, "10", "11", "12", after = 9))) %>% 
