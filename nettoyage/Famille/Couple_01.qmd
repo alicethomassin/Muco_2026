@@ -549,12 +549,12 @@ C4_C0 <- C4_B5 %>%
 Il devrait y avoir 105 NA par colonne après le recodage
 
 ```{r}
-library(gtsummary)
-cross_C4_C1 <- C4_C1 %>% 
-  tbl_summary(
-    include = fa_cp_celib,
-    by = complet_fa_cp
-  )
+# library(gtsummary)
+# cross_C4_C1 <- C4_C1 %>% 
+#   tbl_summary(
+#     include = fa_cp_celib,
+#     by = complet_fa_cp
+#   )
 ```
 
 
@@ -672,67 +672,9 @@ C4_C1 <- C4_C0 %>%
 
 #### II- Après question borne
 
-```{r}
-
-rcd_fct_B1L <- function(df, borne, vars){
-  df %>%  
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) & {{borne}} == "1" ~ as.character(.x),
-          is.na(.x) & {{borne}} == "0" & nb_obs == 1 ~ "222",
-          is.na(.x) & {{borne}} == "0" & nb_obs > 1 ~ "444",
-          is.na(.x) & {{borne}} == "1" ~ "555",
-          is.na(.x) & {{borne}} == "666" ~ "666",
-          is.na(.x) & {{borne}} == "333" ~ "333",
-          is.na(.x) & {{borne}} == "777" ~ "777",
-          is.na(.x) & is.na({{borne}}) ~ NA_character_,
-          TRUE ~ "E"
-        )
-      )
-    ) %>% 
-    mutate(
-      across(
-        {{vars}}, ~ fct_relevel(.x, "222", "333", "444", "555", "666", "777", after = Inf)
-      )
-    )
-}
-
-```
 
 ```{r}
-
-vars_fct_end <- C4_C1 %>% 
-  select(fa_cp_union_int_par, fa_cp_union_int_muco, fa_cp_union_int_mois) %>% 
-  colnames()
-
-C4_C2 <- C4_C1 %>%
-  rcd_fct_B1L(fa_cp_union_int, all_of(vars_fct_end)) %>% 
-  mutate(
-    fa_cp_union_int_mois = fct_relevel(
-      fa_cp_union_int_mois, "10", "11", "12", after = 9),
-    fa_cp_union_int_an = case_when(
-      !is.na(fa_cp_union_int_an) & fa_cp_union_int == "1" ~ as.integer(fa_cp_union_int_an),
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "0" & nb_obs == 1 ~ 2222L,
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "0" & nb_obs > 1 ~ 4444L,
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "333" ~ 3333L,
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "1" ~ 5555L,
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "666" ~ 6666L,
-      is.na(fa_cp_union_int_an) & fa_cp_union_int == "777" ~ 7777L,
-      is.na(fa_cp_union_int_an) & is.na(fa_cp_union_int) ~ NA_integer_,
-      TRUE ~ 9999L
-    )) %>% 
-  select(-nb_obs)
-
-# save(C4_C2, file = "../../clean_data/THOA_coupleLong.RData")
-
-# rm(list = c("vars_fct_end", "rcd_fct_B1L", "C4_C0", "C4_C1"))
-```
-
-
-```{r}
-rcd_fct_B1L2 <- function(df, borne, filtre, vars){
+rcd_fct_B1L <- function(df, borne, filtre, vars){
   df %>%
     mutate(
       across(
@@ -761,12 +703,12 @@ rcd_fct_B1L2 <- function(df, borne, filtre, vars){
 
 
 ```{r}
-vars_fct_end <- tC4_C1 %>% 
+vars_fct_end <- C4_C1 %>% 
   select(fa_cp_union_int_par, fa_cp_union_int_muco, fa_cp_union_int_mois) %>% 
   colnames()
 
-tC4_C2 <- tC4_C1 %>%
-  rcd_fct_B1L2(fa_cp_celib, fa_cp_union_int, all_of(vars_fct_end)) %>% 
+C4_C2 <- C4_C1 %>%
+  rcd_fct_B1L(fa_cp_celib, fa_cp_union_int, all_of(vars_fct_end)) %>% 
   mutate(
     fa_cp_union_int_mois = fct_relevel(
       fa_cp_union_int_mois, "10", "11", "12", after = 9),
@@ -783,10 +725,14 @@ tC4_C2 <- tC4_C1 %>%
       TRUE ~ 9999L
     ))
 
-verif <- tC4_C2 %>% 
+verif <- C4_C2 %>% 
   relocate(c("id_anonymat", "fa_cp_union_int", "fa_cp_union_int_an",
              "fa_cp_union_int_par", "fa_cp_union_int_muco", "fa_cp_union_int_mois"),
            .after = complet_fa_cp)
+
+# save(C4_C2, file = "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong.RData")
+
+# rm(list = c("vars_fct_end", "rcd_fct_B1L", "C4_C0", "C4_C1"))
 
 ```
 
