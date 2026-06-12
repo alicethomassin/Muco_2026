@@ -605,7 +605,7 @@ vars_years_up8 <- C4_C0 %>%
   select(fa_cp_conjt_nais_an, fa_cp_union_an) %>% 
   colnames()
 
-test_celib <- C4_C0 %>%
+C4_C1 <- C4_C0 %>%
   group_by(id_anonymat) %>% 
   mutate(
     n_cpl = case_when(
@@ -626,9 +626,7 @@ test_celib <- C4_C0 %>%
     )
   ) %>% 
   relocate(n_cpl, nb_int, fa_cp_celib) %>%
-  ungroup()
-
-C4_C1 <- C4_C0 %>%
+  ungroup() %>% 
   rcd_fct_L(all_of(vars_fct_up8), complet_fa_cp) %>%
   mutate(
     fa_cp_union_int = as.character(fa_cp_union_int),
