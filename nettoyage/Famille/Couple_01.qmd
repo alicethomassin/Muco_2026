@@ -442,7 +442,7 @@ C4_B4 <- full_join(
 
 ### b) Identifier les participants
 
-```{r}
+```{r C4_B4 to C4_B5}
 
 # Les variables pour lesquelles la non-réponse doit être comptée
 vars_verif <- C4_B4 %>% 
@@ -548,19 +548,10 @@ C4_C0 <- C4_B5 %>%
 
 Il devrait y avoir 105 NA par colonne après le recodage
 
-```{r}
-# library(gtsummary)
-# cross_C4_C1 <- C4_C1 %>% 
-#   tbl_summary(
-#     include = fa_cp_celib,
-#     by = complet_fa_cp
-#   )
-```
-
 
 #### I- Avant question borne
 
-```{r}
+```{r fonctions rcd long pre-borne}
 
 # Corriger les valeurs manquantes sur le long et avant les événements
 # d'après la borne: les interruptions du couple
@@ -605,7 +596,7 @@ rcd_years_L <- function(df, vars, complet){
 ```
 
 
-```{r}
+```{r C4_C0 to C4_C1}
 vars_fct_up8 <- C4_C0 %>% 
   select(fa_cp_conjt_sexe, fa_cp_conjt_nais_mois, fa_cp_union_nature,
          fa_cp_union_mois, fa_cp_conjt_muco, fa_cp_union_int, fa_cp_union_enf) %>% 
@@ -673,7 +664,7 @@ C4_C1 <- C4_C0 %>%
 #### II- Après question borne
 
 
-```{r}
+```{r fonctions rcd long post-borne}
 rcd_fct_B1L <- function(df, borne, filtre, vars){
   df %>%
     mutate(
@@ -702,7 +693,7 @@ rcd_fct_B1L <- function(df, borne, filtre, vars){
 ```
 
 
-```{r}
+```{r C4_C1 to C4_C2}
 vars_fct_end <- C4_C1 %>% 
   select(fa_cp_union_int_par, fa_cp_union_int_muco, fa_cp_union_int_mois) %>% 
   colnames()
@@ -745,7 +736,7 @@ Puis dictionnaire des variables!!
 
 Je le saurai pour la prochaine fois, donc je ne vais pas le changer, mais je devrais attendre avant de mettre le prefix fa_cp_ parce que maintenant je dois l'enlever pour préparer le pivot-wider
 #### I- Préparer le pivot
-```{r}
+```{r C4_C2 to C4_C3}
 vars_rm_pref <- C4_C2 %>% 
   select(starts_with("fa_cp_"), -fa_cp_couple_1an, -fa_cp_celib) %>% 
   colnames()
@@ -769,7 +760,7 @@ C4_C3 <- C4_C2 %>%
 
 #### II- Pivot-Wider
 
-```{r}
+```{r C4_C3 to C4_W0}
 
 vars_wider <- C4_C3 %>% 
   select(starts_with("conjt"), starts_with("union")) %>% 
@@ -798,170 +789,61 @@ C4_W0 <- C4_C3 %>%
 
 ### c) Recoder NAs (MW)
 
-#### I- Avant question borne
-
-```{r}
-rcd_fct_W <- function(df, vars, complet){
+```{r fonctions rcd wide}
+rcd_fct_W1 <- function(df, borne, vars){
+  
+  niveaux_NA <- c("222", "333", "444", "555", "666", "777", "888")
+  
   df %>% 
     mutate(
       across(
         {{vars}},
         ~ case_when(
           !is.na(.x) ~ as.character(.x),
-          is.na(.x) & {{complet}} == "1" ~ "444",
-          is.na(.x) & {{complet}} == "0" ~ NA_character_,
-          is.na(.x) & {{complet}} == "333" ~ "333",
-          is.na(.x) & {{complet}} == "777" ~ "777",
-          TRUE ~ "E"
-        )
-      )
-    ) %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ fct_relevel(.x, "333", "444", "555", "777", after = Inf)
-      )
-    )
-}
-
-rcd_fct_W2 <- function(df, vars, borne){
-  df %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) ~ as.character(.x),
-          is.na(.x) & {{borne}} == "0" ~ "444",
-          is.na(.x) & {{borne}} == "1" ~ "444",
-          is.na(.x) & {{borne}} == "0" ~ NA_character_,
-          is.na(.x) & {{borne}} == "333" ~ "333",
           is.na(.x) & {{borne}} == "777" ~ "777",
-          TRUE ~ "E"
-        )
-      )
-    ) %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ fct_relevel(.x, "333", "444", "555", "777", after = Inf)
-      )
-    )
-}
-
-rcd_years_W <- function(df, vars, complet){
-  df %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) ~ as.integer(.x),
-          is.na(.x) & {{complet}} == "1" ~ 4444L,
-          is.na(.x) & {{complet}} == "0" ~ NA_integer_,
-          is.na(.x) & {{complet}} == "333" ~ 3333L,
-          is.na(.x) & {{complet}} == "777" ~ 7777L,
-          TRUE ~ 9999L
-        )
-      )
-    )
-}
-```
-
-```{r}
-
-fct_wide <- C4_W0 %>% 
-  select(contains("conjt"), contains("union"), -contains("prenom"), 
-         -contains("_an"), -contains("_int")) %>% 
-  colnames()
-
-vars_mois1_wide <- C4_W0 %>% 
-  select(contains("_mois"), -contains("_int")) %>% 
-  colnames()
-
-years1_wide <- C4_W0 %>% 
-  select(contains("_an"), -contains("_int"), -id_anonymat) %>% 
-  colnames()
-
-C4_W1 <- C4_W0 %>%
-  rcd_fct_W(all_of(fct_wide), complet_fa_cp) %>% 
-  mutate(
-    across(all_of(vars_mois1_wide),
-           ~ factor(.x, levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-                         "11", "12", "333", "444", "555", "777")))) %>% 
-  rcd_years_W(all_of(years1_wide), complet_fa_cp)
-
-# rm(list = c("fct_wide", "vars_mois1_wide", "years1_wide", "C4_W0",
-#             "rcd_fct_W", "rcd_years_W"))
-```
-
-#### II- Après question borne
-
-```{r}
-rcd_fct_B1W <- function(df, borne, vars){
-  df %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) ~ as.character(.x),
-          is.na(.x) & {{borne}} == "0" ~ "222",
-          is.na(.x) & {{borne}} == "1" ~ "888",
-          is.na(.x) & {{borne}} == "2" ~ "444",
           is.na(.x) & {{borne}} == "333" ~ "333",
           is.na(.x) & {{borne}} == "666" ~ "666",
-          is.na(.x) & {{borne}} == "777" ~ "777",
-          is.na(.x) & is.na({{borne}}) ~ NA_character_,
-          TRUE ~ "E"
-        )
-      )
-    ) %>% 
-    mutate(
-      across(
-        {{vars}},
-        ~ fct_relevel(.x, c("222", "333", "444", "555", "666", "777", "888"), after = Inf)
-      )
-    )
-}
-
-rcd_fct_B1W2 <- function(df, borne, vars){
-  df %>%  
-    mutate(
-      across(
-        {{vars}},
-        ~ case_when(
-          !is.na(.x) & ~ as.character(.x),
           is.na(.x) & {{borne}} == "0" ~ NA_character_,
           is.na(.x) & {{borne}} == "1" ~ "222",
           is.na(.x) & {{borne}} == "2" ~ "888",
           is.na(.x) & {{borne}} == "3" ~ "444",
-          is.na(.x) & {{borne}} == "666" ~ "666",
-          is.na(.x) & {{borne}} == "333" ~ "333",
-          is.na(.x) & {{borne}} == "777" ~ "777",
           TRUE ~ "E"
         )
       )
     ) %>% 
     mutate(
       across(
-        {{vars}}, 
-        ~ fct_relevel(.x, "222", "333", "444", "555", "666", "777", "888", after = Inf)
+        {{vars}},
+        ~ .x %>% 
+          fct_expand(niveaux_NA) %>% 
+          fct_relevel(
+            niveaux_NA,
+            after = Inf
+            )
+        )
       )
-    )
 }
 
-rcd_years_B1W <- function(df, borne, vars){
+
+rcd_years_W1 <- function(df, borne, vars){
+  
+ # niveaux_NA <- c(2222L, 3333L, 4444L, 5555L, 6666L, 7777L, 8888L)
+  # J'ai décidé de ne pas mettre de niveaux parce que je ne veux pas modifier
+  # les années en facteurs, je veux conserver la valeur numérique de l'année.
+  
   df %>% 
     mutate(
       across(
         {{vars}},
         ~ case_when(
           !is.na(.x) ~ as.integer(.x),
-          is.na(.x) & {{borne}} == "0" ~ 2222L,
-          is.na(.x) & {{borne}} == "1" ~ 8888L,
-          is.na(.x) & {{borne}} == "2" ~ 4444L,
+          is.na(.x) & {{borne}} == "777" ~ 7777L,
           is.na(.x) & {{borne}} == "333" ~ 3333L,
           is.na(.x) & {{borne}} == "666" ~ 6666L,
-          is.na(.x) & {{borne}} == "777" ~ 7777L,
-          is.na(.x) & is.na({{borne}}) ~ NA_integer_,
+          is.na(.x) & {{borne}} == "0" ~ NA_integer_,
+          is.na(.x) & {{borne}} == "1" ~ 2222L,
+          is.na(.x) & {{borne}} == "2" ~ 8888L,
+          is.na(.x) & {{borne}} == "3" ~ 4444L,
           TRUE ~ 9999L
         )
       )
@@ -969,63 +851,94 @@ rcd_years_B1W <- function(df, borne, vars){
 }
 ```
 
-```{r}
 
-fct_B1W <- C4_W1 %>% 
-  select(contains("_int"), -nb_int, -contains("_int_an")) %>% 
+```{r C4_W0 to C4_W1}
+
+fct_wide <- C4_W0 %>% 
+  select(contains("conjt"), contains("union"), -contains("prenom"), 
+         -contains("_an")) %>% 
   colnames()
 
-vars_mois2_wide <- C4_W1 %>% 
-  select(contains("int_mois")) %>% 
+vars_mois1_wide <- C4_W0 %>% 
+  select(contains("_mois")) %>% 
   colnames()
 
-vars_years2_wide <- C4_W1 %>% 
-  select(ends_with("int_an")) %>% 
+years1_wide <- C4_W0 %>% 
+  select(contains("_an"), -id_anonymat) %>% 
   colnames()
 
-C4_W2 <- C4_W1 %>% 
-  rcd_fct_B1W(fa_cp_celib, all_of(fct_B1W)) %>% 
+niveaux_mois <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11", 
+                  "12", "222", "333", "444", "555", "666", "777", "888")
+
+C4_W1 <- C4_W0 %>%
+  rcd_fct_W1(fa_cp_celib, all_of(fct_wide)) %>% 
+  rcd_years_W1(fa_cp_celib, all_of(years1_wide)) %>% 
   mutate(
-    across(all_of(vars_mois2_wide),
-           ~ factor(.x, levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-                         "11", "12", "222", "333", "444", "555", "666", "777")))) %>% 
-  rcd_years_B1W(fa_cp_celib, all_of(vars_years2_wide)) %>% 
+    across(all_of(vars_mois1_wide),
+           ~ .x %>% 
+             fct_expand(niveaux_mois) %>% 
+             fct_relevel(niveaux_mois)
+           )
+    ) %>% 
   mutate(
     across(
       contains("prenom"),
       ~ case_when(
         !is.na(.x) ~ .x,
-        is.na(.x) & complet_fa_cp == "0" ~ NA_character_,
-        is.na(.x) & complet_fa_cp == "333" ~ "33",
-        is.na(.x) & complet_fa_cp == "777" ~ "77",
         is.na(.x) & fa_cp_celib == "777" ~ "77",
+        is.na(.x) & fa_cp_celib == "333" ~ "33",
+        is.na(.x) & fa_cp_celib == "666" ~ "66",
+        is.na(.x) & fa_cp_celib == "0" ~ NA_character_,
+        is.na(.x) & fa_cp_celib == "1" ~ "22",
+        is.na(.x) & fa_cp_celib == "2" ~ "88",
+        is.na(.x) & fa_cp_celib == "3" ~ "44",
         TRUE ~ "99"))) %>% 
   rename(
-    "fa_cp_nb_unions" = "fa_cp_nb",
-    "fa_cp_nb_ints" = "fa_cp_sep",
+    "fa_cp_nb_unions" = "nb_cpl",
+    "fa_cp_nb_seprt" = "nb_int",
     "fa_cp_complet" = "complet_fa_cp",
-    "fa_cp_source" = "couple_rep",
+    "fa_cp_source_dbl" = "couple_rep",
     "fa_cp_date_creation" = "couple_date_creation"
   )
 
+# Vérifier s'il y a des erreurs qui se sont logées dans le recodage
+check <- C4_W1 %>% 
+  filter_at(vars(starts_with("fa_cpl")), any_vars(. == "E")) %>% 
+  filter_at(vars(starts_with("fa_cpl")), any_vars(. == 9999)) %>% 
+  filter_at(vars(starts_with("fa_cpl")), any_vars(. == "99"))
+
+# rm(list = c("fct_wide", "vars_mois1_wide", "years1_wide", "C4_W0",
+#             "rcd_fct_W", "rcd_years_W"))
+
 ```
+
+
 
 ## 2.4 EXPORTER LA BASE
 
-```{r}
+```{r export}
 
 
-  
+# Ancienne version où il n'y a pas les 888 pour les NA
 # write_csv(C4_W2, "../../clean_data/THOA_couple_m1.csv")
 
-pour_pub <- C4_W2 %>% 
-  select(fa_cp_complet, fa_cp_date_creation, id_anonymat, id_sexe,
-           id_date_nais, fa_cp_nb_unions, fa_cp_nb_ints, 
-           fa_cp_couple_1an:fa_cp04_union_enf)
+# Nouvelle version en date du 16/06/2026
+# write_csv(C4_W1, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_m2.csv")
 
-# print(codebookr::codebook(pour_pub), "../../codebooks/M4_W2_codebookr.docx")
+pour_pub <- C4_W1 %>% 
+  select(fa_cp_complet, fa_cp_date_creation, id_anonymat, id_sexe,
+           id_date_nais, fa_cp_nb_unions, fa_cp_nb_seprt, fa_cp_celib,
+           fa_cp_couple_1an:fa_cpl4_union_enf)
+
+
+
+# Ancienne version où il n'y a pas les 888 pour les NA
 # write_csv(pour_pub, "../../clean_data/THOA_couple_P1.csv")
 
+# Nouvelle version en date du 16/06/2026
+# write_csv(pour_pub, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_P2.csv")
+
+# print(codebookr::codebook(pour_pub), "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/codebooks/M4_W3_codebookr.docx")
 
 # rm(list = c("C4_W1", "pour_moi", "pour_pub", "fct_B1W",
 #            "vars_mois2_wide", "vars_years2_wide", "rcd_fct_B1W",
