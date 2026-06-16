@@ -899,7 +899,19 @@ C4_W1 <- C4_W0 %>%
     "fa_cp_complet" = "complet_fa_cp",
     "fa_cp_source_dbl" = "couple_rep",
     "fa_cp_date_creation" = "couple_date_creation"
-  )
+  ) %>% 
+  # Changer les modalités de fa_cp_celib parce que c'est pas lisible je trouve
+  mutate(
+    fa_cp_biographie = case_when(
+      fa_cp_celib == "0" ~ "0",
+      fa_cp_celib == "1" ~ "222",
+      fa_cp_celib == "2" ~ "888",
+      fa_cp_celib == "3" ~ "444",
+      TRUE ~ fa_cp_celib
+    )
+  ) %>% 
+  relocate(fa_cp_biographie, .after = fa_cp_celib) %>% 
+  select(-fa_cp_celib)
 
 # Vérifier s'il y a des erreurs qui se sont logées dans le recodage
 check <- C4_W1 %>% 
@@ -922,20 +934,26 @@ check <- C4_W1 %>%
 # Ancienne version où il n'y a pas les 888 pour les NA
 # write_csv(C4_W2, "../../clean_data/THOA_couple_m1.csv")
 
-# Nouvelle version en date du 16/06/2026
+# Nouvelle version en date du 16/06/2026 avec fa_cp_biographie
 # write_csv(C4_W1, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_m2.csv")
 
 pour_pub <- C4_W1 %>% 
   select(fa_cp_complet, fa_cp_date_creation, id_anonymat, id_sexe,
-           id_date_nais, fa_cp_nb_unions, fa_cp_nb_seprt, fa_cp_celib,
+           id_date_nais, fa_cp_nb_unions, fa_cp_nb_seprt, fa_cp_biographie,
            fa_cp_couple_1an:fa_cpl4_union_enf)
 
+# exemple <- C4_W1 %>% 
+#   filter(
+#     id_anonymat == "ACIML" |
+#       id_anonymat == "AHTZE" |
+#       id_anonymat == "AGJKE" ) %>% 
+#   select(id_anonymat, fa_cpl1_conjt_sexe:fa_cpl4_conjt_sexe, fa_cpl1_union_int:fa_cpl4_union_int, fa_cpl1_union_int_muco:fa_cpl4_union_int_muco)
 
 
 # Ancienne version où il n'y a pas les 888 pour les NA
 # write_csv(pour_pub, "../../clean_data/THOA_couple_P1.csv")
 
-# Nouvelle version en date du 16/06/2026
+# Nouvelle version en date du 16/06/2026 avec fa_cp_biographie
 # write_csv(pour_pub, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_P2.csv")
 
 # print(codebookr::codebook(pour_pub), "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/codebooks/M4_W3_codebookr.docx")
