@@ -158,7 +158,7 @@ E4_T1 <- E4_T0 %>%
       vrep_enfant == 1 & nb_NA == length(vars_verif) ~ "333",
       vrep_enfant == 0 & nb_NA == length(vars_verif) ~ "777",
       is.na(vrep_enfant) & nb_NA == length(vars_verif) ~ "0",
-      TRUE ~ "ERROR"
+      TRUE ~ "E"
     ),
     fa_en_complet = factor(fa_en_complet, levels = c("0", "1", "333", "777"))
   ) %>%
@@ -232,19 +232,20 @@ case_when il n'y a pas de conjoint documenté dans les enfants, mais qu'il y en 
 ## 2.3 Infos Conjoint
 ### 2.3.1 Rang des unions dans lesquelles il y a eu des enfants
 ```{r}
-load("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong_avecRang.RData")
+load("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong_avecRang2.RData")
 
 C4_pour_kid0 <- C4_C3 %>% 
   rename(
-    "fa_cp_nb_unions" = "fa_cp_nb",
-    "fa_cp_nb_ints" = "fa_cp_sep"
+    "fa_cp_nb_unions" = "nb_cpl",
+    "fa_cp_nb_seprt" = "nb_int",
+    "fa_cp_complet" = "complet_fa_cp"
   ) %>%
   mutate(
     rang_conjt = str_sub(rang_fa_cp, -1)
   ) %>%
   mutate(
     rang_couple_enfant = case_when(
-      complet_fa_cp == "1" & union_enf == "1" ~ paste0(
+      fa_cp_complet == "1" & union_enf == "1" ~ paste0(
         sprintf("Union %s sur %0d", rang_conjt, fa_cp_nb_unions)
       ),
       TRUE ~ NA_character_
@@ -256,11 +257,16 @@ C4_pour_kid0 <- C4_C3 %>%
 kid_oui <- E4_T2 %>% 
   filter(fa_en_complet == "1")
 
+# Ajouter ceux qui n'ont pas participé, mais ont déclaré avoir eu des enfants
+# kid_oui_333 <- C4_pour_kid0 %>%
+#   filter_at(vars(ends_with("union_enf")), any_vars(. == "1")) %>% 
+#   filter_out(id_anonymat %in% kid_oui$id_anonymat)
+
 add_fa_cp <- c("union_enf", "conjt_prenom", "conjt_sexe", "union_an", 
                "union_int", "union_int_an")
 
 C4_pour_kid1 <- C4_pour_kid0 %>% 
-  select(complet_fa_cp, id_anonymat, rang_couple_enfant, conjt_prenom, 
+  select(fa_cp_complet, id_anonymat, rang_couple_enfant, conjt_prenom, 
          conjt_sexe, union_an, union_int, union_int_an, union_enf) %>% 
   filter(id_anonymat %in% kid_oui$id_anonymat) %>% 
   rename_with(~ paste0("fa_cp_", .x), all_of(add_fa_cp)) %>% 
@@ -321,7 +327,7 @@ E4_sans_conjt_cor <- left_join(
   )) %>% 
   relocate(fa_en_conjt_sexe, .after = fa_cp_conjt_sexe) %>% 
   select(-fa_cp_conjt_sexe, -na_prenom) %>%
-  select(-complet_fa_cp) %>% 
+  select(-fa_cp_complet) %>% 
   relocate(rang_couple_enfant)
 
 ```
@@ -352,7 +358,7 @@ E4_non_rens <- E4_T2 %>%
   ) %>% 
   rename("conjt_prenom" = "sf_enf_conjt_prenom") %>% 
   relocate(rang_couple_enfant:fa_cp_union_enf, .after = conjt_prenom) %>% 
-  select(-complet_fa_cp)
+  select(-fa_cp_complet)
 
 
 E4_T3 <- E4_T2 %>%
@@ -365,7 +371,7 @@ E4_T3 <- E4_T2 %>%
     relationship = "many-to-many"
   ) %>%
   relocate(rang_couple_enfant:fa_cp_union_enf, .after = conjt_prenom) %>% 
-  select(-complet_fa_cp) %>% 
+  select(-fa_cp_complet) %>% 
   bind_rows(E4_non_rens) %>% 
   mutate(
     rang_couple_enfant = 
