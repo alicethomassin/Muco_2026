@@ -756,6 +756,10 @@ C4_C3 <- C4_C2 %>%
 # rm(list = c("vars_rm_pref", "C4_C2"))
 # save(C4_C3, file = "../../clean_data/THOA_coupleLong_avecRang.RData")
 
+# Nouvelle version en date du 17/06/2026 pour tenir compte de la nouvelle
+# codification des non-réponses
+# save(C4_C3, file = "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_coupleLong_avecRang2.RData")
+
 ```
 
 #### II- Pivot-Wider
