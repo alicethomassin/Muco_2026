@@ -18,8 +18,6 @@ library(questionr)
 ## 1.1 Retirer les colonnes vides et hors module
 
 ```{r E4_B0 to E4_B1}
-library(tidyverse)
-library(questionr)
 
 # Importer la base
 E4_B0 <- haven::read_sas("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/raw_data/gb_ddb_fa_04_enfants_04.sas7bdat")
@@ -77,7 +75,7 @@ E4_B1 <- E4_B0 %>%
 ## 1.2 Corriger les problèmes d'importation
 ```{r}
 
-Couple <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_m1.csv", show_col_types = FALSE)
+Couple <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_m2.csv", show_col_types = FALSE)
 
 corrections0 <- E4_B1 %>% 
   filter(aa_cor > 0)
@@ -154,7 +152,7 @@ E4_T1 <- E4_T0 %>%
     nb_NA = rowSums(is.na(across(all_of(vars_verif))))
   ) %>%
   mutate(
-    complet_fa_en = case_when(
+    fa_en_complet = case_when(
       id_anonymat == "FCISN" ~ "777",
       nb_NA < length(vars_verif) ~ "1",
       vrep_enfant == 1 & nb_NA == length(vars_verif) ~ "333",
@@ -162,14 +160,14 @@ E4_T1 <- E4_T0 %>%
       is.na(vrep_enfant) & nb_NA == length(vars_verif) ~ "0",
       TRUE ~ "ERROR"
     ),
-    complet_fa_en = factor(complet_fa_en, levels = c("0", "1", "333", "777"))
+    fa_en_complet = factor(fa_en_complet, levels = c("0", "1", "333", "777"))
   ) %>%
-  relocate(nb_NA, complet_fa_en) %>% 
+  relocate(nb_NA, fa_en_complet) %>% 
   mutate(across(all_of(to_factor), as.factor)) %>% 
   mutate(
     fa_en_enfants = case_when(
-      complet_fa_en %in% c("1", "333") ~ "1",
-      complet_fa_en == "777" ~ "0",
+      fa_en_complet %in% c("1", "333") ~ "1",
+      fa_en_complet == "777" ~ "0",
       !is.na(fa_date_creation) & is.na(vrep_enfant) ~ "555",
       is.na(fa_date_creation) & is.na(enfants_date_creation) &
         is.na(vrep_enfant) ~ NA_character_,
@@ -183,13 +181,13 @@ E4_T1 <- E4_T0 %>%
 cas_verif <- E4_T1 %>% 
   group_by(id_anonymat) %>% 
   mutate(n = n()) %>% 
-  group_by(id_anonymat, complet_fa_en) %>% 
+  group_by(id_anonymat, fa_en_complet) %>% 
   mutate(check = n()) %>% 
   ungroup() %>% 
   filter(check != n)
 
 correction_check <- cas_verif %>% 
-  filter_out(complet_fa_en == 333) %>% 
+  filter_out(fa_en_complet == 333) %>% 
   slice(-c(4,
            7:8)) %>% 
   mutate(
@@ -256,7 +254,7 @@ C4_pour_kid0 <- C4_C3 %>%
 
 # Isoler ceux qui ont documenté des enfants dans le module du couple
 kid_oui <- E4_T2 %>% 
-  filter(complet_fa_en == "1")
+  filter(fa_en_complet == "1")
 
 add_fa_cp <- c("union_enf", "conjt_prenom", "conjt_sexe", "union_an", 
                "union_int", "union_int_an")
@@ -298,7 +296,7 @@ J'ai aussi le sexe du conjoint. Maintenant je vais joindre les infos à la base.
 E4_sans_conjt <- E4_T2 %>%
   group_by(id_anonymat) %>% 
   mutate(na_prenom = sum(is.na(sf_enf_conjt_prenom))) %>% 
-  filter(complet_fa_en == "1" &
+  filter(fa_en_complet == "1" &
            na_prenom != 0)
 
 C4_info_conjt0 <- C4_pour_kid2 %>% 
@@ -374,19 +372,19 @@ E4_T3 <- E4_T2 %>%
       replace_when(rang_couple_enfant,
                    id_anonymat == "QFGMN" ~ "Couple non renseigné",
                    id_anonymat == "LAIMN" ~ "Union 3 sur 3",
-                   complet_fa_en == "333" & is.na(rang_couple_enfant) ~ "333",
-                   complet_fa_en == "777" & is.na(rang_couple_enfant) ~ "777")) %>% 
+                   fa_en_complet == "333" & is.na(rang_couple_enfant) ~ "333",
+                   fa_en_complet == "777" & is.na(rang_couple_enfant) ~ "777")) %>% 
   # créer le sexe du conjoint
   mutate(fa_en_conjt_sexe = case_when(
     fa_cp_conjt_sexe %in% c("1", "2") ~ fa_cp_conjt_sexe,
-    complet_fa_en == "333" ~ "333",
-    complet_fa_en == "777" ~ "777",
+    fa_en_complet == "333" ~ "333",
+    fa_en_complet == "777" ~ "777",
     fa_cp_conjt_sexe == "333" & sf_enf_issu == "2" ~ "999",
     fa_cp_conjt_sexe == "555" & sf_enf_issu == "2" ~ "999",
     id_sexe == "1" & sf_enf_issu == "1" ~ "2",
     id_sexe == "2" & sf_enf_issu == "1" ~ "1",
     is.na(fa_cp_conjt_sexe) & sf_enf_issu == "2" ~ "555",
-    complet_fa_en == "0" ~ NA_character_,
+    fa_en_complet == "0" ~ NA_character_,
     TRUE ~ "E"
   )) %>% 
   relocate(fa_en_conjt_sexe, .after = fa_cp_conjt_sexe) %>% 
@@ -414,7 +412,6 @@ E4_T3 <- E4_T2 %>%
 
 E4_C0 <- E4_T3 %>%
   rename(
-    "fa_enf_complet" = "complet_fa_en",
     "fa_enf_date_creation" = "enfants_date_creation",
     "fa_commentaires" = "commentaires_fam",
     "fa_act_nb_enf_bio" = "sf_enf_bio_nb",
@@ -446,7 +443,7 @@ E4_C1 <- E4_C0 %>%
   mutate(
     nb_obs = case_when(
       fa_enf_enfants %in% c("0", "555", NA) ~ 0,
-      fa_enf_complet == "333" ~ 0,
+      fa_en_complet == "333" ~ 0,
       TRUE ~ n()),
     miss_nb = case_when(
       is.na(fa_act_nb_enf_bio) & is.na(fa_act_nb_enf_adp) ~ 2,
@@ -454,15 +451,15 @@ E4_C1 <- E4_C0 %>%
       TRUE ~ 1)) %>% 
   mutate(across(all_of(starts_with("fa_act_nb_")),
          ~ case_when(
-           miss_nb == 2 & fa_enf_complet == "777" ~ 0,
-           miss_nb == 2 & fa_enf_complet == "333" ~ 333,
+           miss_nb == 2 & fa_en_complet == "777" ~ 0,
+           miss_nb == 2 & fa_en_complet == "333" ~ 333,
            miss_nb == 2 & fa_enf_enfants == "555" ~ 555,
            miss_nb == 1 & is.na(.) ~ 0,
            TRUE ~ .
          ))
     ) %>%
   relocate(nb_obs, fa_act_nb_enf_bio, fa_act_nb_enf_adp, miss_nb,
-           fa_enf_enfants, fa_enf_complet) %>% 
+           fa_enf_enfants, fa_en_complet) %>% 
   ungroup()
 
 
@@ -493,7 +490,7 @@ E4_C2 <- E4_C1 %>%
   mutate(
     nb_kids_rep = case_when(
       fa_enf_enfants %in% c("555", "0") ~ 0,
-      fa_enf_complet == 0 ~ 0,
+      fa_en_complet == 0 ~ 0,
       fa_act_nb_enf_adp == "333" ~ 0,
       TRUE ~ fa_act_nb_enf_adp + fa_act_nb_enf_bio
     )
@@ -503,7 +500,7 @@ E4_C2 <- E4_C1 %>%
 
 correciont <- E4_C2 %>% 
   filter(nb_kids_rep != nb_obs) %>% 
-  filter_out(fa_enf_complet == "333")
+  filter_out(fa_en_complet == "333")
 
 correciont1 <- correciont %>% 
   replace_when(fa_sf_nb_enf_bio
@@ -520,8 +517,8 @@ E4_C1 <- E4_C0 %>%
   ungroup() %>%
   mutate(across(all_of(starts_with("fa_sf_nb_")),
          ~ case_when(
-           miss_nb == 2 & complet_fa_en == "777" ~ 0,
-           miss_nb == 2 & complet_fa_en == "333" ~ 333,
+           miss_nb == 2 & fa_en_complet == "777" ~ 0,
+           miss_nb == 2 & fa_en_complet == "333" ~ 333,
            miss_nb == 2 & fa_en_enfants == "555" ~ 555,
            miss_nb == 1 & is.na(.) ~ 0,
            TRUE ~ .
@@ -531,7 +528,7 @@ E4_C1 <- E4_C0 %>%
   mutate(
     fa_en_nb = case_when(
       id_anonymat == "CYJRN" ~ NA_integer_,
-      fa_en_enfants == "1" & complet_fa_en %in% c("1", "333") ~ n(),
+      fa_en_enfants == "1" & fa_en_complet %in% c("1", "333") ~ n(),
       fa_en_enfants == "0" ~ 0,
       fa_sf_nb_enf_bio > 0 ~ as.integer(fa_sf_nb_enf_bio),
       fa_sf_nb_enf_adp > 0 ~ as.integer(fa_sf_nb_enf_adp),
@@ -542,7 +539,7 @@ E4_C1 <- E4_C0 %>%
       )
     ) %>% 
   relocate(fa_en_nb, rang_fa_en, check_sum, miss_nb, fa_sf_nb_enf_bio, fa_sf_nb_enf_adp,
-           issu, fa_en_enfants, complet_fa_en) %>% 
+           issu, fa_en_enfants, fa_en_complet) %>% 
   ungroup()
   
 
@@ -551,7 +548,7 @@ check <- E4_C0 %>%
     (fa_en_nb == fa_sf_nb_enf_adp |
       fa_en_nb == fa_sf_nb_enf_bio)
   ) %>% 
-  filter_out(complet_fa_en == "777") %>% 
+  filter_out(fa_en_complet == "777") %>% 
   filter_out(is.na(fa_en_nb) & 
                is.na(fa_sf_nb_enf_bio) &
                is.na(fa_sf_nb_enf_adp)) %>% 
