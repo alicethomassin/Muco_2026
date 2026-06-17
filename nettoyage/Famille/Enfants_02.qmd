@@ -218,3 +218,62 @@ rm(list = c("cas_verif", "correction_check", "Couple", "E4_B1", "E4_B2",
             "vars_join", "vars_verif"))
 
 ```
+
+À partir d'ici, je ne sais pas comment procéder. 
+Je peux commencer par identifier les lignes où les enfants sont renseignés plus d'une fois.
+
+NON: Je peux trouver les lignes où les variables de base pour les enfants ne sont pas toutes complétées. Ça peut être un indicateur que la personne a arrêté sa saisie et que l'enfant est enregistré plus d'une fois.
+
+Je ne vais pas tout de suite comparer les réponses du nombre d'enfant parce que je crois qu'il y a beaucoup d'erreurs là-dessus.
+
+```{r}
+
+E4_T3 <- E4_T2 %>%
+  group_by(id_anonymat) %>% 
+  mutate(
+    n_doc = case_when(
+      fa_en_complet == "0" ~ NA_integer_,
+      fa_en_complet == "333" ~ 333L,
+      fa_en_complet == "777" ~ 777L,
+      fa_en_complet == "1" ~ n(),
+      TRUE ~ 999L
+    ),
+    .before = fa_en_complet
+  ) %>% 
+  group_by(id_anonymat, sf_enf_mois_nais, sf_enf_an_nais) %>% 
+  mutate(
+    n_freq_DDN = case_when(
+      fa_en_complet == "0" ~ NA_integer_,
+      fa_en_complet == "333" ~ 333L,
+      fa_en_complet == "777" ~ 777L,
+      fa_en_complet == "1" ~ n(),
+      TRUE ~ 999L
+    ),
+    .before = fa_en_complet
+    ) %>% 
+  ungroup() %>% 
+  mutate(
+    fa_en_jumeaux = case_when(
+      fa_en_complet == "0" ~ NA_character_,
+      fa_en_complet == "333" ~ "333",
+      fa_en_complet == "777" ~ "777",
+      fa_en_complet == "1" & (n_freq_DDN > 1) ~ "1",
+      fa_en_complet == "1" & (n_freq_DDN == 1) ~ "0",
+      TRUE ~ "E"
+      ) %>%
+      factor(),
+    .before = fa_en_complet
+  ) %>% 
+  filter_out(
+    id_anonymat == "HYFFS" & sf_enf_prenom == "DO" & sf_enf_an_nais == 2008
+  ) %>%
+  mutate(
+    fa_en_jumeaux = replace_when(fa_en_jumeaux,
+                                 fa_en_jumeaux == "0" & id_anonymat == "HYFFS" ~ "1")
+  ) %>%
+  select(-n_freq_DDN)
+
+
+
+```
+
