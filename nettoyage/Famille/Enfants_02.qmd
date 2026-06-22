@@ -362,3 +362,33 @@ E4_T4 <- E4_T3 %>%
 
 ```
 
+# 3. PASSAGE WIDE
+
+## 3.1 Retirer préfixes variables
+
+```{r E4_T4 to E4_C0}
+
+rm_sf_enf <- colnames(select(E4_T4,
+                    sf_enf_conjt_prenom:sf_enf_an_deces))
+  
+E4_C0 <- E4_T4 %>% 
+  rename_with(.cols = all_of(rm_sf_enf), ~gsub("sf_enf", "", .x)) %>% 
+  rename(
+    "fa_en_nb_doc" = "n_doc",
+    "fa_en_date_creation" = "enfants_date_creation",
+    "fa_en_nb_bio" = "sf_enf_bio_nb",
+    "fa_en_nb_adp" = "sf_enf_adopte_nb",
+    "fa_en_nb_dcd" = "sf_enf_dcd_nb",
+    "_prenom_conjt" = "_conjt_prenom",
+    "_nais_mois" = "_mois_nais",
+    "_nais_an" = "_an_nais",
+    "_adpt_mois" = "_mois_adopte",
+    "_adpt_an" = "_an_adopte",
+    "_decd_mois" = "_mois_deces",
+    "_decd_an" = "_an_deces",
+    "fa_commentaires" = "commentaires_fam"
+  )
+
+
+```
+
