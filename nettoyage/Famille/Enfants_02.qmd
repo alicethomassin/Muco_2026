@@ -350,8 +350,9 @@ E4_T4 <- E4_T3 %>%
   mutate(
     sf_enf_dcd_nb = case_when(
        fa_en_complet == "777" ~ 777L,
-       fa_en_complet == "333" ~ 555L,
-       fa_en_complet == "0" ~ 555L,
+       fa_en_complet == "333" ~ 333L,
+       fa_en_complet == "0" & !is.na(fa_date_creation) ~ 555L,
+       fa_en_complet == "0" & is.na(fa_date_creation) ~ NA_integer_,
        fa_en_complet == "1" ~ sum(sf_enf_decede == "1"),
        TRUE ~ 999L
     ),
@@ -400,7 +401,8 @@ Les différentes trajectoires:
 444: a eu au moins 1 deces, mais un autre enfant après
 888: 1 décès , plus d'autres enfants
 
-```{r}
+```{r fonctions}
+
 rcd_fct_L <- function(df, vars, complet){
   df %>%
     mutate(
@@ -417,21 +419,33 @@ rcd_fct_L <- function(df, vars, complet){
       )
     ) %>%
     mutate(
-      across(
-        {{vars}}, ~ fct_relevel(.x, "333", "555", "777", after = Inf)
+    across(
+        {{vars}},
+           ~ fct_expand(.x, "333", "555", "777") %>% 
+             fct_relevel("333", "555", "777", after = Inf)
+        )
       )
-    )
 }
+
+
 ```
 
 
-```{r}
+```{r E4_C0 to E4_C1}
 
 fct_rcd <- E4_C0 %>% 
   select(sexe, nais_mois, issu, diag_avt, muco, decede) %>% 
   colnames()
 
+niveaux_mois <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11", 
+                  "12", "222", "333", "444", "555", "777", "888")
+
+vars_mois_long <- E4_C0 %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
 E4_C1 <- E4_C0 %>% 
+  rcd_fct_L(all_of(fct_rcd), fa_en_complet) %>% 
   group_by(id_anonymat) %>% 
   mutate(
     fa_en_biographie = case_when(
@@ -439,15 +453,83 @@ E4_C1 <- E4_C0 %>%
       fa_en_complet == "333" ~ "333",
       fa_en_complet == "777" ~ "777",
       fa_en_complet == "1" & fa_en_nb_dcd == 0 ~ "222",
-      fa_en_complet == "1" & fa_en_nb_dcd == 1 & fa_en_nb_doc == 1 ~ "888",
-      fa_en_complet == "1" & fa_en_nb_dcd == 1 & fa_en_nb_doc == 2 ~ "444",
+      fa_en_complet == "1" & fa_en_nb_dcd == 1 ~ "444",
       TRUE ~ "E"
     ),
     .after = fa_en_complet
+  ) %>%
+  mutate(
+    across(
+      contains("prenom"),
+      ~ case_when(
+        !is.na(.x) ~ .x,
+        is.na(.x) & fa_en_complet == "777" ~ "77",
+        is.na(.x) & fa_en_complet == "333" ~ "33",
+        is.na(.x) & fa_en_complet == "0" ~ NA_character_,
+        is.na(.x) & fa_en_complet == "1" ~ "55",
+        TRUE ~ "99"))) %>%
+  ungroup() %>% 
+  mutate(
+    nais_an = case_when(
+      !is.na(nais_an) ~ as.integer(nais_an),
+      is.na(nais_an) & fa_en_complet == "333" ~ 3333L,
+      is.na(nais_an) & fa_en_complet == "0" ~ NA_integer_,
+      is.na(nais_an) & fa_en_complet == "777" ~ 7777L,
+      is.na(nais_an) & fa_en_complet == "1" ~ 5555L,
+      TRUE ~ 9999L
+    )
   ) %>% 
-  ungroup() %>%
-  rcd_fct_L(all_of(fct_rcd), fa_en_complet)
-  
+  mutate(
+    adpt_mois = case_when(
+      !is.na(adpt_mois) ~ as.character(adpt_mois),
+      is.na(adpt_mois) & issu == "333" ~ "333",
+      is.na(adpt_mois) & is.na(issu) ~ NA_character_,
+      is.na(adpt_mois) & issu == "777" ~ "777",
+      is.na(adpt_mois) & issu %in% c("1", "2", "3") ~ "888",
+      is.na(adpt_mois) & issu == "4" ~ "555",
+      TRUE ~ "999"
+    ),
+    adpt_an = case_when(
+      !is.na(adpt_an) ~ as.integer(adpt_an),
+      is.na(adpt_an) & issu == "333" ~ 3333L,
+      is.na(adpt_an) & is.na(issu) ~ NA_integer_,
+      is.na(adpt_an) & issu == "777" ~ 7777L,
+      is.na(adpt_an) & issu == "4" ~ 5555L,
+      is.na(adpt_an) & issu %in% c("1", "2", "3") ~ 8888L,
+      TRUE ~ 9999L
+    ),
+    decd_mois = case_when(
+      !is.na(decd_mois) ~ as.character(decd_mois),
+      is.na(decd_mois) & decede == "333" ~ "333",
+      is.na(decd_mois) & is.na(decede) ~ NA_character_,
+      is.na(decd_mois) & decede == "777" ~ "777",
+      is.na(decd_mois) & decede == "0" ~ "888",
+      is.na(decd_mois) & decede == "1" ~ "555",
+      TRUE ~ "999"
+    ),
+    decd_an = case_when(
+      !is.na(decd_an) ~ as.integer(decd_an),
+      is.na(decd_an) & decede == "333" ~ 3333L,
+      is.na(decd_an) & is.na(decede) ~ NA_integer_,
+      is.na(decd_an) & decede == "777" ~ 7777L,
+      is.na(decd_an) & decede == "0" ~ 8888L,
+      is.na(decd_an) & decede == "1" ~ 5555L,
+      TRUE ~ 9999L
+    )
+  ) %>% 
+  mutate(
+    across(all_of(vars_mois_long),
+           ~ .x %>% 
+             fct_expand(niveaux_mois) %>% 
+             fct_relevel(niveaux_mois)
+           )
+    )
+
+```
+
+## 3.3 Ordonner les naissances
+
+```{r}
 
 ```
 
