@@ -298,7 +298,7 @@ E4_T3 <- E4_T2 %>%
   ungroup() %>%
   select(-both_na, -one_na)
 
-
+rm(list = c("E4_T0", "E4_T1"))
 ```
 
 
@@ -362,6 +362,7 @@ E4_T4 <- E4_T3 %>%
   bind_rows(corr_check) %>% 
   arrange(id_anonymat, sf_enf_an_nais, sf_enf_mois_nais)
 
+rm(list = c("check", "corr_check", "E4_T2"))
 ```
 
 # 3. PASSAGE WIDE
@@ -391,7 +392,7 @@ E4_C0 <- E4_T4 %>%
     "fa_commentaires" = "commentaires_fam"
   )
 
-
+rm(list = c("rm_sf_enf", "E4_T3"))
 ```
 
 ## 3.2 Recoder les NAs longs
@@ -525,6 +526,7 @@ E4_C1 <- E4_C0 %>%
            )
     )
 
+rm(list = c("E4_T4", "vars_mois_long"))
 ```
 
 ## 3.3 Ordonner les naissances
@@ -542,7 +544,7 @@ E4_C2 <- E4_C1 %>%
   ) %>% 
   ungroup()
 
-
+rm(E4_C0)
 ```
 
 ## 3.4 Pivot wider
@@ -560,5 +562,6 @@ E4_W0 <- E4_C2 %>%
     names_glue = "{rang_enf}_{.value}"
   )
 
+rm(list = c("vars_wider", "fct_rcd", "rcd_fct_L", "E4_C1"))
 ```
 
