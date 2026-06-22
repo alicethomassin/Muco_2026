@@ -565,3 +565,103 @@ E4_W0 <- E4_C2 %>%
 rm(list = c("vars_wider", "fct_rcd", "rcd_fct_L", "E4_C1"))
 ```
 
+## 3.5 Recoder les NAs wide
+
+```{r}
+rcd_fct_W1 <- function(df, biographie, vars){
+  
+  niveaux_NA <- c("222", "333", "444", "555", "777")
+  
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.character(.x),
+          is.na(.x) & {{biographie}} == "777" ~ "777",
+          is.na(.x) & {{biographie}} == "333" ~ "333",
+          is.na(.x) & {{biographie}} == "0" ~ NA_character_,
+          is.na(.x) & {{biographie}} == "222" ~ "222",
+          is.na(.x) & {{biographie}} == "444" ~ "444",
+          TRUE ~ "E"
+        )
+      )
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ .x %>% 
+          fct_expand(niveaux_NA) %>% 
+          fct_relevel(
+            niveaux_NA,
+            after = Inf
+            )
+        )
+      )
+}
+
+
+rcd_years_W1 <- function(df, biographie, vars){
+  
+ # niveaux_NA <- c(2222L, 3333L, 4444L, 5555L, 6666L, 7777L, 8888L)
+  # J'ai décidé de ne pas mettre de niveaux parce que je ne veux pas modifier
+  # les années en facteurs, je veux conserver la valeur numérique de l'année.
+  
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.integer(.x),
+          is.na(.x) & {{biographie}} == "777" ~ 7777L,
+          is.na(.x) & {{biographie}} == "333" ~ 3333L,
+          is.na(.x) & {{biographie}} == "0" ~ NA_integer_,
+          is.na(.x) & {{biographie}} == "222" ~ 2222L,
+          is.na(.x) & {{biographie}} == "444" ~ 4444L,
+          TRUE ~ 9999L
+        )
+      )
+    )
+}
+```
+
+
+```{r}
+
+fct_wide <- E4_W0 %>% 
+  select(fa_enf1_sexe:fa_enf3_nais_mois, ends_with("_issu"),
+         fa_enf1_diag_avt:fa_enf3_decede) %>% 
+  colnames()
+
+years1_wide <- E4_W0 %>% 
+  select(ends_with("nais_an")) %>% 
+  colnames()
+
+E4_W1 <- E4_W0 %>%
+  rcd_fct_W1(fa_en_biographie, all_of(fct_wide)) %>% 
+  rcd_years_W1(fa_en_biographie, all_of(years1_wide)) %>% 
+  mutate(
+    across(
+      contains("prenom"),
+      ~ case_when(
+        !is.na(.x) ~ .x,
+        is.na(.x) & fa_en_biographie == "777" ~ "77",
+        is.na(.x) & fa_en_biographie == "333" ~ "33",
+        is.na(.x) & fa_en_biographie == "0" ~ NA_character_,
+        is.na(.x) & fa_en_biographie == "222" ~ "22",
+        is.na(.x) & fa_en_biographie == "444" ~ "44",
+        TRUE ~ "99")),
+    across(
+      ends_with("adpt_mois"),
+      ~ case_when(
+        !is.na(.x) ~ .x,
+        is.na(.x) & fa_en_biographie == "777" ~ "777",
+        is.na(.x) & fa_en_biographie == "333" ~ "333",
+        is.na(.x) & fa_en_biographie == "0" ~ NA_character_,
+        is.na(.x) & fa_en_biographie == "222" ~ "22",
+        is.na(.x) & fa_en_biographie == "444" ~ "44",
+        TRUE ~ "99"
+      )))
+
+```
+
