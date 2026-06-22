@@ -439,7 +439,7 @@ fct_rcd <- E4_C0 %>%
   colnames()
 
 niveaux_mois <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11", 
-                  "12", "222", "333", "444", "555", "777", "888")
+                  "12", "222", "333", "555", "777", "888")
 
 vars_mois_long <- E4_C0 %>% 
   select(contains("mois")) %>% 
@@ -448,17 +448,6 @@ vars_mois_long <- E4_C0 %>%
 E4_C1 <- E4_C0 %>% 
   rcd_fct_L(all_of(fct_rcd), fa_en_complet) %>% 
   group_by(id_anonymat) %>% 
-  mutate(
-    fa_en_biographie = case_when(
-      fa_en_complet == "0" ~ "0",
-      fa_en_complet == "333" ~ "333",
-      fa_en_complet == "777" ~ "777",
-      fa_en_complet == "1" & fa_en_nb_dcd == 0 ~ "222",
-      fa_en_complet == "1" & fa_en_nb_dcd == 1 ~ "444",
-      TRUE ~ "E"
-    ),
-    .after = fa_en_complet
-  ) %>%
   mutate(
     across(
       contains("prenom"),
@@ -540,7 +529,7 @@ E4_C2 <- E4_C1 %>%
   mutate(
     rang_enf = paste0(
       "fa_enf", sprintf("%d", row_number())
-      ), .after = fa_en_biographie,
+      ), .after = fa_en_complet,
   ) %>% 
   ungroup()
 
@@ -568,9 +557,9 @@ rm(list = c("vars_wider", "fct_rcd", "rcd_fct_L", "E4_C1"))
 ## 3.5 Recoder les NAs wide
 
 ```{r}
-rcd_fct_W1 <- function(df, biographie, vars){
+rcd_fct_W1 <- function(df, complet, vars){
   
-  niveaux_NA <- c("222", "333", "444", "555", "777")
+  niveaux_NA <- c("222", "333", "555", "777")
   
   df %>% 
     mutate(
@@ -578,11 +567,10 @@ rcd_fct_W1 <- function(df, biographie, vars){
         {{vars}},
         ~ case_when(
           !is.na(.x) ~ as.character(.x),
-          is.na(.x) & {{biographie}} == "777" ~ "777",
-          is.na(.x) & {{biographie}} == "333" ~ "333",
-          is.na(.x) & {{biographie}} == "0" ~ NA_character_,
-          is.na(.x) & {{biographie}} == "222" ~ "222",
-          is.na(.x) & {{biographie}} == "444" ~ "444",
+          is.na(.x) & {{complet}} == "777" ~ "777",
+          is.na(.x) & {{complet}} == "333" ~ "333",
+          is.na(.x) & {{complet}} == "0" ~ NA_character_,
+          is.na(.x) & {{complet}} == "1" ~ "222",
           TRUE ~ "E"
         )
       )
@@ -601,7 +589,7 @@ rcd_fct_W1 <- function(df, biographie, vars){
 }
 
 
-rcd_years_W1 <- function(df, biographie, vars){
+rcd_years_W1 <- function(df, complet, vars){
   
  # niveaux_NA <- c(2222L, 3333L, 4444L, 5555L, 6666L, 7777L, 8888L)
   # J'ai décidé de ne pas mettre de niveaux parce que je ne veux pas modifier
@@ -613,11 +601,10 @@ rcd_years_W1 <- function(df, biographie, vars){
         {{vars}},
         ~ case_when(
           !is.na(.x) ~ as.integer(.x),
-          is.na(.x) & {{biographie}} == "777" ~ 7777L,
-          is.na(.x) & {{biographie}} == "333" ~ 3333L,
-          is.na(.x) & {{biographie}} == "0" ~ NA_integer_,
-          is.na(.x) & {{biographie}} == "222" ~ 2222L,
-          is.na(.x) & {{biographie}} == "444" ~ 4444L,
+          is.na(.x) & {{complet}} == "777" ~ 7777L,
+          is.na(.x) & {{complet}} == "333" ~ 3333L,
+          is.na(.x) & {{complet}} == "0" ~ NA_integer_,
+          is.na(.x) & {{complet}} == "1" ~ 2222L,
           TRUE ~ 9999L
         )
       )
@@ -629,39 +616,36 @@ rcd_years_W1 <- function(df, biographie, vars){
 ```{r}
 
 fct_wide <- E4_W0 %>% 
-  select(fa_enf1_sexe:fa_enf3_nais_mois, ends_with("_issu"),
-         fa_enf1_diag_avt:fa_enf3_decede) %>% 
+  select(fa_enf1_sexe:fa_enf3_decd_mois, -ends_with("_an")) %>% 
   colnames()
 
 years1_wide <- E4_W0 %>% 
-  select(ends_with("nais_an")) %>% 
+  select(ends_with("_an")) %>% 
+  colnames()
+
+vars_mois_wide <- E4_W0 %>% 
+  select(ends_with("_mois")) %>% 
   colnames()
 
 E4_W1 <- E4_W0 %>%
-  rcd_fct_W1(fa_en_biographie, all_of(fct_wide)) %>% 
-  rcd_years_W1(fa_en_biographie, all_of(years1_wide)) %>% 
+  rcd_fct_W1(fa_en_complet, all_of(fct_wide)) %>% 
+  rcd_years_W1(fa_en_complet, all_of(years1_wide)) %>% 
   mutate(
     across(
       contains("prenom"),
       ~ case_when(
         !is.na(.x) ~ .x,
-        is.na(.x) & fa_en_biographie == "777" ~ "77",
-        is.na(.x) & fa_en_biographie == "333" ~ "33",
-        is.na(.x) & fa_en_biographie == "0" ~ NA_character_,
-        is.na(.x) & fa_en_biographie == "222" ~ "22",
-        is.na(.x) & fa_en_biographie == "444" ~ "44",
+        is.na(.x) & fa_en_complet == "777" ~ "77",
+        is.na(.x) & fa_en_complet == "333" ~ "33",
+        is.na(.x) & fa_en_complet == "0" ~ NA_character_,
+        is.na(.x) & fa_en_complet == "1" ~ "22",
         TRUE ~ "99")),
-    across(
-      ends_with("adpt_mois"),
-      ~ case_when(
-        !is.na(.x) ~ .x,
-        is.na(.x) & fa_en_biographie == "777" ~ "777",
-        is.na(.x) & fa_en_biographie == "333" ~ "333",
-        is.na(.x) & fa_en_biographie == "0" ~ NA_character_,
-        is.na(.x) & fa_en_biographie == "222" ~ "22",
-        is.na(.x) & fa_en_biographie == "444" ~ "44",
-        TRUE ~ "99"
-      )))
+    across(all_of(vars_mois_wide),
+           ~ .x %>% 
+             fct_expand(niveaux_mois) %>% 
+             fct_relevel(niveaux_mois)
+           )
+    )
 
 ```
 
