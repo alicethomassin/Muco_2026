@@ -229,7 +229,7 @@ Je ne vais pas tout de suite comparer les réponses du nombre d'enfant parce que
 ## 2.3 Identifier les jumeaux
 ```{r E4_T2 to E4_T3}
 
-E4_T3 <- E4_T2 %>%
+E4_T3 <- E4_T2 %>% 
   group_by(id_anonymat) %>% 
   mutate(
     n_doc = case_when(
@@ -279,9 +279,10 @@ E4_T3 <- E4_T2 %>%
       (!is.na(sf_enf_bio_nb) & is.na(sf_enf_adopte_nb)),
     across(c("sf_enf_bio_nb", "sf_enf_adopte_nb"),
            ~ replace_when(.x,
-             both_na & fa_en_complet == "777" ~ 777L,
+             both_na & fa_en_complet == "777" ~ 0L,
              both_na & fa_en_complet == "333" ~ 555L,
-             both_na & fa_en_complet == "0" ~ 555L,
+             both_na & is.na(fa_date_creation) ~ NA_integer_,
+             both_na & fa_en_complet == "0" & !is.na(fa_date_creation) ~ 555L,
              one_na  & is.na(.x) ~ 0L
            ))
          ) %>% 
@@ -294,7 +295,7 @@ E4_T3 <- E4_T2 %>%
                                  both_na &
                                    fa_en_complet == "1" ~ sum(sf_enf_issu %in% c("3", "4")))
   ) %>% 
-  ungroup() %>% 
+  ungroup() %>%
   select(-both_na, -one_na)
 
 
@@ -400,6 +401,35 @@ Les différentes trajectoires:
 888: 1 décès , plus d'autres enfants
 
 ```{r}
+rcd_fct_L <- function(df, vars, complet){
+  df %>%
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) & {{complet}} == "1" ~ as.character(.x),
+          is.na(.x) & {{complet}} == "0" ~ NA_character_,
+          is.na(.x) & {{complet}} == "1" ~ "555",
+          is.na(.x) & {{complet}} == "333" ~ "333",
+          is.na(.x) & {{complet}} == "777" ~ "777",
+          TRUE ~ "E"
+        )
+      )
+    ) %>%
+    mutate(
+      across(
+        {{vars}}, ~ fct_relevel(.x, "333", "555", "777", after = Inf)
+      )
+    )
+}
+```
+
+
+```{r}
+
+fct_rcd <- E4_C0 %>% 
+  select(sexe, nais_mois, issu, diag_avt, muco, decede) %>% 
+  colnames()
 
 E4_C1 <- E4_C0 %>% 
   group_by(id_anonymat) %>% 
@@ -414,7 +444,10 @@ E4_C1 <- E4_C0 %>%
       TRUE ~ "E"
     ),
     .after = fa_en_complet
-  )
+  ) %>% 
+  ungroup() %>%
+  rcd_fct_L(all_of(fct_rcd), fa_en_complet)
+  
 
 ```
 
