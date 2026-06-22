@@ -545,3 +545,20 @@ E4_C2 <- E4_C1 %>%
 
 ```
 
+## 3.4 Pivot wider
+
+```{r}
+
+vars_wider <- E4_C2 %>% 
+  select(prenom_conjt:decd_an) %>% 
+  colnames()
+
+E4_W0 <- E4_C2 %>% 
+  pivot_wider(
+    names_from = rang_enf,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_enf}_{.value}"
+  )
+
+```
+
