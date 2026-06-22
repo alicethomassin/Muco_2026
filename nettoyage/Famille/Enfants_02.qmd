@@ -663,7 +663,31 @@ E4_W1 <- E4_W0 %>%
              fct_expand(niveaux_mois) %>% 
              fct_relevel(niveaux_mois)
            )
-    )
+    ) %>% 
+  rename(
+    "fa_en_nb_tot" = "fa_en_nb_doc"
+  ) %>% 
+  mutate(
+    fa_en_nb_tot = replace_when(fa_en_nb_tot,
+                                fa_en_nb_tot == 777 ~ 0L)
+  )
+
+# Verifier erreurs de recodage
+check <- E4_W1 %>% 
+  filter_at(vars(starts_with("fa_enf")), any_vars(. == "E")) %>% 
+  filter_at(vars(starts_with("fa_enf")), any_vars(. == 9999)) %>% 
+  filter_at(vars(starts_with("fa_enf")), any_vars(. == "99")) %>% 
+  filter_at(vars(starts_with("fa_enf")), any_vars(. == "999"))
+
+```
+
+# 4. EXPORTER LA BASE
+
+```{r}
+# version en date du 22/06/2026
+write_csv(E4_W1, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_enfants_m1.csv")
+
+print(codebookr::codebook(E4_W1), "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/codebooks/THOA_enfants_m1_CB.docx")
 
 ```
 
