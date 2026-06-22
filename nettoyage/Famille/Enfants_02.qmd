@@ -529,7 +529,19 @@ E4_C1 <- E4_C0 %>%
 
 ## 3.3 Ordonner les naissances
 
-```{r}
+```{r E4_C1 to E4_C2}
+# Identifier premier venu s'il y a adp et naiss bio
+# Pas un problème finalement
+
+E4_C2 <- E4_C1 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    rang_enf = paste0(
+      "fa_enf", sprintf("%d", row_number())
+      ), .after = fa_en_biographie,
+  ) %>% 
+  ungroup()
+
 
 ```
 
