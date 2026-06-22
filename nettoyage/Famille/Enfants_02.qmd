@@ -531,7 +531,25 @@ E4_C2 <- E4_C1 %>%
       "fa_enf", sprintf("%d", row_number())
       ), .after = fa_en_complet,
   ) %>% 
-  ungroup()
+  ungroup() 
+
+age_prem_nais <- E4_C2 %>% 
+  filter(fa_en_complet == "1" & rang_enf == "fa_enf1" & id_anonymat != "NOWSY"|
+           id_anonymat == "NOWSY" & rang_enf == "fa_enf2") %>% 
+  mutate(
+    ddn_rang1 = make_date(year = nais_an, month = nais_mois),
+    .after = id_date_nais,
+    fa_en_age_prem_enf = year(as.period(interval(id_date_nais, ddn_rang1)))
+  ) %>% 
+  select(id_anonymat, fa_en_age_prem_enf)
+
+E4_C3 <- E4_C2 %>% 
+  left_join(
+    age_prem_nais,
+    by = "id_anonymat",
+    relationship = "many-to-one"
+  ) %>% 
+  relocate(fa_en_age_prem_enf, .after = id_date_nais)
 
 rm(E4_C0)
 ```
@@ -540,11 +558,11 @@ rm(E4_C0)
 
 ```{r}
 
-vars_wider <- E4_C2 %>% 
+vars_wider <- E4_C3 %>% 
   select(prenom_conjt:decd_an) %>% 
   colnames()
 
-E4_W0 <- E4_C2 %>% 
+E4_W0 <- E4_C3 %>% 
   pivot_wider(
     names_from = rang_enf,
     values_from = all_of(vars_wider),
