@@ -52,4 +52,229 @@ PA_T0 <- Famille %>%
 
 ```
 
+## 1.2 Formatter les variables
+
+```{r}
+
+to_factor <- PA_T0 %>% 
+  select(id_sexe, fa_pa_complet, contains("_mois"), contains("_decede"), 
+         contains("etudes"), contains("statut"), contains("entreprise"), 
+         contains("_qual"), pf_union_parents, pf_parents_interromp, pf_interromp_par,
+         pf_raison_muco) %>% 
+  colnames()
+
+PA_T1 <- PA_T0 %>% 
+  mutate(
+    across(
+      contains("prenom"),
+      ~ if_else(
+          str_to_upper(.) == "NA", "NAA", str_to_upper(.x)
+        )
+      ),
+    across(
+      all_of(to_factor), ~ factor(.)
+    )
+    )
+
+```
+
+
+# 2. RECODER LES NAs
+
+```{r fonctions}
+
+rcd_fct_L <- function(df, vars, complet){
+  df %>%
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.character(.x),
+          is.na(.x) & {{complet}} == "0" ~ NA_character_,
+          is.na(.x) & {{complet}} == "1" ~ "555",
+          TRUE ~ "E"
+        )
+      )
+    ) %>%
+    mutate(
+    across(
+        {{vars}},
+           ~ fct_expand(.x, "555", "E") %>% 
+             fct_relevel("555", "E", after = Inf)
+        )
+      )
+}
+
+rcd_filtre <- function(df, filtre, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.character(.x),
+          is.na(.x) & is.na({{filtre}}) ~ NA_character_,
+          is.na(.x) & {{filtre}} == "1" ~ "777",
+          is.na(.x) & {{filtre}} != "1" ~ "555",
+          TRUE ~ "E"
+        )
+      )
+    ) %>%
+    mutate(
+    across(
+        {{vars}},
+           ~ fct_expand(.x, "555", "777", "E") %>% 
+             fct_relevel("555", "777", "E", after = Inf)
+        )
+      )
+}
+
+rcd_union <- function(df, filtre, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.character(.x),
+          is.na(.x) & is.na({{filtre}}) ~ NA_character_,
+          is.na(.x) & {{filtre}} == "555" ~ "666",
+          is.na(.x) & {{filtre}} == "3" ~ "777",
+          is.na(.x) & {{filtre}} %in% c("1", "2") ~ "555",
+          TRUE ~ "E"
+        )
+      )
+    ) %>%
+    mutate(
+    across(
+        {{vars}},
+           ~ fct_expand(.x, "555", "666", "777", "E") %>% 
+             fct_relevel("555", "666", "777", "E", after = Inf)
+        )
+      )
+}
+
+rcd_separation <- function(df, filtre, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.x) ~ as.character(.x),
+          is.na(.x) & is.na({{filtre}}) ~ NA_character_,
+          is.na(.x) & {{filtre}} == "777" ~ "777",
+          is.na(.x) & {{filtre}} %in% c("555", "666") ~ "666",
+          is.na(.x) & {{filtre}} == "0" ~ "888",
+          is.na(.x) & {{filtre}} == "1" ~ "555",
+          TRUE ~ "E"
+        )
+      )
+    ) %>%
+    mutate(
+    across(
+        {{vars}},
+           ~ fct_expand(.x, "555", "666", "777", "888", "E") %>% 
+             fct_relevel("555", "666", "777", "888", "E", after = Inf)
+        )
+      )
+}
+
+```
+
+
+```{r}
+
+fct_to_rcd <- c("pf_pere_mois_nais", "pf_pere_decede", "pf_pere_etudes", "pf_pere_statut",
+                "pf_mere_mois_nais", "pf_mere_decede", "pf_mere_etudes", "pf_mere_statut",
+                "pf_union_parents")
+
+niveaux_mois <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10","11", 
+                  "12", "555", "666", "777", "888")
+
+vars_mois_long <- PA_T1 %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+PA_T2 <- PA_T1 %>%
+  rcd_fct_L(all_of(fct_to_rcd), fa_pa_complet) %>%
+  rcd_filtre(pf_pere_statut, c("pf_pere_entreprise", "pf_pere_qual")) %>% 
+  rcd_filtre(pf_mere_statut, c("pf_mere_entreprise", "pf_mere_qual")) %>%
+  rcd_union(pf_union_parents, c("pf_union_mois", "pf_parents_interromp")) %>%
+  rcd_separation(pf_parents_interromp, c("pf_interromp_par", "pf_interromp_mois",
+                                         "pf_raison_muco")) %>% 
+  mutate(
+    pf_pere_mois_deces = as.character(pf_pere_mois_deces),
+    pf_pere_mois_deces = replace_when(
+      pf_pere_mois_deces,
+      pf_pere_decede == "1" & is.na(pf_pere_mois_deces) ~ "555",
+      pf_pere_decede == "0" & is.na(pf_pere_mois_deces) ~ "777",
+      pf_pere_decede == "555" & is.na(pf_pere_mois_deces) ~ "666"
+    ) %>% 
+      fct_expand("555", "666", "777") %>% 
+             fct_relevel("555", "666", "777", after = Inf)) %>% 
+  mutate(
+    pf_mere_mois_deces = as.character(pf_mere_mois_deces),
+    pf_mere_mois_deces = replace_when(
+      pf_mere_mois_deces,
+      pf_mere_decede == "1" & is.na(pf_mere_mois_deces) ~ "555",
+      pf_mere_decede == "0" & is.na(pf_mere_mois_deces) ~ "777",
+      pf_mere_decede == "555" & is.na(pf_mere_mois_deces) ~ "666"
+    ) %>% 
+      fct_expand("555", "666", "777") %>% 
+             fct_relevel("555", "666", "777", after = Inf)
+  ) %>% 
+  mutate(
+    pf_pere_an_deces = replace_when(
+      pf_pere_an_deces,
+      pf_pere_decede == "1" & is.na(pf_pere_an_deces) ~ 5555L,
+      pf_pere_decede == "0" & is.na(pf_pere_an_deces) ~ 7777L,
+      pf_pere_decede == "555" & is.na(pf_pere_an_deces) ~ 6666L
+    ),
+     pf_mere_an_deces = replace_when(
+      pf_mere_an_deces,
+      pf_mere_decede == "1" & is.na(pf_mere_an_deces) ~ 5555L,
+      pf_mere_decede == "0" & is.na(pf_mere_an_deces) ~ 7777L,
+      pf_mere_decede == "555" & is.na(pf_mere_an_deces) ~ 6666L
+    ),
+    pf_pere_an_nais = replace_when(
+      pf_pere_an_nais,
+      fa_pa_complet == "1" & is.na(pf_pere_an_nais) ~ 5555L
+    ),
+    pf_mere_an_nais = replace_when(
+      pf_mere_an_nais,
+      fa_pa_complet == "1" & is.na(pf_mere_an_nais) ~ 5555L
+    ),
+    pf_union_an = replace_when(
+      pf_union_an,
+      pf_union_parents == "3" & is.na(pf_union_an) ~ 7777L,
+      pf_union_parents %in% c("1", "2") & is.na(pf_union_an) ~ 5555L,
+      pf_union_parents == "555" & is.na(pf_union_an) ~ 6666L,
+    ),
+    pf_interromp_an = replace_when(
+      pf_interromp_an,
+      pf_parents_interromp == "0" & is.na(pf_interromp_an) ~ 8888L,
+      pf_parents_interromp == "1" & is.na(pf_interromp_an) ~ 5555L,
+      pf_union_parents %in% c("555", "666") & is.na(pf_union_an) ~ 6666L,
+      pf_parents_interromp == "777" & is.na(pf_interromp_an) ~ 7777L,
+    )
+  ) %>% 
+  mutate(
+    across(
+      contains("prenom"),
+      ~ case_when(
+        !is.na(.x) ~ as.character(.x),
+        is.na(.x) & fa_pa_complet == "1" ~ "55",
+        is.na(.x) & fa_pa_complet == "0" ~ NA_character_,
+        TRUE ~ "999"
+      )
+    )
+  )%>% 
+  mutate(
+    across(all_of(vars_mois_long),
+           ~ .x %>% 
+             fct_expand(niveaux_mois) %>% 
+             fct_relevel(niveaux_mois) %>% 
+             fct_drop()
+           )
+    )
+
+```
 
