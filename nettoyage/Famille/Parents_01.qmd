@@ -52,7 +52,7 @@ PA_B1 <- PA_B0 %>%
     .cols = where(is.character),
     .fns = ~ na_if(., "")
   )) %>%
-  select(id_date_creation, fa_date_creation, fratrie_date_creation, id_anonymat,
+  select(id_date_creation, fa_date_creation, id_anonymat,
          id_sep, id_sexe, id_date_nais, all_of(vars_parents)) %>% 
   mutate(
     id_date_nais = replace_when(
@@ -64,7 +64,6 @@ PA_B1 <- PA_B0 %>%
       TRUE ~ NA_integer_
     )
   ) %>%
-  relocate(aa_cor, .after = fratrie_date_creation) %>% 
   filter_out(aa_cor == 1) %>% 
   select(-aa_cor) %>% 
   # On peut garder une ligne par personne puisque toutes les infos sont identiques
