@@ -66,9 +66,13 @@ PA_B1 <- PA_B0 %>%
   ) %>%
   relocate(aa_cor, .after = fratrie_date_creation) %>% 
   filter_out(aa_cor == 1) %>% 
-  select(-aa_cor)
+  select(-aa_cor) %>% 
+  # On peut garder une ligne par personne puisque toutes les infos sont identiques
+  distinct()
 
  rm(list = c("empty_cols_PA_B0", "vars_vides", "PA_B0", "vars_parents"))
 
 ```
+
+
 
