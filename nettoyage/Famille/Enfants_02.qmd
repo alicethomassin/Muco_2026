@@ -681,6 +681,30 @@ check <- E4_W1 %>%
 
 ```
 
+## 3.6 Retouche du nombre d'enfants
+
+```{r E4_W1 to E4_W2}
+
+
+E4_W2 <- E4_W1 %>% 
+  mutate(
+    fa_en_nb_tot = replace_when(
+      fa_en_nb_tot,
+      fa_en_complet == "333" & (fa_en_nb_bio + fa_en_nb_adp) < 10 ~ fa_en_nb_bio + fa_en_nb_adp,
+      fa_en_complet == "333" & (fa_en_nb_bio + fa_en_nb_adp) > 10 ~ NA_integer_
+    ),
+    fa_en_nb_dcd = replace_when(
+      fa_en_nb_dcd,
+      fa_en_nb_dcd == "333" ~ NA_integer_,
+      fa_en_nb_dcd == "777" ~ NA_integer_,
+      fa_en_nb_dcd == "555" ~ NA_integer_
+    )
+  )
+
+
+```
+
+
 # 4. EXPORTER LA BASE
 
 ```{r}
