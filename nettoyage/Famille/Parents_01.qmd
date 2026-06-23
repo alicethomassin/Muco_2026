@@ -1,0 +1,71 @@
+---
+title: "Nucléaire_01"
+format: html
+---
+
+```{r Setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+
+```
+
+# 1. NETTOYAGE PRÉLIMINAIRE
+
+## 1.1 Retirer les colonnes vides et hors module
+
+```{r E4_B0 to E4_B1}
+
+# Importer la base
+PA_B0 <- haven::read_sas("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/raw_data/gb_ddb_fa_04_fratrie_04.sas7bdat")
+
+# Identifier les colonnes vides
+empty_cols_PA_B0 <- PA_B0 %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "nb_empty_cells") %>% 
+  filter(nb_empty_cells == nrow(PA_B0))
+
+# Créer vecteur avec le nom des variables à retirer
+vars_vides <- empty_cols_PA_B0$variable
+
+vars_parents <- PA_B0 %>% 
+  select(starts_with("pf_pere_"), starts_with("pf_mere_"),
+         pf_union_parents, pf_union_mois, pf_union_an, pf_parents_interromp,
+         pf_interromp_par, pf_interromp_mois, pf_interromp_an,
+         pf_raison_muco) %>% 
+  colnames()
+
+# Retirer les variables, corriger les formats et les NA character
+PA_B1 <- PA_B0 %>%
+  select(-all_of(vars_vides)) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  select(id_date_creation, fa_date_creation, fratrie_date_creation, id_anonymat,
+         id_sep, id_sexe, id_date_nais, all_of(vars_parents)) %>% 
+  mutate(
+    aa_cor = case_when(
+      is.na(id_date_nais) ~ 1,
+      is.na(id_date_creation) ~ 2,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
+  relocate(aa_cor, .after = fratrie_date_creation)
+
+
+
+ rm(list = c("empty_cols_PA_B0", "vars_vides", "PA_B0", "vars_parents"))
+
+```
+
