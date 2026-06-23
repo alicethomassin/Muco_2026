@@ -55,15 +55,18 @@ PA_B1 <- PA_B0 %>%
   select(id_date_creation, fa_date_creation, fratrie_date_creation, id_anonymat,
          id_sep, id_sexe, id_date_nais, all_of(vars_parents)) %>% 
   mutate(
+    id_date_nais = replace_when(
+      id_date_nais,
+      id_anonymat == "YUVJT" ~ as.Date("1976-10-15")
+    ),
     aa_cor = case_when(
       is.na(id_date_nais) ~ 1,
-      is.na(id_date_creation) ~ 2,
       TRUE ~ NA_integer_
     )
   ) %>%
-  relocate(aa_cor, .after = fratrie_date_creation)
-
-
+  relocate(aa_cor, .after = fratrie_date_creation) %>% 
+  filter_out(aa_cor == 1) %>% 
+  select(-aa_cor)
 
  rm(list = c("empty_cols_PA_B0", "vars_vides", "PA_B0", "vars_parents"))
 
