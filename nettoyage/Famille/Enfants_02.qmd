@@ -520,7 +520,7 @@ rm(list = c("E4_T4", "vars_mois_long"))
 
 ## 3.3 Ordonner les naissances
 
-```{r E4_C1 to E4_C2}
+```{r E4_C1 to E4_C3}
 # Identifier premier venu s'il y a adp et naiss bio
 # Pas un problème finalement
 
@@ -556,7 +556,7 @@ rm(E4_C0)
 
 ## 3.4 Pivot wider
 
-```{r}
+```{r E4_C3 to E4_W0}
 
 vars_wider <- E4_C3 %>% 
   select(prenom_conjt:decd_an) %>% 
@@ -631,7 +631,7 @@ rcd_years_W1 <- function(df, complet, vars){
 ```
 
 
-```{r}
+```{r E4_W0 to E4_W1}
 
 fct_wide <- E4_W0 %>% 
   select(fa_enf1_sexe:fa_enf3_decd_mois, -ends_with("_an")) %>% 
