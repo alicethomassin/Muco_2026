@@ -13,6 +13,7 @@ help <- C4_C0 %>%
                               "KHDKI", "NWUFG")) %>% 
   select(id_anonymat, id_date_nais, sf_conjt_an_nais, sf_conjt_an_union)
 
+Couple <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_P1.csv", show_col_types = FALSE)
 
 final <- Couple %>% 
   filter(id_anonymat %in% help$id_anonymat) %>% 
