@@ -488,6 +488,7 @@ C4_B5 <- C4_B4 %>%
   ) %>% 
   relocate(fa_cp_couple_1an, .after = vrep_couple)
 
+# write_csv(C4_B5, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_C4_B5.csv")
 # rm(list = c("rep_couple", "vars_join", "C4_B3", "vars_verif", "to_factor",
 #             "C4_B4", "Famille"))
 ```
