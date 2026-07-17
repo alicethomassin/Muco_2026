@@ -2,7 +2,8 @@
 title: "Peter_Couples_1"
 format: html
 ---
-
+!!!!READ ME!!!!
+PETER, please search the word "CARROT" to jump to the part of the script where I extract the base I sent you. 
 
 ```{r Setup}
 #| message: FALSE
@@ -510,7 +511,7 @@ C4_B5 <- C4_B4 %>%
 #             "C4_B4", "Famille"))
 ```
 
-# 3. PETER, START HERE!
+# 3. CARROT
 The previous code is not really meant to be understood by someone else. It is my initial clean up since the data had many duplicates. For the purpose of your resquest, I picked up my code from here because it is the last point before I change the name of the variables. 
 
 ## 3.1 Keep only 0 or at least 1 relationship
@@ -520,6 +521,12 @@ The previous code is not really meant to be understood by someone else. It is my
 C4_P0 <- C4_B5 %>% 
   filter(!is.na(nb_cpl)) %>% 
   select(-nb_NA) %>%
+  mutate(sf_interromp = case_when(
+    sf_interromp == "0" ~ 0L,
+    sf_interromp == "1" ~ 1L,
+    TRUE ~ as.integer(sf_interromp)
+  )) %>% 
+  arrange(id_anonymat, sf_conjt_an_union, desc(sf_interromp)) %>% 
   mutate(
     .by = id_anonymat,
     rang_cpl = row_number(),
@@ -530,8 +537,8 @@ C4_P0 <- C4_B5 %>%
       rang_cpl,
       nb_cpl == 0 ~ 0
     )
-  ) %>% 
-  filter(rang_cpl <= 1)
+  ) # %>% 
+ # filter(rang_cpl <= 1)
 
 ```
 
@@ -581,6 +588,8 @@ C4_P1 <- C4_P0 %>%
 
 C4_P2 <- C4_P1 %>% 
   select(id_anonymat, relationship, sex_partner, nature, date_start, date_end)
+
+write_csv(C4_P2, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_sample_couples.csv")
 
 ```
 
