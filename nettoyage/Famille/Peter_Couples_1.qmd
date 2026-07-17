@@ -353,7 +353,6 @@ multiples2 <- multiples1 %>%
 
 #### II- Une observation
 
-
 ```{r correction}
 
 unique0 <- anti_join(
@@ -486,9 +485,102 @@ C4_B5 <- C4_B4 %>%
     ),
     fa_cp_couple_1an = factor(fa_cp_couple_1an)
   ) %>% 
-  relocate(fa_cp_couple_1an, .after = vrep_couple)
+  relocate(fa_cp_couple_1an, .after = vrep_couple) %>%
+  group_by(id_anonymat) %>% 
+  mutate(
+    nb_cpl = case_when(
+      complet_fa_cp %in% c("0", "333") ~ NA_integer_,
+      complet_fa_cp == "777" ~ 0L,
+      complet_fa_cp == "1" ~ n(),
+      TRUE ~ 999L),
+    nb_int = case_when(
+      complet_fa_cp %in% c("0", "333") ~ NA_integer_,
+      complet_fa_cp == "777" ~ 0L,
+      complet_fa_cp == "1" ~ sum(sf_interromp == "1"),
+      TRUE ~ 999L),
+    .after = id_anonymat
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    sf_conjt_prenom = str_to_upper(sf_conjt_prenom)
+  )
 
-# write_csv(C4_B5, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_C4_B5.csv")
+
 # rm(list = c("rep_couple", "vars_join", "C4_B3", "vars_verif", "to_factor",
 #             "C4_B4", "Famille"))
 ```
+
+# 3. PETER, START HERE!
+The previous code is not really meant to be understood by someone else. It is my initial clean up since the data had many duplicates. For the purpose of your resquest, I picked up my code from here because it is the last point before I change the name of the variables. 
+
+## 3.1 Keep only 0 or at least 1 relationship
+
+```{r C4_B5 to C4_P0}
+
+C4_P0 <- C4_B5 %>% 
+  filter(!is.na(nb_cpl)) %>% 
+  select(-nb_NA) %>%
+  mutate(
+    .by = id_anonymat,
+    rang_cpl = row_number(),
+    .after = id_anonymat
+    ) %>% 
+  mutate(
+    rang_cpl = replace_when(
+      rang_cpl,
+      nb_cpl == 0 ~ 0
+    )
+  ) %>% 
+  filter(rang_cpl <= 1)
+
+```
+
+## 3.2 Create columns of interest
+
+```{r C4_P0 to C4_P1}
+
+C4_P1 <- C4_P0 %>% 
+  mutate(
+    relationship = case_when(
+      rang_cpl == 0 ~ "no",
+      rang_cpl == 1 ~ "yes",
+      TRUE ~ "E"
+    ),
+    nature = case_when(
+      sf_nature_union == "1" ~ "married",
+      sf_nature_union == "2" ~ "cohabiting",
+      sf_nature_union == "3" ~ "living appart",
+      relationship == "no" ~ "NR",
+      relationship == "yes" & is.na(sf_nature_union) ~ "skipped F-5",
+      TRUE ~ "E"
+    ),
+    date_start = case_when(
+      relationship == "no" ~ "NR",
+      relationship == "yes" ~ sprintf("%d-%02d", sf_conjt_an_union, sf_conjt_mois_union)),
+    date_end = case_when(
+      relationship == "no" ~ "NR",
+      sf_interromp == 0 ~ "ongoing",
+      sf_interromp == 1 ~ sprintf("%d-%02d", sf_an_interromp, sf_mois_interromp),
+      relationship == "yes" & is.na(sf_interromp) ~ "skipped F-8"
+    ),
+    sex_partner = case_when(
+      relationship == "no" ~ "NR",
+      sf_conjt_sexe == "1" ~ "male",
+      sf_conjt_sexe == "2" ~ "female",
+      relationship == "yes" & is.na(sf_conjt_sexe) ~ "skipped F-3",
+      TRUE ~ "E"
+    ),
+    .after = id_anonymat
+  )
+
+```
+
+## 3.3 Select columns of interest
+
+```{r C4_P1 to C4_P2}
+
+C4_P2 <- C4_P1 %>% 
+  select(id_anonymat, relationship, sex_partner, nature, date_start, date_end)
+
+```
+
