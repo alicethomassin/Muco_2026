@@ -537,8 +537,8 @@ C4_P0 <- C4_B5 %>%
       rang_cpl,
       nb_cpl == 0 ~ 0
     )
-  ) # %>% 
- # filter(rang_cpl <= 1)
+  )  %>% 
+  filter(rang_cpl <= 1)
 
 ```
 
