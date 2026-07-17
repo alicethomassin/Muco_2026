@@ -80,9 +80,12 @@ C4_P1 <- C4_P0 %>%
       relationship == "no" ~ "NR",
       relationship == "yes" ~ sprintf("%d-%02d", sf_conjt_an_union, sf_conjt_mois_union)),
       
-# The same approach was used for the separation date. If the relationship has not
-# ended, the value is "ongoing". If the CFP did not answer the question F-8
-# "Has this relationship ended?", the value is "skipped F-8".
+# The same approach was used for the separation date. 
+# If the relationship has not ended, the value is "ongoing". 
+# If the relationship has ended (sf_interromp == 1) but the CFP has not given the
+# month or the year it ended, the value will contain NAs (2000-NA, NA-11, NA-NA).
+# If the CFP did not answer the question F-8 "Has this relationship ended?", 
+# the value is "skipped F-8".
       
     date_end = case_when(
       relationship == "no" ~ "NR",
