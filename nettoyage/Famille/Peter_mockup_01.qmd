@@ -1,0 +1,10 @@
+---
+title: "Peter_mockup_01"
+format: html
+---
+
+```{r}
+
+C4_B5 <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_nett_preliminaire.csv", show_col_types = FALSE)
+```
+
