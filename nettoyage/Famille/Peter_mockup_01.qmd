@@ -23,7 +23,7 @@ bfr_0 <- C4_B5 %>%
   ) %>% 
   # Sélectionner les quelques variables d'intérêt
   select(id_anonymat, id_date_nais, id_sexe, fa_cp_couple_1an:sf_conjt_sexe,
-         sf_nature_union, sf_interromp, sf_interromp_par, sf_conjt_enf)
+         sf_conjt_an_union, sf_nature_union, sf_interromp, sf_interromp_par, sf_conjt_enf)
 
 ```
 
@@ -33,11 +33,13 @@ Je vais garder les mêmes valeurs d'intérêt, mais ajouter celles qu'il me faut
 ```{r}
 
 aft_0 <- C4_B5 %>% 
-  select(nb_NA:couple_date_creation, id_anonymat:nb_int, id_date_nais, id_sexe,
-         fa_cp_couple_1an:sf_conjt_sexe, sf_nature_union, sf_interromp, sf_interromp_par, sf_conjt_enf) %>% 
+  select(complet_fa_cp:couple_date_creation, id_anonymat:nb_int, id_date_nais, id_sexe,
+         fa_cp_couple_1an:sf_conjt_sexe, sf_conjt_an_union, sf_nature_union, 
+         sf_interromp, sf_interromp_par, sf_conjt_enf) %>% 
   rename(
     "conjt_prenom"  = "sf_conjt_prenom",
     "conjt_sexe" = "sf_conjt_sexe",
+    "union_an" = "sf_conjt_an_union",
     "union_nature" = "sf_nature_union",
     "union_int" = "sf_interromp",
     "union_int_par" = "sf_interromp_par",
@@ -63,7 +65,7 @@ aft_1 <- aft_0 %>%
       TRUE ~ "ERR"
     )
   ) %>% 
-  mutate(across(conjt_sexe:union_enf & !union_int_par,
+  mutate(across(conjt_sexe:union_enf & !c("union_int_par", "union_an"),
          ~ case_when(
            complet_fa_cp == 1 & !is.na(.) ~ .,
            complet_fa_cp == 1 & is.na(.) ~ 555L,
@@ -76,13 +78,50 @@ aft_1 <- aft_0 %>%
     union_int_par = case_when(
       union_int == 1 & !is.na(union_int_par) ~ union_int_par,
       union_int == 0 & is.na(union_int_par) ~ 222L,
-      union_int == 1 & is.na(union_int_par) ~ 555L,
-      union_int == 555 & is.na(union_int_par) ~ 666L,
+      union_int %in% c(1, 555) & is.na(union_int_par) ~ 555L,
       union_int == 333 & is.na(union_int_par) ~ 333L,
       union_int == 777 & is.na(union_int_par) ~ 777L,
       is.na(union_int) ~ NA_integer_,
       TRUE ~ 999L
     )
+  ) %>% 
+  mutate(
+    union_an = case_when(
+      complet_fa_cp == 1 & !is.na(union_an) ~ union_an,
+      complet_fa_cp == 1 & is.na(union_an) ~ 5555L,
+      complet_fa_cp == 333 & is.na(union_an) ~ 3333L,
+      complet_fa_cp == 777 & is.na(union_an) ~ 7777L,
+      complet_fa_cp == 0 & is.na(union_an) ~ NA_integer_,
+      TRUE ~ 9999L
+    )
+  )
+
+```
+
+
+Faire le pivot wider
+
+```{r}
+
+aft_2 <- aft_1 %>% 
+  group_by(id_anonymat) %>%
+  mutate(
+    rang_fa_cp = paste0(
+      "fa_cpl", sprintf("%d", row_number())
+      ), .after = fa_cp_couple_1an,
+    nb_int = factor(nb_int)
+    ) %>%
+   ungroup()
+
+vars_wider <- aft_2 %>% 
+  select(starts_with("conjt"), starts_with("union")) %>% 
+  colnames()
+
+aft_3 <- aft_2 %>% 
+  pivot_wider(
+    names_from = rang_fa_cp,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_fa_cp}_{.value}"
   )
 
 ```
