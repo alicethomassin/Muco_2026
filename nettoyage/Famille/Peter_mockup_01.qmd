@@ -50,6 +50,51 @@ aft_0 <- C4_B5 %>%
 ```
 
 
+# Garder que les participants
+
+```{r}
+nouv_0 <- aft_0 %>% 
+  filter(complet_fa_cp == 1)
+```
+
+# Reconder NAs longs
+
+```{r}
+nouv_1 <- nouv_0 %>% 
+   mutate(
+    conjt_prenom = case_when(
+      !is.na(conjt_prenom) ~ conjt_prenom,
+      is.na(conjt_prenom) ~ "55",
+      TRUE ~ "ERR"
+    )
+  ) %>% 
+  mutate(across(conjt_sexe:union_enf & !c("union_int_par", "union_an"),
+         ~ case_when(
+           !is.na(.) ~ .,
+           is.na(.) ~ 555L,
+           TRUE ~ 999L
+         ))) %>% 
+  mutate(
+    union_int_par = case_when(
+      union_int == 1 & !is.na(union_int_par) ~ union_int_par,
+      union_int == 0 & is.na(union_int_par) ~ 777L,
+      union_int %in% c(1, 555) & is.na(union_int_par) ~ 555L,
+      TRUE ~ 999L
+    )
+  ) %>% 
+  mutate(
+    union_an = case_when(
+      !is.na(union_an) ~ union_an,
+      is.na(union_an) ~ 5555L,
+      TRUE ~ 9999L
+    )
+  )
+
+```
+
+
+J'abandonne peut-être ce qu'il y a en bas
+---
 Corriger NA format long
 
 ```{r}
