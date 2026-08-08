@@ -195,7 +195,7 @@ aft_5 <- aft_4 %>%
   } %>%
   {
     vars_to_lable <- select(., ends_with("union_an")) %>% names()
-    labels_to_put <- set_names(rep("F6 - Year start of relationship", length(vars_to_lable)), vars_to_lable)
+    labels_to_put <- set_names(rep("F6 - Year relationship begun", length(vars_to_lable)), vars_to_lable)
     set_variable_labels(., !!!labels_to_put)
   } %>%
   {
@@ -244,13 +244,90 @@ aft_6 <- aft_5 %>%
                 'Female' = 2),
     fa_cp_couple_1an = c('No' = 0,
                          'Yes' = 1,
-                         'Skipped' = 555)
+                         'Did not answer' = 555),
+    fa_cpl1_conjt_prenom = c('Did not answer' = "55")
   )
 
-val_labels(aft_6[, c("fa_cpl1_conjt_prenom", "fa_cpl2_conjt_prenom",
-                     "fa_cpl3_conjt_prenom", "fa_cpl4_conjt_prenom")]) <- c(
-                       
-                     )
+val_labels(aft_6[, c("fa_cpl2_conjt_prenom", 
+                     "fa_cpl3_conjt_prenom", 
+                     "fa_cpl4_conjt_prenom")]) <- c('No Nth partner' = "22",
+                                                    'Did not answer' = "55")
+
+val_labels(aft_6[, c("fa_cpl1_conjt_sexe",
+                     "fa_cpl2_conjt_sexe", 
+                     "fa_cpl3_conjt_sexe",
+                     "fa_cpl4_conjt_sexe")]) <- c('Male' = 1,
+                                                  'Female' = 2,
+                                                  'No Nth partner' = 222,
+                                                  'Did not answer' = 555)
+
+val_labels(aft_6[, c("fa_cpl1_union_an",
+                     "fa_cpl2_union_an", 
+                     "fa_cpl3_union_an",
+                     "fa_cpl4_union_an")]) <- c('No Nth relationship' = 2222,
+                                                'Did not answer' = 5555)
+
+val_labels(aft_6[, c("fa_cpl1_union_nature",
+                     "fa_cpl2_union_nature", 
+                     "fa_cpl3_union_nature",
+                     "fa_cpl4_union_nature")]) <- c('Married' = 1,
+                                                    'Cohabiting' = 2,
+                                                    'Living appart' = 3,
+                                                    'No Nth relationship' = 222,
+                                                    'Did not answer' = 555)
+
+val_labels(aft_6[, c("fa_cpl1_union_int",
+                     "fa_cpl2_union_int", 
+                     "fa_cpl3_union_int",
+                     "fa_cpl4_union_int")]) <- c('No' = 0,
+                                                 'Yes' = 1,
+                                                 'No Nth relationship' = 222,
+                                                 'Did not answer' = 555)
+
+val_labels(aft_6[, c("fa_cpl1_union_int_par",
+                     "fa_cpl2_union_int_par", 
+                     "fa_cpl3_union_int_par",
+                     "fa_cpl4_union_int_par")]) <- c('Divorce' = 1,
+                                                     'Separation' = 2,
+                                                     'Death' = 3,
+                                                     'No Nth separation' = 222,
+                                                     'Did not answer' = 555)
+
+val_labels(aft_6[, c("fa_cpl1_union_enf",
+                     "fa_cpl2_union_enf", 
+                     "fa_cpl3_union_enf",
+                     "fa_cpl4_union_enf")]) <- c('No' = 0,
+                                                 'Yes' = 1,
+                                                 'No Nth separation' = 222,
+                                                 'Did not answer' = 555)
+
+aft_6 <- aft_6 %>% 
+  relocate(contains("nature"), .before = fa_cpl1_union_an) %>% 
+  drop_unused_value_labels()
+
+```
+
+
+```{r}
+library(codebookr)
+
+separation_vars <- aft_6 %>% 
+  select(ends_with("int_par")) %>% 
+  colnames()
+
+for(i in separation_vars) {
+  attr(aft_6[[i]], "skip_pattern") <- "Not asked if relationship has not ended (F8)"
+}
+
+cb_aft_6 <- aft_6 %>% 
+  cb_add_col_attributes(
+    fa_cpl1_union_int_par,
+    skip_pattern = "Not asked if relationship has not ended (F8)"
+  )
+
+print(codebookr::codebook(cb_aft_6), "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/codebooks/THOA_peter_after2.docx")
+
+print(codebookr::codebook(aft_6), "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/codebooks/THOA_peter_after1.docx")
 
 ```
 
