@@ -59,8 +59,8 @@ aft_1 <- aft_0 %>%
     conjt_prenom = case_when(
       complet_fa_cp == 1 & !is.na(conjt_prenom) ~ conjt_prenom,
       complet_fa_cp == 1 & is.na(conjt_prenom) ~ "55",
-      complet_fa_cp == 333 & is.na(conjt_prenom) ~ "33",
-      complet_fa_cp == 777 & is.na(conjt_prenom) ~ "77",
+      complet_fa_cp == 333 & is.na(conjt_prenom) ~ NA_character_,
+      complet_fa_cp == 777 & is.na(conjt_prenom) ~ NA_character_,
       complet_fa_cp == 0 & is.na(conjt_prenom) ~ NA_character_,
       TRUE ~ "ERR"
     )
@@ -69,8 +69,8 @@ aft_1 <- aft_0 %>%
          ~ case_when(
            complet_fa_cp == 1 & !is.na(.) ~ .,
            complet_fa_cp == 1 & is.na(.) ~ 555L,
-           complet_fa_cp == 333 & is.na(.) ~ 333L,
-           complet_fa_cp == 777 & is.na(.) ~ 777L,
+           complet_fa_cp == 333 & is.na(.) ~ NA_integer_,
+           complet_fa_cp == 777 & is.na(.) ~ NA_integer_,
            complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
            TRUE ~ 999L
          ))) %>% 
@@ -79,8 +79,8 @@ aft_1 <- aft_0 %>%
       union_int == 1 & !is.na(union_int_par) ~ union_int_par,
       union_int == 0 & is.na(union_int_par) ~ 222L,
       union_int %in% c(1, 555) & is.na(union_int_par) ~ 555L,
-      union_int == 333 & is.na(union_int_par) ~ 333L,
-      union_int == 777 & is.na(union_int_par) ~ 777L,
+      union_int == 333 & is.na(union_int_par) ~ NA_integer_,
+      union_int == 777 & is.na(union_int_par) ~ NA_integer_,
       is.na(union_int) ~ NA_integer_,
       TRUE ~ 999L
     )
@@ -89,8 +89,8 @@ aft_1 <- aft_0 %>%
     union_an = case_when(
       complet_fa_cp == 1 & !is.na(union_an) ~ union_an,
       complet_fa_cp == 1 & is.na(union_an) ~ 5555L,
-      complet_fa_cp == 333 & is.na(union_an) ~ 3333L,
-      complet_fa_cp == 777 & is.na(union_an) ~ 7777L,
+      complet_fa_cp == 333 & is.na(union_an) ~ NA_integer_,
+      complet_fa_cp == 777 & is.na(union_an) ~ NA_integer_,
       complet_fa_cp == 0 & is.na(union_an) ~ NA_integer_,
       TRUE ~ 9999L
     )
@@ -135,8 +135,8 @@ aft_4 <- aft_3 %>%
     across(contains("prenom"),
            ~ case_when(
              !is.na(.) ~ .,
-             complet_fa_cp == 777 & is.na(.) ~ "77",
-             complet_fa_cp == 333 & is.na(.) ~ "33",
+             complet_fa_cp == 777 & is.na(.) ~ NA_character_,
+             complet_fa_cp == 333 & is.na(.) ~ NA_character_,
              complet_fa_cp == 0 & is.na(.) ~ NA_character_,
              complet_fa_cp == 1 & is.na(.) ~ "22",
              TRUE ~ "ERRR"
@@ -146,8 +146,8 @@ aft_4 <- aft_3 %>%
     across(contains("union_an"),
                 ~ case_when(
                   !is.na(.) ~ .,
-                  complet_fa_cp == 777 & is.na(.) ~ 7777L,
-                  complet_fa_cp == 333 & is.na(.) ~ 3333L,
+                  complet_fa_cp == 777 & is.na(.) ~ NA_integer_,
+                  complet_fa_cp == 333 & is.na(.) ~ NA_integer_,
                   complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
                   complet_fa_cp == 1 & is.na(.) ~ 2222L,
                   TRUE ~ 9999L
@@ -157,8 +157,8 @@ aft_4 <- aft_3 %>%
     across(fa_cpl1_conjt_sexe:fa_cpl4_union_enf & !ends_with("union_an"),
            ~ case_when(
              !is.na(.) ~ .,
-             complet_fa_cp == 777 & is.na(.) ~ 777L,
-             complet_fa_cp == 333 & is.na(.) ~ 333L,
+             complet_fa_cp == 777 & is.na(.) ~ NA_integer_,
+             complet_fa_cp == 333 & is.na(.) ~ NA_integer_,
              complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
              complet_fa_cp == 1 & is.na(.) ~ 222L,
              TRUE ~ 999L
@@ -180,6 +180,9 @@ aft_5 <- aft_4 %>%
     "fa_cp_nb_cpl" = "nb_cpl",
     "fa_cp_nb_int" = "nb_int"
   ) %>% 
+  mutate(
+    fa_cp_nb_int = as.double(fa_cp_nb_int)
+  ) %>%
   {
     vars_to_lable <- select(., ends_with("prenom")) %>% names()
     labels_to_put <- set_names(rep("F2 - First 2 letters of partner's name", length(vars_to_lable)), vars_to_lable)
@@ -224,6 +227,30 @@ aft_5 <- aft_4 %>%
     id_sexe = "Sexe",
     fa_cp_couple_1an = "F1 - Relationship of at least 1 year?"
   )
+
+```
+
+Ajouter labels aux modalités
+
+```{r}
+
+aft_6 <- aft_5 %>% 
+  set_value_labels(
+    complet_fa_cp = c('Did not participate' = 0,
+                      'Did participate' = 1,
+                      'Should have participated' = 333,
+                      'Did not have to participate' = 777),
+    id_sexe = c('Male' = 1,
+                'Female' = 2),
+    fa_cp_couple_1an = c('No' = 0,
+                         'Yes' = 1,
+                         'Skipped' = 555)
+  )
+
+val_labels(aft_6[, c("fa_cpl1_conjt_prenom", "fa_cpl2_conjt_prenom",
+                     "fa_cpl3_conjt_prenom", "fa_cpl4_conjt_prenom")]) <- c(
+                       
+                     )
 
 ```
 
