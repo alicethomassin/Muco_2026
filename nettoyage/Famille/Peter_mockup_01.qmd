@@ -4,7 +4,26 @@ format: html
 ---
 
 ```{r}
+library(tidyverse)
+library(questionr)
 
 C4_B5 <- readr::read_csv("/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_nett_preliminaire.csv", show_col_types = FALSE)
+
+```
+
+Extraire la base brute, le before
+Il faut que je retire les 555 ajoutés à la première question du module
+```{r}
+
+bfr_0 <- C4_B5 %>% 
+  # Retirer ma correction des valeurs manquantes à la question filtre
+  # sur l'expérience d'un couple dans la vie
+  mutate(
+    fa_cp_couple_1an = na_if(fa_cp_couple_1an, 555)
+  ) %>% 
+  # Sélectionner les quelques variables d'intérêt
+  select(id_anonymat, id_date_nais, id_sexe, fa_cp_couple_1an:sf_conjt_sexe,
+         sf_nature_union, sf_interromp)
+
 ```
 
