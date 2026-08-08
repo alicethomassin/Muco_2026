@@ -93,6 +93,35 @@ nouv_1 <- nouv_0 %>%
 ```
 
 
+# Pivot wider
+
+```{r}
+
+nouv_2 <- nouv_1 %>% 
+  group_by(id_anonymat) %>%
+  mutate(
+    rang_fa_cp = paste0(
+      "fa_cpl", sprintf("%d", row_number())
+      ), .after = fa_cp_couple_1an,
+    nb_int = factor(nb_int),
+    nb_cpl = factor(nb_cpl)
+    ) %>%
+   ungroup()
+
+vars_wider <- nouv_2 %>% 
+  select(starts_with("conjt"), starts_with("union")) %>% 
+  colnames()
+
+nouv_3 <- nouv_2 %>% 
+  pivot_wider(
+    names_from = rang_fa_cp,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_fa_cp}_{.value}"
+  )
+
+```
+
+
 J'abandonne peut-être ce qu'il y a en bas
 ---
 Corriger NA format long
