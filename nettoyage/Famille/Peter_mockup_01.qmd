@@ -126,3 +126,44 @@ aft_3 <- aft_2 %>%
 
 ```
 
+Corriger NA wide
+
+```{r}
+
+aft_4 <- aft_3 %>% 
+  mutate(
+    across(contains("prenom"),
+           ~ case_when(
+             !is.na(.) ~ .,
+             complet_fa_cp == 777 & is.na(.) ~ "77",
+             complet_fa_cp == 333 & is.na(.) ~ "33",
+             complet_fa_cp == 0 & is.na(.) ~ NA_character_,
+             complet_fa_cp == 1 & is.na(.) ~ "22",
+             TRUE ~ "ERRR"
+           ))
+  ) %>% 
+  mutate(
+    across(contains("union_an"),
+                ~ case_when(
+                  !is.na(.) ~ .,
+                  complet_fa_cp == 777 & is.na(.) ~ 7777L,
+                  complet_fa_cp == 333 & is.na(.) ~ 3333L,
+                  complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
+                  complet_fa_cp == 1 & is.na(.) ~ 2222L,
+                  TRUE ~ 9999L
+                ))
+    ) %>% 
+  mutate(
+    across(fa_cpl1_conjt_sexe:fa_cpl4_union_enf & !ends_with("union_an"),
+           ~ case_when(
+             !is.na(.) ~ .,
+             complet_fa_cp == 777 & is.na(.) ~ 777L,
+             complet_fa_cp == 333 & is.na(.) ~ 333L,
+             complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
+             complet_fa_cp == 1 & is.na(.) ~ 222L,
+             TRUE ~ 999L
+           ))
+  )
+
+```
+
