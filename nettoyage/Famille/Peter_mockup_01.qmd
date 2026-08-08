@@ -167,3 +167,63 @@ aft_4 <- aft_3 %>%
 
 ```
 
+
+Réduire nombre de colonnes et ajouter labels
+
+```{r}
+
+library(labelled)
+
+aft_5 <- aft_4 %>% 
+  select(-contains("creation")) %>% 
+  rename(
+    "fa_cp_nb_cpl" = "nb_cpl",
+    "fa_cp_nb_int" = "nb_int"
+  ) %>% 
+  {
+    vars_to_lable <- select(., ends_with("prenom")) %>% names()
+    labels_to_put <- set_names(rep("F2 - First 2 letters of partner's name", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>% 
+  {
+    vars_to_lable <- select(., ends_with("conjt_sexe")) %>% names()
+    labels_to_put <- set_names(rep("F3 - Partner's sexe", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  {
+    vars_to_lable <- select(., ends_with("union_an")) %>% names()
+    labels_to_put <- set_names(rep("F6 - Year start of relationship", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  {
+    vars_to_lable <- select(., ends_with("union_nature")) %>% names()
+    labels_to_put <- set_names(rep("F5 - Relationship's nature", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  {
+    vars_to_lable <- select(., ends_with("union_int")) %>% names()
+    labels_to_put <- set_names(rep("F8 - Did the relationship end?", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  {
+    vars_to_lable <- select(., ends_with("union_int_par")) %>% names()
+    labels_to_put <- set_names(rep("F9 - Type of separation", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  {
+    vars_to_lable <- select(., ends_with("union_enf")) %>% names()
+    labels_to_put <- set_names(rep("F12 - Children from that relationship?", length(vars_to_lable)), vars_to_lable)
+    set_variable_labels(., !!!labels_to_put)
+  } %>%
+  set_variable_labels(
+    complet_fa_cp = "Participation indicator",
+    id_anonymat = "Unique ID",
+    fa_cp_nb_cpl = "Number of documented relationships",
+    fa_cp_nb_int = "Number of documented separations",
+    id_date_nais = "Date of birth",
+    id_sexe = "Sexe",
+    fa_cp_couple_1an = "F1 - Relationship of at least 1 year?"
+  )
+
+```
+
