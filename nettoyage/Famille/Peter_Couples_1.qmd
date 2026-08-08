@@ -504,8 +504,29 @@ C4_B5 <- C4_B4 %>%
   ungroup() %>% 
   mutate(
     sf_conjt_prenom = str_to_upper(sf_conjt_prenom)
-  )
+  ) %>% 
+  # 08.08.2026 J'ai ajouté les lignes 513-525 de Couple_01.qmd pour corriger
+  # l'année de naissance de conjt pour avoir une base plus propre avant de
+  # faire les modifs de la structure
+    mutate(sf_interromp = case_when(
+    sf_interromp == "0" ~ 0L,
+    sf_interromp == "1" ~ 1L,
+    TRUE ~ as.integer(sf_interromp)
+  )) %>% 
+  arrange(id_anonymat, sf_conjt_an_union, desc(sf_interromp)) %>% 
+  mutate(
+    sf_conjt_an_nais = case_when(
+      complet_fa_cp == "1" & is.na(sf_conjt_an_nais) ~ sf_an_conjt_nais,
+      TRUE ~ sf_conjt_an_nais
+    ),
+    sf_interromp = factor(sf_interromp)
+  ) %>% 
+  # J'ai retiré la mauvaise variable de l'année de naissance, puisqu'elle a 
+  # été corrigée
+  select(-sf_an_conjt_nais, -vrep_couple)
 
+# Exporter cette base pour la travailler dans Peter_mockup_01.qmd
+# write_csv(C4_B5, "/Users/alicethomassin/Documents/Scolarité/Muco 2026/data_hors_git/clean_data/THOA_couple_nett_preliminaire.csv")
 
 # rm(list = c("rep_couple", "vars_join", "C4_B3", "vars_verif", "to_factor",
 #             "C4_B4", "Famille"))
