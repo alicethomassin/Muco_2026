@@ -23,7 +23,67 @@ bfr_0 <- C4_B5 %>%
   ) %>% 
   # Sélectionner les quelques variables d'intérêt
   select(id_anonymat, id_date_nais, id_sexe, fa_cp_couple_1an:sf_conjt_sexe,
-         sf_nature_union, sf_interromp)
+         sf_nature_union, sf_interromp, sf_interromp_par, sf_conjt_enf)
+
+```
+
+Faire la base after
+Je vais garder les mêmes valeurs d'intérêt, mais ajouter celles qu'il me faut pour corriger les valeurs manquantes
+
+```{r}
+
+aft_0 <- C4_B5 %>% 
+  select(nb_NA:couple_date_creation, id_anonymat:nb_int, id_date_nais, id_sexe,
+         fa_cp_couple_1an:sf_conjt_sexe, sf_nature_union, sf_interromp, sf_interromp_par, sf_conjt_enf) %>% 
+  rename(
+    "conjt_prenom"  = "sf_conjt_prenom",
+    "conjt_sexe" = "sf_conjt_sexe",
+    "union_nature" = "sf_nature_union",
+    "union_int" = "sf_interromp",
+    "union_int_par" = "sf_interromp_par",
+    "union_enf" = "sf_conjt_enf"
+  )
+  
+  
+```
+
+
+Corriger NA format long
+
+```{r}
+
+aft_1 <- aft_0 %>% 
+  mutate(
+    conjt_prenom = case_when(
+      complet_fa_cp == 1 & !is.na(conjt_prenom) ~ conjt_prenom,
+      complet_fa_cp == 1 & is.na(conjt_prenom) ~ "55",
+      complet_fa_cp == 333 & is.na(conjt_prenom) ~ "33",
+      complet_fa_cp == 777 & is.na(conjt_prenom) ~ "77",
+      complet_fa_cp == 0 & is.na(conjt_prenom) ~ NA_character_,
+      TRUE ~ "ERR"
+    )
+  ) %>% 
+  mutate(across(conjt_sexe:union_enf & !union_int_par,
+         ~ case_when(
+           complet_fa_cp == 1 & !is.na(.) ~ .,
+           complet_fa_cp == 1 & is.na(.) ~ 555L,
+           complet_fa_cp == 333 & is.na(.) ~ 333L,
+           complet_fa_cp == 777 & is.na(.) ~ 777L,
+           complet_fa_cp == 0 & is.na(.) ~ NA_integer_,
+           TRUE ~ 999L
+         ))) %>% 
+  mutate(
+    union_int_par = case_when(
+      union_int == 1 & !is.na(union_int_par) ~ union_int_par,
+      union_int == 0 & is.na(union_int_par) ~ 222L,
+      union_int == 1 & is.na(union_int_par) ~ 555L,
+      union_int == 555 & is.na(union_int_par) ~ 666L,
+      union_int == 333 & is.na(union_int_par) ~ 333L,
+      union_int == 777 & is.na(union_int_par) ~ 777L,
+      is.na(union_int) ~ NA_integer_,
+      TRUE ~ 999L
+    )
+  )
 
 ```
 
