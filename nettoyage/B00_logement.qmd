@@ -10,3 +10,32 @@ format: html
 library(tidyverse)
 library(questionr)
 ```
+
+
+```{r M5_B0}
+
+# 1.1.1 Importer M5_b0 et M1_B0 ---
+M5_b0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
+M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
+
+```
+
+```{r M5_b0 to M5_b1}
+
+M5_b0 <- M5_b0 %>% 
+  relocate(c("id_sep", "tab_db", "lo_date_creation"), .after = id_anonymat) %>% 
+  select(-lo_type)
+
+# Changer id_anonymat de deux doublons
+
+M5_b1 <- M5_b0 %>% 
+  mutate(
+    id_anonymat = replace_when(
+      id_anonymat,
+      id_anonymat %in% M1_F2$id_module ~ str_sub(id_sep, 7, 11)
+    )
+  )
+
+
+```
+
