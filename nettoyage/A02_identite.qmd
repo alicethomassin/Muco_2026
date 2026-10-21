@@ -11,7 +11,7 @@ library(questionr)
 
 ```{r M1_F0 to M1_F1}
 # Importer la base brute de l'identité
-M1_F0 <- haven::read_sas("../raw_data/gb_ddb_identite_01.sas7bdat")
+M1_F0 <- haven::read_sas("../../../raw_data/gb_ddb_identite_01.sas7bdat")
 
 vars_id_rmv <- c("id_type", "tab_db")
 # 1. Correction classe  ---------------------------------------------------
