@@ -20,8 +20,8 @@ En les isolant, je peux savoir sur lesquelles travailler pour ajuster la cohére
 ```{r M5_B0}
 
 # 1.1.1 Importer M5_b0 et M1_B0 ---
-M5_b0 <- haven::read_sas("../raw_data/gb_ddb_logement_05.sas7bdat")
-M1_B0 <- haven::read_sas("../raw_data/gb_ddb_identite_01.sas7bdat")
+M5_b0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
+M1_B0 <- haven::read_sas("../../../raw_data/gb_ddb_identite_01.sas7bdat")
 
 # 1.1.2 Unir l'ensemble des variables de base ---
 v_M1B_M5b <- dplyr::union(names(M5_b0), names(M1_B0))
