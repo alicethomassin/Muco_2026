@@ -18,8 +18,12 @@ library(questionr)
 M5_b0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
 M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
 
+M5_F0 <- haven::read_sas("../../../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
+
 ```
 
+
+Remplacer le id_anonymat de deux doublons en pigeant dans la base d'identité. J'ai décidé de travailler sur la base qui n'a que ceux qui ont participé au module
 ```{r M5_b0 to M5_b1}
 
 M5_b0 <- M5_b0 %>% 
@@ -34,8 +38,53 @@ M5_b1 <- M5_b0 %>%
       id_anonymat,
       id_anonymat %in% M1_F2$id_module ~ str_sub(id_sep, 7, 11)
     )
-  )
+  ) %>% 
+  select(-tab_db, -id_sep, -fa_amenag)
 
 
 ```
+
+Récupérer les variables créées par Gil grâce à la jonction entre les données d'identité et celles du logement.
+```{r M5_F0 to M5_S0}
+
+M5_S0 <- M5_F0 %>% 
+  select(id_anonymat, id_date_creation, id_sep, dep_centre1, dep_la_situ_centre1)
+
+```
+
+Ici on joint finalement ces variables créées pour tous les enquêtés (454) aux 364 qui ont participé au module du logement. On a donc tout le monde dans une base
+```{r M5_b1 to M5_J0}
+
+M5_J0 <- full_join(
+  M5_S0,
+  M5_b1,
+  by = "id_anonymat"
+) %>% 
+  
+  # Enlever les deux doublons
+  filter_out(is.na(id_date_creation)) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    lo_complet = case_when(
+      is.na(lo_date_creation) ~ 0L,
+      !is.na(lo_date_creation) ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Retirer var inutile
+  select(-id_sep) %>% 
+  
+  # Corriger une valeur pcq Gil n'a pas identifié le centre1 pour cette personne
+  mutate(
+    dep_centre1 = replace_when(
+      dep_centre1,
+      id_anonymat == "WUJIE" ~ -8L
+    )
+  )
+
+```
+
 
