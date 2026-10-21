@@ -1,0 +1,12 @@
+---
+title: "B00_logement"
+format: html
+---
+
+```{r setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
