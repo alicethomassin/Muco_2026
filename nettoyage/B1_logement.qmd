@@ -27,7 +27,7 @@ M1_B0 <- haven::read_sas("../../../raw_data/gb_ddb_identite_01.sas7bdat")
 v_M1B_M5b <- dplyr::union(names(M5_b0), names(M1_B0))
 
 # 1.1.3 Importer M5_B0 ---
-M5_B0 <- haven::read_sas("../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
+M5_B0 <- haven::read_sas("../../../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
 
 # 1.1.4 Identifer les variables exclusives au logement ---
 v_M5x <- dplyr::setdiff(names(M5_B0), v_M1B_M5b)
@@ -43,7 +43,7 @@ v_M5x
 ```{r M1_C1}
 
 ## 1.2.1 Importer M1_C0 ---
-M1_C0 <- readr::read_csv("../clean_data/thoa_M1_L1.csv", show_col_types = FALSE)
+M1_C0 <- readr::read_csv("../../data_hors_git/clean_data/thoa_M1_L1.csv", show_col_types = FALSE)
 
 ## 1.2.2 Réduire aux variables essentielles ---
 M1_C1 <- M1_C0 %>% 
