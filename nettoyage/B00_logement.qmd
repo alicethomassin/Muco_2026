@@ -308,3 +308,10 @@ M5_C4 <- M5_C3 %>%
 
 ```
 
+ENregistrer
+
+```{r}
+
+write_csv(M5_C4, "../../data_hors_git/clean_data/aut26/thoa_logement_notag.csv")
+```
+
