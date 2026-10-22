@@ -85,6 +85,100 @@ M5_J0 <- full_join(
     )
   )
 
+# Clean up
+
+rm(list = c("M5_b0", "M5_b1", "M5_F0", "M5_S0"))
+
 ```
 
+Renommer les variables
+
+```{r}
+
+vars_sub_la <- M5_J0 %>% 
+  select(all_of(starts_with("la_"))) %>% 
+  colnames()
+
+M5_C0 <- M5_J0 %>% 
+  rename_with(~ gsub("^la_", "lo_", .x), all_of(vars_sub_la)) %>% 
+  rename("lo_commentaires" = "commentaires_loge",
+         "lo_dep_centre1" = "dep_centre1",
+         "lo_statut_occup" = "lo_occup_logement",
+         "lo_statut_occup_autre" = "lo_occup_logement_autre",
+         "lo_dep_situ_centre1" = "dep_la_situ_centre1") %>% 
+  relocate(c("lo_date_creation", "lo_complet", "lo_an_logement",
+             "lo_situ_logement", "lo_situ_dep", "lo_dep_situ_centre1", "lo_situ_pays"),
+           .after = id_anonymat) %>% 
+  select(-id_date_creation) %>% 
+  relocate(lo_dep_situ_centre1, .after = lo_dep_centre1) %>%
+  relocate(c("lo_type_logement", "lo_type_logement_autre", "lo_statut_occup",
+             "lo_statut_occup_autre", "lo_occup_cause_1", "lo_occup_cause_2",
+             "lo_occup_cause_3", "lo_occup_cause_999", "lo_occup_cause_autre",
+             "lo_amenag_logement", "lo_amenag_logement_precis", "lo_emprunt_1",
+             "lo_emprunt_2", "lo_emprunt_3", "lo_emprunt_4", "lo_emprunt_5",
+             "lo_emprunt_6", "lo_emprunt_precis", "lo_demenag", "lo_demenag_cause_1",
+             "lo_demenag_cause_2", "lo_demenag_cause_999", "lo_demenag_cause_autre"),
+           .after = lo_dep_situ_centre1) %>% 
+  relocate(lo_commentaires, .after = last_col())
+```
+
+Identifier ceux qui ont vraiment répondu au module en fonction du nombre de réponses
+
+```{r}
+
+# vars_check <- M5_C0 %>% 
+#   select(lo_an_logement:lo_situ_dep, lo_type_logement:lo_demenag_cause_autre) %>% 
+#   names()
+# 
+# M5_C1 <- M5_C0 %>% 
+#   mutate(
+#     absent = if_all(all_of(vars_check), is.na),
+#     .after = lo_date_creation
+#   )
+
+M5_C1 <- M5_C0 %>% 
+  mutate(
+    
+    # lo_situ_pays est particulier parce qu'une modalité ne figure que si la
+    # personne a déclaré vivre à l'étranger. Donc le recodage doit se faire à
+    # la main puisqu'elle se comporte de manière unique.
+    lo_situ_pays = case_when(
+      !is.na(lo_situ_pays) ~ lo_situ_pays,
+      is.na(lo_situ_pays) & !is.na(lo_situ_dep) ~ 1,
+      is.na(lo_situ_pays) & lo_complet == 0 ~ -2,
+      is.na(lo_situ_pays) & is.na(lo_situ_dep) & lo_complet == 1 ~ -9,
+      TRUE ~ 999
+    ),
+    
+    # Ici on applique -9 parce que c'est pour toutes les personnes qui n'ont pas
+    # renseigné un premier centre de suivi. On ignore donc le departement.
+    lo_dep_centre1 = replace_when(
+      lo_dep_centre1,
+      is.na(lo_dep_centre1) ~ -9
+    ),
+    
+    lo_situ_dep = case_when(
+      !is.na(lo_situ_dep) ~ lo_situ_dep,
+      is.na(lo_situ_dep) & lo_complet == 0 ~ -2,
+      is.na(lo_situ_dep) & lo_situ_logement == 2 ~ -1,
+      is.na(lo_situ_dep) & lo_complet == 1 ~ -9,
+      TRUE ~ 999
+    ),
+    
+    # Ici on remplace à la main, parce que la donnée est aussi unique.
+    lo_situation_cor = case_when(
+      lo_situ_dep == -9 & lo_dep_centre1 == -9 ~ "-9",
+      lo_situ_dep == lo_dep_centre1 ~ "Meme departement",
+      lo_dep_centre1 == -9 & lo_complet == 0 ~ "-2",
+      lo_dep_centre1 == -9 & lo_complet == 1 ~ "-9",
+      lo_complet == 0 ~ "-2",
+      lo_situ_dep == -9 ~ "-9",
+      lo_situ_dep != lo_dep_centre1 ~ "Departement different",
+      TRUE ~ "999"
+    )
+  ) %>% 
+  relocate(lo_situation_cor, .after = lo_dep_situ_centre1) %>% 
+  select(-lo_dep_situ_centre1)
+
+```
 
