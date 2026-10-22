@@ -227,3 +227,84 @@ M5_C3 <- M5_C2 %>%
 
 ```
 
+
+Recoder les QCM
+
+```{r}
+
+rcd_qcm2 <- function(df, complet, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{complet}} == 0 ~ -2,
+          {{complet}} == 1 & all_na_vars ~ -9,
+          {{complet}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+
+rcd_qcm3 <- function(df, complet, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{complet}} == 0 ~ -2,
+          {{borne}} == 0 & all_na_vars ~ -1,
+          {{complet}} == 1 & all_na_vars ~ -9,
+          {{complet}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+
+```
+
+
+```{r}
+
+vars_L5 <- M5_C3 %>% 
+  select(lo_occup_cause_1:lo_occup_cause_999) %>% 
+  names()
+
+vars_L8 <- M5_C3 %>% 
+  select(lo_emprunt_1:lo_emprunt_6) %>% 
+  names()
+
+vars_L11 <- M5_C3 %>% 
+  select(lo_demenag_cause_1:lo_demenag_cause_999) %>% 
+  names()
+
+M5_C4 <- M5_C3 %>% 
+  rcd_qcm2(lo_complet, all_of(vars_L5)) %>% 
+  rcd_qcm2(lo_complet, all_of(vars_L8)) %>% 
+  
+  # Il y a deux personnes qui ont dit ne pas vouloir déménager, mais ont quand
+  # meme répondu à la question suivante et ont donné la raison de leur désire
+  # de déménager donc j'ai changé leur réponse pour mettre oui.
+  mutate(
+    lo_demenag = replace_when(
+      lo_demenag,
+      lo_demenag == 0 & lo_demenag_cause_999 == 1 ~ 1
+    )
+  ) %>% 
+  rcd_qcm3(lo_complet, lo_demenag, all_of(vars_L11))
+  
+
+```
+
