@@ -39,7 +39,13 @@ M5_b1 <- M5_b0 %>%
       id_anonymat %in% M1_F2$id_module ~ str_sub(id_sep, 7, 11)
     )
   ) %>% 
-  select(-tab_db, -id_sep, -fa_amenag)
+  select(-tab_db, -id_sep, -fa_amenag) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  ))
 
 
 ```
@@ -62,17 +68,7 @@ M5_J0 <- full_join(
 ) %>% 
   
   # Enlever les deux doublons
-  filter_out(is.na(id_date_creation)) %>% 
-  
-  # Identifier ceux qui ont participé au module
-  mutate(
-    lo_complet = case_when(
-      is.na(lo_date_creation) ~ 0L,
-      !is.na(lo_date_creation) ~ 1L,
-      TRUE ~ -99L
-    ),
-    .after = id_anonymat
-  ) %>% 
+  filter_out(is.na(id_date_creation)) %>%
   
   # Retirer var inutile
   select(-id_sep) %>% 
@@ -106,7 +102,7 @@ M5_C0 <- M5_J0 %>%
          "lo_statut_occup" = "lo_occup_logement",
          "lo_statut_occup_autre" = "lo_occup_logement_autre",
          "lo_dep_situ_centre1" = "dep_la_situ_centre1") %>% 
-  relocate(c("lo_date_creation", "lo_complet", "lo_an_logement",
+  relocate(c("lo_date_creation", "lo_an_logement",
              "lo_situ_logement", "lo_situ_dep", "lo_dep_situ_centre1", "lo_situ_pays"),
            .after = id_anonymat) %>% 
   select(-id_date_creation) %>% 
@@ -126,17 +122,28 @@ Identifier ceux qui ont vraiment répondu au module en fonction du nombre de ré
 
 ```{r}
 
-# vars_check <- M5_C0 %>% 
-#   select(lo_an_logement:lo_situ_dep, lo_type_logement:lo_demenag_cause_autre) %>% 
-#   names()
-# 
-# M5_C1 <- M5_C0 %>% 
-#   mutate(
-#     absent = if_all(all_of(vars_check), is.na),
-#     .after = lo_date_creation
-#   )
+vars_check <- M5_C0 %>%
+  select(lo_an_logement:lo_situ_pays, lo_type_logement:lo_demenag_cause_autre) %>%
+  names()
 
-M5_C1 <- M5_C0 %>% 
+M5_C1 <- M5_C0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    lo_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+M5_C2 <- M5_C1 %>% 
   mutate(
     
     # lo_situ_pays est particulier parce qu'une modalité ne figure que si la
@@ -179,6 +186,44 @@ M5_C1 <- M5_C0 %>%
   ) %>% 
   relocate(lo_situation_cor, .after = lo_dep_situ_centre1) %>% 
   select(-lo_dep_situ_centre1)
+
+```
+
+Corriger les NAs génériques, simples
+
+```{r}
+
+rcd_vars <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        ))
+      )
+    )
+}
+```
+
+
+```{r}
+
+# Identifier la liste des variables faciles à recoder
+
+vars_simples <- M5_C2 %>% 
+  select(lo_an_logement, lo_situ_logement, lo_type_logement:lo_demenag,
+         -ends_with("_autre"), -contains("occup_cause_"),
+         -contains("emprunt"), -contains("demenag_cause_"), 
+         -contains("precis")) %>% 
+  names()
+
+M5_C3 <- M5_C2 %>% 
+  rcd_vars(all_of(vars_simples), lo_complet)
+
 
 ```
 
