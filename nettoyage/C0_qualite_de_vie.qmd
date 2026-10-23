@@ -4,7 +4,7 @@ format: html
 ---
 
 
-```{r}
+```{r Setup}
 #| message: FALSE
 #| echo: False
 
@@ -12,30 +12,40 @@ library(tidyverse)
 library(questionr)
 ```
 
-```{r}
+```{r Import}
 
+# Base d'identité
 M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
-# Peut-être pas nécessaire...
-M5_C4 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_logement_notag.csv", show_col_types = FALSE)
 
+# Base brute courte
 M6_b0 <- haven::read_sas("../../../raw_data/gb_ddb_qualite_06_test.sas7bdat")
 
+# Base brute longue avec les données d'identité
+M6_B0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_qv_06_test.sas7bdat")
 ```
 
-
+# Premier nettoyage
 Réordonner les variables, faire modifications de base pour les caractéristiques de la base
 
-```{r}
+```{r M6_b0 to M6_b1}
 
 M6_b1 <- M6_b0 %>% 
+  
+  # Réordonner variables d'identité
   relocate(c("id_sep", "qv_date_creation"), .after = id_anonymat) %>% 
   relocate(commentaires_qual, .after = last_col()) %>% 
+  
+  # Effacer les traces de sas
   haven::zap_label() %>% 
   haven::zap_formats() %>% 
+  
+  # Mettre des NAs pour le texte
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
   )) %>% 
+  
+  # Changer id_anonymat des doublons
   mutate(
     id_anonymat = replace_when(
       id_anonymat,
@@ -46,16 +56,15 @@ M6_b1 <- M6_b0 %>%
 
 ```
 
+# Joindre tous les enquêtés
 Importer la base avec l'identité
 
-```{r}
-
-M6_B0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_qv_06_test.sas7bdat")
-# Non je crois qu'il n'y a aucune variable créée
+```{r M6_b1 to M6_J0}
 
 M6_J0 <- full_join(
   M6_b1,
   M6_B0 %>% 
+    # Garder id_date_creation pour facilement retirer les doublons
     select(id_anonymat, id_date_creation),
   by = "id_anonymat"
 ) %>% 
@@ -63,14 +72,16 @@ M6_J0 <- full_join(
   
   # Retirer les deux doublons
   filter_out(is.na(id_date_creation)) %>% 
+  
+  # Retirer variables inutiles
   select(-id_date_creation, -id_sep, -qv_type, -tab_db)
 
 ```
 
 
-Renommer les variables
+# Renommer les variables
 
-```{r}
+```{r M6_J0 to M6_C0}
 
 add_qv <- M6_J0 %>% 
   select(all_of(starts_with("sa_")),
@@ -97,6 +108,8 @@ M6_C0 <- M6_J0 %>%
          "qv_ad_act10" = "VAR10",
          "qv_ad_act999" = "ad_activites_999",
          "qv_ad_act_autre" = "ad_activites_autre") %>% 
+  
+  # Mettre toutes les variables en ordre
   relocate(id_anonymat, qv_date_creation,
            qv_sa_etat, qv_sa_mobilite, qv_sa_autonomie, qv_sa_activites,
            qv_sa_douleurs, qv_sa_anxiete, 
@@ -109,13 +122,16 @@ M6_C0 <- M6_J0 %>%
            qv_am_type_1, qv_am_type_2, qv_am_type_999, qv_am_type_autre,
            qv_am_ald, qv_am_rac, qv_am_rac_montant, 
            qv_am_rac_pour_1:qv_am_rac_pour_autre, qv_commentaires) %>% 
+  
+  # Retirer variable inutile
   select(-qv_sa_autre_precisez)
 
 ```
 
+# Identifier les participants
 Identifier ceux qui n'ont pas répondu au module
 
-```{r}
+```{r M6_C0 to M6_C1}
 
 vars_check <- M6_C0 %>%
   select(qv_sa_etat:qv_commentaires) %>%
@@ -140,9 +156,9 @@ M6_C1 <- M6_C0 %>%
 
 ```
 
-Corriger les NAs simples
+# Recoder les NAs
 
-```{r}
+```{r Script des fonctions}
 
 rcd_vars <- function(df, vars, complet){
   df %>% 
@@ -222,7 +238,7 @@ rcd_qcm_borne1 <- function(df, borne, vars){
 ```
 
 
-```{r}
+```{r M6_C1 to M6_C2}
 
 quest_simples <- M6_C1 %>% 
   select(qv_sa_etat:qv_ad_besoin, qv_sc_travailleur:qv_am_regime,
@@ -243,6 +259,9 @@ QV22 <- M6_C1 %>%
 
 M6_C2 <- M6_C1 %>% 
   rcd_vars(all_of(quest_simples), qv_complet) %>% 
+  
+  # Corriger à la main pcq option dans le questionnaire pour jsp et ne pas répondre
+  # donc lui remettre notre codification
   mutate(
     qv_sa_etat = replace_when(
       qv_sa_etat,
