@@ -74,13 +74,14 @@ M4_L2 <- M4_L1 %>%
   relocate(id_sexe, .after = id_module) %>%
   arrange(n, id_anonymat) %>%
   ungroup() %>% 
-  mutate(
-    id_sexe = replace_when(
-      id_sexe,
-      is.na(id_sexe) ~ 2
-    )
-  ) %>% 
   filter_out(n == 2 & is.na(id_module)) %>% 
-  select(-n, -id_date_creation, -id_sep)
+  select(-n, -id_date_creation, -id_sep) %>%
+  rows_patch(
+    M1_F2 %>% 
+      select(id_anonymat, id_date_nais, id_sexe),
+    by = "id_anonymat"
+  )
 
 ```
+
+
