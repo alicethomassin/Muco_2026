@@ -113,3 +113,30 @@ M6_C0 <- M6_J0 %>%
 
 ```
 
+Identifier ceux qui n'ont pas répondu au module
+
+```{r}
+
+vars_check <- M6_C0 %>%
+  select(qv_sa_etat:qv_commentaires) %>%
+  names()
+
+M6_C1 <- M6_C0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    qv_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+```
+
