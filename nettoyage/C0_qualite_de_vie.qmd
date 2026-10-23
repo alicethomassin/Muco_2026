@@ -76,6 +76,8 @@ M6_J0 <- full_join(
   # Retirer variables inutiles
   select(-id_date_creation, -id_sep, -qv_type, -tab_db)
 
+rm(M6_b0)
+
 ```
 
 
@@ -126,6 +128,8 @@ M6_C0 <- M6_J0 %>%
   # Retirer variable inutile
   select(-qv_sa_autre_precisez)
 
+rm(list = c("M6_B0", "M6_b1"))
+
 ```
 
 # Identifier les participants
@@ -153,6 +157,8 @@ M6_C1 <- M6_C0 %>%
     .after = id_anonymat
   ) %>% 
   select(-absent)
+
+rm(list = c("M6_J0", "add_qv"))
 
 ```
 
@@ -291,5 +297,20 @@ M6_C2 <- M6_C1 %>%
   ) %>% 
   rcd_qcm_borne1(qv_am_rac, all_of(QV22))
 
+rm(M6_C0)
+
+```
+
+
+```{r}
+
+rm(list = c("quest_simples", "QV18", "QV22", "QV5", "vars_check", "rcd_qcm_borne1",
+            "rcd_qcm3", "rcd_vars", "rcd_vars_borne1"))
+```
+
+
+```{r}
+
+write_csv(M6_C2, "../../data_hors_git/clean_data/aut26/thoa_qualite_notag.csv")
 ```
 
