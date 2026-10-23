@@ -3,7 +3,9 @@ title: "D0_Famille_unique"
 format: html
 ---
 
+# Base brute
 Ce script sert à mettre en ordre la base des variables qui n'ont qu'une seule occurence, d'où le "unique". Donc tous les événements renouvelables seront traités dans d'autres bases. 
+
 
 ```{r Setup}
 library(tidyverse)
@@ -16,6 +18,8 @@ M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_not
 ### 1.1.1 Importer la base
 M4_L0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bdat")
 ```
+
+## Reduire le nb de variables
 
 ```{r M4_L0 to M4_L1}
 ### 1.1.2 Identifier les colonnes vides
@@ -62,7 +66,7 @@ M4_L1 <- M4_L0 %>%
 rm(list = c("empty_cols_M4_L0", "vars_vides", "M4_L0"))
 ```
 
-Corriger les doublons
+## Corriger les doublons
 
 ```{r M4_L1 to M4_L2}
 
@@ -89,7 +93,7 @@ Je peux repartir de M4_L2 pour faire le foyer puis le nombre d'enfants/freres/so
 
 ## Réduire les nombre de variables
 Je vais commencer à partir des parents, et fratrie
-```{r}
+```{r M4_L2 to P4_C0}
 
 sub_pf <- M4_L2 %>% 
   select(pf_pere_prenom, pf_pere_mois_nais, pf_pere_an_nais, pf_pere_decede,
@@ -152,7 +156,7 @@ rm(list = c("M4_L1", "M4_L2", "M1_F2", "sub_pf", "mere", "pere", "parents"))
 
 ## Identifier participants
 
-```{r}
+```{r P4_C0 to P4_C1}
 
 vars_check <- P4_C0 %>%
   select(fa_pap_prenom:fa_par_union_int_muco) %>%
@@ -179,8 +183,9 @@ rm(vars_check)
 
 ```
 
+## Recoder les NAs
 
-```{r}
+```{r Fonctions}
 rcd_vars <- function(df, vars, complet){
   df %>% 
     mutate(
@@ -265,7 +270,7 @@ rcd_vars_borne3 <- function(df, borne, vars){
 ```
 
 
-```{r}
+```{r P4_C1 to P4_C2}
 
 simple <- P4_C1 %>% 
   select(fa_pap_nais_mois:fa_pap_deces, fa_pap_etudes, fa_pap_statut,
@@ -306,5 +311,16 @@ P4_C2 <- P4_C1 %>%
   rcd_vars_borne2(fa_pam_statut, all_of(job_mere)) %>% 
   rcd_vars_borne3(fa_par_union_int, all_of(separation))
 
+```
+
+```{r nettoyage}
+rm(list = c("deces_mere", "deces_pere", "job_mere", "job_pere", "separation",
+            "simple", "texte", "vars_check"))
+
+```
+
+
+```{r Export}
+write_csv(P4_C2, "../../data_hors_git/clean_data/aut26/thoa_parents_notag.csv")
 ```
 
