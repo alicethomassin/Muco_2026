@@ -1,0 +1,9 @@
+---
+title: "tags0_identite"
+format: html
+---
+
+```{r}
+idt0 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
+```
+
