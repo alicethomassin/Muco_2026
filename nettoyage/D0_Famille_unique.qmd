@@ -145,6 +145,8 @@ P4_C0 <- M4_L2 %>%
       fa_pam_prenom == "NA" ~ "NAA"
     ))
 
+rm(list = c("M4_L1", "M4_L2", "M1_F2", "sub_pf", "mere", "pere", "parents"))
+
 ```
 
 
@@ -172,6 +174,137 @@ P4_C1 <- P4_C0 %>%
     .after = id_anonymat
   ) %>% 
   select(-absent)
+
+rm(vars_check)
+
+```
+
+
+```{r}
+rcd_vars <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          . == 99 ~ -8,
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        ))
+      )
+    )
+}
+
+rcd_vars_text <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ "-9",
+          is.na(.) & {{complet}} == 0 ~ "-2",
+          TRUE ~ "-999"
+        ))
+      )
+    )
+}
+
+rcd_vars_borne1 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & is.na(.) ~ -1,
+          ({{borne}} == 1 | {{borne}} == -9) & is.na(.) ~ -9,
+          TRUE ~ 999
+        )
+      )
+    ))
+}
+
+rcd_vars_borne2 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 1 & is.na(.) ~ -1,
+          ({{borne}} == 2 | {{borne}} == -9 | {{borne}} == 3 | {{borne}} == -8) & is.na(.) ~ -9,
+          TRUE ~ 999
+        )
+      )
+    ))
+}
+
+rcd_vars_borne3 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          . == 99 ~ -8,
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & is.na(.) ~ -1,
+          ({{borne}} == 1 | {{borne}} == -9 | {{borne}} == -8) & is.na(.) ~ -9,
+          TRUE ~ 999
+        )
+      )
+    ))
+}
+
+
+```
+
+
+```{r}
+
+simple <- P4_C1 %>% 
+  select(fa_pap_nais_mois:fa_pap_deces, fa_pap_etudes, fa_pap_statut,
+         fa_pam_nais_mois:fa_pam_deces, fa_pam_etudes, fa_pam_statut,
+         fa_par_union:fa_par_union_int) %>% 
+  colnames()
+
+texte <- P4_C1 %>% 
+  select(fa_pap_prenom, fa_pap_prof, fa_pam_prenom, fa_pam_prof) %>% 
+  colnames()
+
+deces_pere <- P4_C1 %>% 
+  select(contains("pap_deces_")) %>% 
+  colnames()
+
+deces_mere <- P4_C1 %>% 
+  select(contains("pam_deces_")) %>% 
+  colnames()
+
+job_pere <- P4_C1 %>% 
+  select(fa_pap_entreprise, fa_pap_qual) %>% 
+  colnames()
+
+job_mere <- P4_C1 %>% 
+  select(fa_pam_entreprise, fa_pam_qual) %>% 
+  colnames()
+
+separation <- P4_C1 %>% 
+  select(fa_par_union_int_nat:fa_par_union_int_muco) %>% 
+  colnames()
+
+P4_C2 <- P4_C1 %>% 
+  rcd_vars(all_of(simple), fa_pa_complet) %>% 
+  rcd_vars_text(all_of(texte), fa_pa_complet) %>% 
+  rcd_vars_borne1(fa_pap_deces, all_of(deces_pere)) %>% 
+  rcd_vars_borne1(fa_pam_deces, all_of(deces_mere)) %>% 
+  rcd_vars_borne2(fa_pap_statut, all_of(job_pere)) %>% 
+  rcd_vars_borne2(fa_pam_statut, all_of(job_mere)) %>% 
+  rcd_vars_borne3(fa_par_union_int, all_of(separation))
 
 ```
 
