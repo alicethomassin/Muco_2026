@@ -140,3 +140,137 @@ M6_C1 <- M6_C0 %>%
 
 ```
 
+Corriger les NAs simples
+
+```{r}
+
+rcd_vars <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        ))
+      )
+    )
+}
+
+rcd_qcm3 <- function(df, complet, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{complet}} == 0 ~ -2,
+          {{borne}} == 0 & all_na_vars ~ -1,
+          {{complet}} == 1 & all_na_vars ~ -9,
+          {{complet}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+
+rcd_vars_borne1 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & is.na(.) ~ -1,
+          ({{borne}} == 1 | {{borne}} == -9) & is.na(.) ~ -9,
+          TRUE ~ 999
+        )
+      )
+    ))
+}
+
+rcd_qcm_borne1 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~.,
+          {{borne}} == 1 & !all_na_vars & is.na(.) ~ 0,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == -9 & all_na_vars ~ -9,
+          {{borne}} == 0 & all_na_vars ~ -1,
+          {{borne}} == 1 & all_na_vars ~ -9,
+          TRUE ~ 999
+        ))
+      )
+    ) %>% 
+    select(-all_na_vars)
+  
+}
+
+```
+
+
+```{r}
+
+quest_simples <- M6_C1 %>% 
+  select(qv_sa_etat:qv_ad_besoin, qv_sc_travailleur:qv_am_regime,
+         qv_am_complement, qv_am_ald:qv_am_rac) %>% 
+  colnames()
+
+QV5 <- M6_C1 %>% 
+  select(qv_ad_act01:qv_ad_act999) %>% 
+  colnames()
+
+QV18 <- M6_C1 %>% 
+  select(qv_am_type_1:qv_am_type_999) %>% 
+  colnames()
+
+QV22 <- M6_C1 %>% 
+  select(qv_am_rac_pour_1:qv_am_rac_pour_999) %>% 
+  colnames()
+
+M6_C2 <- M6_C1 %>% 
+  rcd_vars(all_of(quest_simples), qv_complet) %>% 
+  mutate(
+    qv_sa_etat = replace_when(
+      qv_sa_etat,
+      qv_sa_etat == 99 ~ -8,
+      qv_sa_etat == 88 ~ -9
+    )
+  ) %>% 
+  rcd_qcm3(qv_complet, qv_ad_besoin, all_of(QV5)) %>% 
+  rcd_vars_borne1(qv_ad_besoin, qv_ad_type) %>% 
+  mutate(
+    qv_ad_lien = replace_when(
+      qv_ad_lien,
+      is.na(qv_ad_lien) & qv_ad_type == 1 ~ -9,
+      is.na(qv_ad_lien) & qv_ad_type == -9 ~ -9,
+      is.na(qv_ad_lien) & qv_ad_type >= 2 ~ -1,
+      is.na(qv_ad_lien) & qv_ad_besoin == 0 ~ -1,
+      is.na(qv_ad_lien) & qv_complet == 0 ~ -2
+    )
+  ) %>% 
+  rcd_qcm_borne1(qv_am_complement, all_of(QV18)) %>% 
+  rcd_vars_borne1(qv_am_rac, qv_am_rac_montant) %>% 
+  mutate(
+    qv_am_rac = replace_when(
+      qv_am_rac,
+      qv_am_rac == 0 & qv_am_rac_montant > 0 ~ 1
+    )
+  ) %>% 
+  rcd_qcm_borne1(qv_am_rac, all_of(QV22))
+
+```
+
