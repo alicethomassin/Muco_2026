@@ -1,0 +1,86 @@
+---
+title: "E0_famille_couple"
+format: html
+---
+
+```{r Setup}
+library(tidyverse)
+library(questionr)
+```
+
+```{r}
+
+M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = F)
+
+C4_L0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_fa_04_couple_04.sas7bdat")
+```
+
+```{r}
+
+
+empty_cols_C4_L0 <- C4_L0 %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "nb_empty_cells") %>% 
+  filter(nb_empty_cells == nrow(C4_L0))
+
+### 1.1.3 Créer vecteur avec le nom des variables à retirer
+vars_vides <- empty_cols_C4_L0$variable
+
+### 1.1.4 Retirer les variables, corriger les formats et les NA character
+C4_L1 <- C4_L0 %>%
+  select(-all_of(vars_vides)) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%  
+  select(-c("tab_db",
+            "fa_type")) %>% 
+  select(fa_date_creation, couple_date_creation, id_date_creation, id_anonymat, 
+         id_sep, id_date_nais, id_sexe, sf_couple_1an, couple_sf_couple_1an,
+           sf_conjt_prenom, sf_conjt_sexe, sf_conjt_mois_nais, sf_an_conjt_nais,
+           sf_conjt_an_nais, sf_nature_union, sf_conjt_mois_union, sf_conjt_an_union,
+           sf_conjt_muco, sf_interromp, sf_interromp_par, sf_mois_interromp, sf_an_interromp,
+           sf_raison_muco, sf_conjt_enf, commentaires_fam) %>% 
+  mutate(
+    id_module = case_when(
+      is.na(id_date_creation) ~ id_anonymat,
+      !is.na(id_sep) ~ str_sub(id_sep, 7, 11)
+    ),
+    .after = id_anonymat
+  ) %>% 
+  mutate(
+    id_keep = case_when(
+      !is.na(id_sep) ~ str_sub(id_sep, 1, 5)
+    ),
+    .after = id_module
+  ) %>% 
+  mutate(
+    sf_conjt_prenom = str_to_upper(sf_conjt_prenom),
+    sf_conjt_prenom = replace_when(
+      sf_conjt_prenom,
+      sf_conjt_prenom == "NA" ~ "NAA"
+    )
+  )
+
+
+
+# rm(list = c("empty_cols_C4_L0", "vars_vides", "C4_L0"))
+```
+
+# Extraire les doublons
+
+```{r}
+
+doublons0 <- C4_L1 %>% 
+  filter(!is.na(id_module))
+
+```
+
