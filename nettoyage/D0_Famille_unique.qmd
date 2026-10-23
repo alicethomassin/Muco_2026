@@ -148,4 +148,30 @@ P4_C0 <- M4_L2 %>%
 ```
 
 
+## Identifier participants
+
+```{r}
+
+vars_check <- P4_C0 %>%
+  select(fa_pap_prenom:fa_par_union_int_muco) %>%
+  names()
+
+P4_C1 <- P4_C0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    fa_pa_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+```
 
