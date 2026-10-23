@@ -22,3 +22,48 @@ M6_b0 <- haven::read_sas("../../../raw_data/gb_ddb_qualite_06_test.sas7bdat")
 
 ```
 
+
+Réordonner les variables, faire modifications de base pour les caractéristiques de la base
+
+```{r}
+
+M6_b1 <- M6_b0 %>% 
+  relocate(c("id_sep", "qv_date_creation"), .after = id_anonymat) %>% 
+  relocate(commentaires_qual, .after = last_col()) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+  mutate(
+    id_anonymat = replace_when(
+      id_anonymat,
+      id_anonymat %in% M1_F2$id_module ~ str_sub(id_sep, 7, 11)
+    )
+  )
+
+
+```
+
+Importer la base avec l'identité
+
+```{r}
+
+M6_B0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_qv_06_test.sas7bdat")
+# Non je crois qu'il n'y a aucune variable créée
+
+M6_J0 <- full_join(
+  M6_b1,
+  M6_B0 %>% 
+    select(id_anonymat, id_date_creation),
+  by = "id_anonymat"
+) %>% 
+  relocate(id_date_creation, .after = qv_date_creation) %>% 
+  
+  # Retirer les deux doublons
+  filter_out(is.na(id_date_creation)) %>% 
+  select(-id_date_creation, -id_sep, -qv_type, -tab_db)
+
+```
+
