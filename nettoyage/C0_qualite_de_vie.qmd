@@ -1,0 +1,24 @@
+---
+title: "C0_qualite_de_vie"
+format: html
+---
+
+
+```{r}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
+
+```{r}
+
+M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
+# Peut-être pas nécessaire...
+M5_C4 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_logement_notag.csv", show_col_types = FALSE)
+
+M6_b0 <- haven::read_sas("../../../raw_data/gb_ddb_qualite_06_test.sas7bdat")
+
+```
+
