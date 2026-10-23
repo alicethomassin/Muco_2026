@@ -5,19 +5,19 @@ format: html
 
 Ce script sert à mettre en ordre la base des variables qui n'ont qu'une seule occurence, d'où le "unique". Donc tous les événements renouvelables seront traités dans d'autres bases. 
 
-```{r}
+```{r Setup}
 library(tidyverse)
 library(questionr)
 ```
 
-```{r}
+```{r Import}
 M1_F2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv", show_col_types = FALSE)
 
 ### 1.1.1 Importer la base
 M4_L0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bdat")
 ```
 
-```{r}
+```{r M4_L0 to M4_L1}
 ### 1.1.2 Identifier les colonnes vides
 empty_cols_M4_L0 <- M4_L0 %>%
   mutate(across(
@@ -64,7 +64,7 @@ rm(list = c("empty_cols_M4_L0", "vars_vides", "M4_L0"))
 
 Corriger les doublons
 
-```{r}
+```{r M4_L1 to M4_L2}
 
 M4_L2 <- M4_L1 %>% 
   group_by(id_anonymat) %>% 
@@ -83,5 +83,69 @@ M4_L2 <- M4_L1 %>%
   )
 
 ```
+Je peux repartir de M4_L2 pour faire le foyer puis le nombre d'enfants/freres/soeurs
+
+# Parents
+
+## Réduire les nombre de variables
+Je vais commencer à partir des parents, et fratrie
+```{r}
+
+sub_pf <- M4_L2 %>% 
+  select(pf_pere_prenom, pf_pere_mois_nais, pf_pere_an_nais, pf_pere_decede,
+         pf_pere_mois_deces, pf_pere_an_deces, pf_pere_etudes, pf_pere_prof,
+         pf_pere_statut, pf_pere_entreprise, pf_pere_qual, 
+         pf_mere_prenom,
+         pf_mere_mois_nais, pf_mere_an_nais, pf_mere_decede, pf_mere_mois_deces,
+         pf_mere_an_deces, pf_mere_etudes, pf_mere_prof, pf_mere_statut,
+         pf_mere_entreprise, pf_mere_qual,
+         pf_union_parents, pf_union_mois, pf_union_an, pf_parents_interromp,
+         pf_interromp_par, pf_interromp_mois, pf_interromp_an,
+         pf_raison_muco) %>% 
+  colnames()
+
+pere <- M4_L2 %>% 
+  select(starts_with("pf_pere")) %>% 
+  colnames()
+
+mere <- M4_L2 %>% 
+  select(starts_with("pf_mere")) %>% 
+  colnames()
+
+parents <- dplyr::setdiff(sub_pf, union(pere, mere))
+
+P4_C0 <- M4_L2 %>% 
+  select(fa_date_creation, id_anonymat, id_module, id_sexe, id_date_nais, all_of(sub_pf)) %>%
+  rename_with(~ gsub("^pf_pere", "fa_pap", .x), all_of(pere)) %>% 
+  rename_with(~ gsub("^pf_mere", "fa_pam", .x), all_of(mere)) %>% 
+  rename_with(~ gsub("^pf_", "fa_par_", .x), all_of(parents)) %>% 
+  rename(
+    "fa_pap_nais_mois" = "fa_pap_mois_nais",
+    "fa_pap_nais_an" = "fa_pap_an_nais",
+    "fa_pap_deces" = "fa_pap_decede",
+    "fa_pap_deces_mois" = "fa_pap_mois_deces",
+    "fa_pap_deces_an" = "fa_pap_an_deces",
+    "fa_pam_nais_mois" = "fa_pam_mois_nais",
+    "fa_pam_nais_an" = "fa_pam_an_nais",
+    "fa_pam_deces" = "fa_pam_decede",
+    "fa_pam_deces_mois" = "fa_pam_mois_deces",
+    "fa_pam_deces_an" = "fa_pam_an_deces",
+    "fa_par_union" = "fa_par_union_parents",
+    "fa_par_union_int" = "fa_par_parents_interromp",
+    "fa_par_union_int_nat" = "fa_par_interromp_par",
+    "fa_par_union_int_mois" = "fa_par_interromp_mois",
+    "fa_par_union_int_an" = "fa_par_interromp_an",
+    "fa_par_union_int_muco" = "fa_par_raison_muco"
+  ) %>% 
+  mutate(
+    fa_pam_prenom = str_to_upper(fa_pam_prenom),
+    fa_pap_prenom = str_to_upper(fa_pap_prenom),
+   fa_pam_prenom = replace_when(
+      fa_pam_prenom,
+      fa_pam_prenom == "NA" ~ "NAA"
+    ))
+
+```
+
 
 
