@@ -86,6 +86,8 @@ M4_L2 <- M4_L1 %>%
     by = "id_anonymat"
   )
 
+# write_csv(M4_L2, "../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv")
+
 ```
 Je peux repartir de M4_L2 pour faire le foyer puis le nombre d'enfants/freres/soeurs
 
