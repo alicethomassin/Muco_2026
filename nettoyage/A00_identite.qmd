@@ -39,35 +39,9 @@ M1_F1 <- M1_F0 %>%
   ), .after = id_sep) 
 
 
-  mutate(
-    id_centre_suivi = case_when(
-      is.na(id_centre1) ~ 0,
-      TRUE ~ 1) %>% factor()
-  ) %>% 
-  relocate(id_centre_suivi, .after = id_dep_nais) %>% 
-  mutate(
-    has_dbl = case_when(
-      is.na(id_sep) ~ "non",
-      TRUE ~ "oui"
-    ),
-      has_dbl = as.factor(has_dbl),
-    id_link = case_when(
-      has_dbl == "oui" ~ str_sub(id_sep, 7, 11),
-      TRUE ~ NA_character_
-    )
-  ) %>% 
-  relocate(has_dbl, .after = id_date_creation) %>% 
-  relocate(id_link, .after = id_anonymat) %>% 
-  select(-id_sep)
-
-
 ```
 
 ```{r M1_F1 to M1_F2}
-
-# Ajouter le nombre de centres de suivi
-vars_centre <- M1_F1 %>% 
-  select()
 
 M1_F2 <- M1_F1 %>%
   
@@ -117,7 +91,8 @@ M1_F2 <- M1_F1 %>%
     id_keep = id_anonymat,
     .after = id_anonymat
   ) %>% 
-  select(-id_sep)
+  select(-id_sep) %>% 
+  rename("id_doublon" = "id_module")
   
 
 ```
@@ -125,7 +100,9 @@ M1_F2 <- M1_F1 %>%
 
 ```{r Save}
 
-write_csv(M1_F2, "../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv")
+write_csv(M1_F2, "../../data_hors_git/process_data/thoa_identite.csv")
+
+# write_csv(M1_F2, "../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv")
 
 ```
 
