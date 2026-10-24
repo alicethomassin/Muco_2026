@@ -67,8 +67,9 @@ C4_L1 <- C4_L0 %>%
       select(id_anonymat, id_date_creation, id_date_nais, id_sexe),
     by = "id_anonymat",
     unmatched = "ignore"
-  ) %>% 
-  select(-fa_date_creation)
+  ) 
+# %>% 
+#   select(-fa_date_creation)
 
 
 
@@ -188,6 +189,26 @@ corr_4 <- corr_2 %>%
   # Retirer un doublon completement vide
   filter_out(id_anonymat == "GCXSD")
 
+# Ajouter date de participation à la famille -----------------------------------
+
+# Importer la base brute pour avoir tout le monde, la date pour famille et leur 
+# réponse sur le couple
+M4_L2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv",
+                         show_col_types = FALSE)
+
+# Extraire la date de participation au questionnaire famille
+date_famille <- M4_L2 %>% 
+  filter(id_anonymat %in% corr_4$id_keep) %>% 
+  select(id_keep = id_anonymat, fa_date_creation) %>% 
+  distinct(id_keep, .keep_all = TRUE)
+
+# Ajouter la donnée aux endroits manquants
+corr_5 <- corr_4 %>% 
+  rows_patch(
+    date_famille,
+    by = "id_keep",
+    unmatched = "ignore"
+  )
 
 ```
 
