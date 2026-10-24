@@ -224,6 +224,47 @@ rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4",
 ```
 
 
+```{r}
+
+M4_L2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv",
+                         show_col_types = FALSE)
+
+M4_L2_couple <- M4_L2 %>%
+  select(id_anonymat, "M4_sf_couple_1an" = "sf_couple_1an")
+
+C4_L3 <- C4_L2 %>% 
+  mutate(
+    sf_conjt_an_nais = replace_when(
+      sf_conjt_an_nais,
+      is.na(sf_conjt_an_nais) & !is.na(sf_an_conjt_nais) ~ sf_an_conjt_nais
+    )
+  ) %>% 
+  select(-sf_an_conjt_nais)
+
+C4_J0 <- full_join(
+  C4_L3,
+  M4_L2_couple,
+  by = "id_anonymat"
+) %>% 
+  relocate(M4_sf_couple_1an, .before = sf_couple_1an) %>%
+  rename(
+         "conjt_prenom"  = "sf_conjt_prenom",
+         "conjt_sexe"  = "sf_conjt_sexe",
+         "conjt_nais_an" = "sf_conjt_an_nais",
+         "conjt_nais_mois" = "sf_conjt_mois_nais",
+         "union_nature" = "sf_nature_union",
+         "union_mois" = "sf_conjt_mois_union",
+         "union_an" = "sf_conjt_an_union",
+         "conjt_muco" = "sf_conjt_muco",
+         "union_int" = "sf_interromp",
+         "union_int_par" = "sf_interromp_par",
+         "union_int_mois" = "sf_mois_interromp",
+         "union_int_an" = "sf_an_interromp",
+         "union_int_muco" = "sf_raison_muco",
+         "union_enf" = "sf_conjt_enf")
+
+```
+
 
 
 
