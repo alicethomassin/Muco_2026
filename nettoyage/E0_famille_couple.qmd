@@ -216,7 +216,7 @@ C4_L2 <- bind_rows(
 ) %>% 
   
   # Mettre en ordre pour classer les relations
-  arrange(id_anonymat, sf_conjt_an_union, sf_interromp)
+  arrange(id_anonymat, sf_conjt_an_union, desc(sf_interromp))
 
 
 rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4",
@@ -311,4 +311,41 @@ C4_J1 <- C4_J0 %>%
 
 ```
 
+Ordonner les relations
+
+```{r}
+
+C4_J2 <- C4_J1 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    fa_cp_nb_rlt = n(),
+    rang_cpl = row_number(),
+    .before = conjt_prenom
+  ) %>%
+  arrange(desc(fa_cp_complet), desc(fa_cp_nb_rlt)) %>% 
+  ungroup() %>% 
+  mutate(
+    rang_suff = case_when(
+      rang_cpl == 1 ~ "fa_cp1_",
+      rang_cpl == 2 ~ "fa_cp2_",
+      rang_cpl == 3 ~ "fa_cp3_",
+      rang_cpl == 4 ~ "fa_cp4_",
+      TRUE ~ "EEE"
+    ),
+    .after = rang_cpl
+  ) %>% 
+  select(-rang_cpl) %>% 
+  rename("rang_cpl" = "rang_suff") %>% 
+  mutate(
+    fa_cp_n_rela = case_when(
+      fa_cp_couple_1an == 0 ~ 0,
+      fa_cp_couple_1an == 1 & fa_cp_complet == 0 ~ -9,
+      fa_cp_complet == 1 ~ fa_cp_nb_rlt,
+      fa_cp_couple_1an == -9 ~ -2,
+      TRUE ~ 999
+    ),
+    .before = conjt_prenom
+  )
+
+```
 
