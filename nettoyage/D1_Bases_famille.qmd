@@ -10,7 +10,7 @@ library(tidyverse)
 library(questionr)
 ```
 
-# Base pour l'identité
+# thoa_identite
 
 ```{r}
 
@@ -20,7 +20,7 @@ identite <- readr::read_csv("../../data_hors_git/process_data/thoa_identite.csv"
 ```
 
 
-# Base pour les doublons et leur identité
+# thoa_475_identite
 
 ```{r}
 
@@ -64,9 +64,11 @@ cpl_famille<- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_fa_04_couple_
 
 # Famille 
 
-## Tout le monde
+## thoa_fam_id
 
 ```{r Import}
+#| execute: false
+
 
 ### 1.1.1 Importer la base
 fam_id_0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bdat")
@@ -74,7 +76,10 @@ fam_id_0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas
 
 ### Reduire le nb de variables
 
-```{r M4_L0 to M4_L1}
+```{r }
+#| execute: false
+
+
 ### 1.1.2 Identifier les colonnes vides
 empty_cols_fam_id <- fam_id_0 %>%
   mutate(across(
@@ -112,6 +117,8 @@ rm(list = c("empty_cols_fam_id", "vars_vides", "fam_id_0"))
 ### Corriger données d'identité manquantes
 
 ```{r}
+#| execute: false
+
 
 fam_id_2 <- fam_id_1 %>% 
   rows_patch(
@@ -156,6 +163,7 @@ fam_id_3 <- bind_rows(
 ### Réordonner
 
 ```{r}
+#| execute: FALSE
 
 fam_id_4 <- fam_id_3 %>% 
   relocate(c("sf_couple_1an", "sf_enfants", "pf_pere_prenom", "pf_pere_mois_nais",
@@ -176,33 +184,15 @@ fam_id_4 <- fam_id_3 %>%
 
 write_csv(fam_id_4, "../../data_hors_git/process_data/thoa_fam_id.csv")
 
+rm(list = c("doublons", "fam_id_1", "fam_id_2", "fam_id_3", "fam_id_4",
+            "identite_dbl"))
+
+fam_id_0 <- readr::read_csv("../../data_hors_git/process_data/thoa_fam_id.csv",
+                           show_col_types = FALSE)
 
 ```
 
 
-### Corriger les doublons
-
-```{r M4_L1 to M4_L2}
-
-fam_id_2 <- fam_id_1 %>% 
-  group_by(id_anonymat) %>% 
-  mutate(n = n(),
-         .after = id_module) %>% 
-  relocate(fo_revenus_corr, .after = id_module) %>%
-  relocate(id_sexe, .after = id_module) %>%
-  arrange(n, id_anonymat) %>%
-  ungroup() %>% 
-  filter_out(n == 2 & is.na(id_module)) %>% 
-  select(-n, -id_sep) %>%
-  rows_patch(
-    M1_F2 %>% 
-      select(id_anonymat, id_date_nais, id_sexe),
-    by = "id_anonymat"
-  )
-
-# write_csv(M4_L2, "../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv")
-
-```
 
 ## Que participants
 
@@ -210,6 +200,8 @@ fam_id_2 <- fam_id_1 %>%
 
 fam_0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_famille_04.sas7bdat")
 
+identite_dbl <- readr::read_csv("../../data_hors_git/process_data/thoa_475_identite.csv",
+                               show_col_types = FALSE)
 ```
 
 ### reduire nb de variables
@@ -245,15 +237,46 @@ fam_1 <- fam_0 %>%
   mutate(
     id_anonymat = replace_when(
       id_anonymat,
-      id_anonymat %in% M1_F2$id_module ~ str_sub(id_sep, 7, 11)
+      id_anonymat %in% identite_dbl$id_doublon ~ str_sub(id_sep, 7, 11)
     )
   ) %>% 
-  mutate(
-    id_module = case_when(
-      str_sub(id_sep, 7, 11) == id_anonymat ~ str_sub(id_sep, 1, 5)
-    ),
-    .after = id_sep
-  )
+  left_join(
+    identite_dbl %>% 
+      select(id_anonymat, id_doublon),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon, .after = id_anonymat) %>% 
+  select(-id_sep)
 
 rm(list = c("empty_cols_fam_0", "vars_vides", "fam_0"))
 ```
+
+### Reordonner variables
+
+```{r}
+
+fam_2 <- fam_1 %>% 
+  relocate(c("sf_couple_1an", "sf_enfants", "pf_pere_prenom", "pf_pere_mois_nais",
+             "pf_pere_an_nais", "pf_pere_decede", "pf_pere_mois_deces", 
+             "pf_pere_an_deces", "pf_pere_etudes", "pf_pere_prof", "pf_pere_statut",
+             "pf_pere_entreprise", "pf_pere_qual", "pf_mere_prenom", "pf_mere_an_nais",
+             "pf_mere_mois_nais", "pf_mere_decede", "pf_mere_mois_deces", "pf_mere_an_deces",
+             "pf_mere_etudes", "pf_mere_prof", "pf_mere_statut", "pf_mere_entreprise",
+             "pf_mere_qual", "pf_union_parents", "pf_union_mois", "pf_union_an",
+             "pf_parents_interromp", "pf_interromp_par", "pf_interromp_mois",
+             "pf_interromp_an", "pf_raison_muco", "pf_fratrie", "fo_vie", 
+             "fo_vie_autre", "fo_conjt_prof", "fo_conjt_ress", "fo_parent_prof",
+             "fo_parent_ress", "fo_pere_prof", "fo_mere_prof", "fo_vos_parents_ress",
+             "fo_membres_prof", "fo_membres_ress", "fo_vous_ress", "fo_revenus",
+             "fo_revenus_mois", "fo_revenus_an", "sf_matrimoniale",
+             "sf_enf_bio_nb", "sf_enf_adopte_nb", "sf_fratrie_bio_nb", "pf_rang_nais",
+             "sf_fratrie_demi_nb", "sf_fratrie_adopte_nb"), .after = commentaires_fam)
+
+
+write_csv(fam_2, "../../data_hors_git/process_data/thoa_fam.csv")
+
+fam_0 <- readr::read_csv("../../data_hors_git/process_data/thoa_fam.csv",
+                         show_col_types = FALSE)
+
+```
+
