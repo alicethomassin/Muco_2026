@@ -226,12 +226,15 @@ rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4",
 
 ```{r}
 
+# Importer la base brute pour avoir tout le monde et leur réponse sur le couple
 M4_L2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv",
                          show_col_types = FALSE)
 
+# Sélectionner nos deux variables d'intérêt
 M4_L2_couple <- M4_L2 %>%
   select(id_anonymat, "M4_sf_couple_1an" = "sf_couple_1an")
 
+# Apporter minis changements à la base avant d'ajouter tout le monde
 C4_L3 <- C4_L2 %>% 
   mutate(
     sf_conjt_an_nais = replace_when(
@@ -241,6 +244,7 @@ C4_L3 <- C4_L2 %>%
   ) %>% 
   select(-sf_an_conjt_nais)
 
+# Joindre tout le monde et renommer les variables
 C4_J0 <- full_join(
   C4_L3,
   M4_L2_couple,
@@ -263,8 +267,48 @@ C4_J0 <- full_join(
          "union_int_muco" = "sf_raison_muco",
          "union_enf" = "sf_conjt_enf")
 
+rm(list = c("C4_L1", "M4_L2", "M4_L2_couple", "C4_L2", "C4_L3"))
 ```
 
 
+
+```{r}
+
+C4_J1 <- C4_J0 %>% 
+  mutate(
+    
+    # Identifier ceux qui ont répondu
+    absent = if_all(conjt_prenom:union_enf, is.na),
+    
+    # Nouvelle variable pour la question du couple
+    fa_cp_couple_1an = case_when(
+      absent & M4_sf_couple_1an == 0 ~ 0,
+      absent & if_any(M4_sf_couple_1an:couple_sf_couple_1an, ~ . == 1) ~ 1,
+      !absent ~ 1,
+      absent & if_all(M4_sf_couple_1an:couple_sf_couple_1an, is.na) ~ -9,
+      TRUE ~ 999
+    ),
+    .after = couple_sf_couple_1an
+  ) %>% 
+  
+  # Retirer anciennes vars pour question du couple
+  select(-(M4_sf_couple_1an:couple_sf_couple_1an)) %>% 
+  
+  # Variable contrôle de participation
+  mutate(
+    fa_cp_complet = ifelse(absent, 0, 1),
+      .after = fa_cp_couple_1an
+  ) %>% 
+  select(-absent) %>% 
+  
+  # Remettre les données d'identité de ceux qui ont rejoint la base
+  rows_patch(
+    M1_F2 %>% 
+      select(any_of(colnames(C4_J0))),
+    by = "id_anonymat"
+  )
+
+
+```
 
 
