@@ -72,7 +72,7 @@ C4_L1 <- C4_L0 %>%
 
 
 
-# rm(list = c("empty_cols_C4_L0", "vars_vides", "C4_L0"))
+ rm(list = c("empty_cols_C4_L0", "vars_vides", "C4_L0"))
 ```
 
 # Extraire les doublons
@@ -107,41 +107,121 @@ rm(list = c("org_0", "dbl_0"))
 
 ```{r}
 
+# Extraire les doublons --------------------------------------------------------
+
 corr_0 <- C4_L1 %>% 
   filter(is.na(id_date_creation) | !is.na(id_sep))
 
+# Donner les bons identifiants -------------------------------------------------
 corr_1 <- corr_0 %>% 
+  
+  # Ajouter id_keep pour savoir quel identifiant garder à la fin
   left_join(
     registre_0 %>% 
       select(id_anonymat, id_keep),
     by = "id_anonymat"
   ) %>% 
   relocate(id_keep, .after = id_anonymat) %>% 
+  
+  # Remettre les données d'identité dans les cases vides
   rows_patch(
     registre_0 %>% 
       select(id_anonymat, id_date_creation, id_date_nais, id_sexe),
     by = "id_anonymat",
     unmatched = "ignore"
   ) %>% 
+  
+  # Remplir id_keep avec id_anonymat pour avoir une colonne propre d'identité
   mutate(
     id_keep = replace_when(
       id_keep,
       is.na(id_keep) ~ id_anonymat
     )
   ) %>% 
-  select(-id_sep) %>% 
-  arrange(id_keep, sf_conjt_an_union)
   
+  # Plus besoin de la variable
+  select(-id_sep) %>% 
+  
+  # Mettre en ordre pour examiner les relations
+  arrange(id_keep, sf_conjt_an_union)
 
 
+# Garder que les lignes différentes ------------------------------------------------
+  
+corr_2 <- corr_1 %>% 
+  group_by(id_keep) %>% 
+  
+  # Retirer les lignes pareilles
+  distinct(
+    pick(sf_conjt_prenom:sf_conjt_enf),
+    .keep_all = TRUE
+  ) %>% 
+  
+  # Trouver ceux qui ont plus d'une ligne pour un conjoint avec meme prenom
+  group_by(id_keep, sf_conjt_prenom) %>% 
+  mutate(
+    n = n()
+  ) %>% 
+  ungroup()
 
- 
 
+# Trier parmis ceux qui ont renseigné plus d'une fois une meme relation --------
+
+corr_3 <- corr_2 %>%
+  group_by(id_keep) %>% 
+  filter(n == 2) %>% 
+  
+  # Garder l'année d'union la plus ancienne
+  filter(sf_conjt_an_union == min(sf_conjt_an_union)) %>% 
+  ungroup()
+
+# Réunir les doublons ----------------------------------------------------------
+corr_4 <- corr_2 %>% 
+  
+  # Retirer ceux qu'on a modifiés
+  filter_out(id_keep %in% corr_3$id_keep) %>% 
+  bind_rows(corr_3) %>% 
+  
+  # Retirer variable inutile
+  select(-n) %>% 
+  
+  # Retirer un doublon completement vide
+  filter_out(id_anonymat == "GCXSD")
 
 
 ```
 
 
+Remettre les doublons avec le reste
+
+```{r}
+
+C4_L2 <- bind_rows(
+  
+  C4_L1 %>% 
+    
+    # Retirer variable inutile
+    select(-id_sep) %>% 
+    
+    # Retirer ceux sur qui on a travaillé
+    filter_out(id_anonymat %in% corr_0$id_anonymat),
+  
+  corr_4 %>% 
+    
+    # Modifier la colonne id_anonymat pour garder les bons ids
+    select(-id_anonymat) %>% 
+    rename(
+      "id_anonymat" = "id_keep"
+    )
+) %>% 
+  
+  # Mettre en ordre pour classer les relations
+  arrange(id_anonymat, sf_conjt_an_union, sf_interromp)
+
+
+rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4",
+            "registre_0"))
+```
 
 
 
