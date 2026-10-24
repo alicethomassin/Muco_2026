@@ -100,7 +100,7 @@ M1_F2 <- M1_F1 %>%
 
 ```{r Save}
 
-write_csv(M1_F2, "../../data_hors_git/process_data/thoa_identite.csv")
+# write_csv(M1_F2, "../../data_hors_git/process_data/thoa_identite.csv")
 
 # write_csv(M1_F2, "../../data_hors_git/clean_data/aut26/thoa_identite_notag.csv")
 
