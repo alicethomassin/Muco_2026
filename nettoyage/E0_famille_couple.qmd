@@ -50,25 +50,25 @@ C4_L1 <- C4_L0 %>%
            sf_conjt_muco, sf_interromp, sf_interromp_par, sf_mois_interromp, sf_an_interromp,
            sf_raison_muco, sf_conjt_enf, commentaires_fam) %>% 
   mutate(
-    id_module = case_when(
-      is.na(id_date_creation) ~ id_anonymat,
-      !is.na(id_sep) ~ str_sub(id_sep, 7, 11)
-    ),
-    .after = id_anonymat
-  ) %>% 
-  mutate(
-    id_keep = case_when(
-      !is.na(id_sep) ~ str_sub(id_sep, 1, 5)
-    ),
-    .after = id_module
-  ) %>% 
-  mutate(
     sf_conjt_prenom = str_to_upper(sf_conjt_prenom),
     sf_conjt_prenom = replace_when(
       sf_conjt_prenom,
       sf_conjt_prenom == "NA" ~ "NAA"
     )
-  )
+  ) %>% 
+  
+  # Il y a 3 personnes qui n'ont pas leurs données d'identité, sans pour autant
+  # être des doublons. Je vais essayer de corriger leur info avant d'extraire les
+  # doublons. Le défi ça va ensuite être d'extraire les doublons sans se référer
+  # à l'info d'identité manquante
+  
+  rows_patch(
+    M1_F2 %>% 
+      select(id_anonymat, id_date_creation, id_date_nais, id_sexe),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  ) %>% 
+  select(-fa_date_creation)
 
 
 
@@ -76,11 +76,74 @@ C4_L1 <- C4_L0 %>%
 ```
 
 # Extraire les doublons
+Faire une base avec les correspondances pour les doublons
 
 ```{r}
 
-doublons0 <- C4_L1 %>% 
-  filter(!is.na(id_module))
+org_0 <- M1_F2 %>% 
+  filter(!is.na(id_module)) %>% 
+  rename(
+    "id_doublon" = "id_module"
+  )
+
+dbl_0 <- org_0 %>% 
+  select(-id_anonymat) %>% 
+  rename(
+    "id_anonymat" = "id_doublon"
+  ) %>% 
+  mutate(
+    id_doublon = id_anonymat,
+    .after = id_keep
+  )
+
+registre_0 <- bind_rows(
+  org_0,
+  dbl_0
+) %>% 
+  arrange(id_keep)
+
+rm(list = c("org_0", "dbl_0"))
+```
+
+```{r}
+
+corr_0 <- C4_L1 %>% 
+  filter(is.na(id_date_creation) | !is.na(id_sep))
+
+corr_1 <- corr_0 %>% 
+  left_join(
+    registre_0 %>% 
+      select(id_anonymat, id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_keep, .after = id_anonymat) %>% 
+  rows_patch(
+    registre_0 %>% 
+      select(id_anonymat, id_date_creation, id_date_nais, id_sexe),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  ) %>% 
+  mutate(
+    id_keep = replace_when(
+      id_keep,
+      is.na(id_keep) ~ id_anonymat
+    )
+  ) %>% 
+  select(-id_sep) %>% 
+  arrange(id_keep, sf_conjt_an_union)
+  
+
+
+
+ 
+
+
 
 ```
+
+
+
+
+
+
 
