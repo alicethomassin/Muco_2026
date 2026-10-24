@@ -227,7 +227,7 @@ C4_L2 <- bind_rows(
     # Retirer ceux sur qui on a travaillé
     filter_out(id_anonymat %in% corr_0$id_anonymat),
   
-  corr_4 %>% 
+  corr_5 %>% 
     
     # Modifier la colonne id_anonymat pour garder les bons ids
     select(-id_anonymat) %>% 
@@ -240,16 +240,16 @@ C4_L2 <- bind_rows(
   arrange(id_anonymat, sf_conjt_an_union, desc(sf_interromp))
 
 
-rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4",
-            "registre_0"))
+rm(list = c("corr_0", "corr_1", "corr_2", "corr_3", "corr_4", "corr_5", 
+            "date_famille", "registre_0"))
 ```
+
+
+
 
 
 ```{r}
 
-# Importer la base brute pour avoir tout le monde et leur réponse sur le couple
-M4_L2 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_M4_L2.csv",
-                         show_col_types = FALSE)
 
 # Sélectionner nos deux variables d'intérêt
 M4_L2_couple <- M4_L2 %>%
@@ -288,7 +288,32 @@ C4_J0 <- full_join(
          "union_int_muco" = "sf_raison_muco",
          "union_enf" = "sf_conjt_enf")
 
-rm(list = c("C4_L1", "M4_L2", "M4_L2_couple", "C4_L2", "C4_L3"))
+# rm(list = c("C4_L1", "M4_L2", "M4_L2_couple", "C4_L2", "C4_L3"))
+```
+
+```{r}
+
+# Ajouter variable contrôle participation à la famille pour coder la non réponse
+
+parents <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_parents_notag.csv",
+                           show_col_types = FALSE)
+
+participation_fam <- parents %>% 
+  select(fa_date_creation, id_anonymat, fa_pa_complet)
+
+C4_J1 <- C4_J0 %>% 
+  rows_patch(
+    participation_fam %>% 
+      select(fa_date_creation, id_anonymat),
+    by = "id_anonymat"
+  ) %>% 
+  left_join(
+    participation_fam %>% 
+      select(id_anonymat, fa_pa_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(fa_pa_complet, .after = id_anonymat)
+
 ```
 
 
