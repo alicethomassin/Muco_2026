@@ -18,8 +18,6 @@ M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
 
 M5_A0 <- haven::read_sas("../../../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
 
-M5_S0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
-
 
 ```
 
@@ -166,5 +164,49 @@ write_csv(M5_C0, "../../data_hors_git/process_data/thoa_M5_C0.csv")
 
 rm(list = c("M5_A0", "M5_A1", "M5_A2", "M5_B0", "M5_B1", "M5_C0", "vars_check",
             "doublons", "doublons_corr"))
+```
+
+# logement_05
+
+```{r}
+
+M5_S0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
+
+```
+
+## Corriger les doublons
+
+```{r M5_S0 to M5_S2}
+
+# Ajouter id_doublon
+M5_S1 <- M5_S0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -lo_type, -tab_db, -fa_amenag) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  ))
+
+# Identifier les doublons
+
+doublons <- M5_S1 %>% 
+  filter(id_anonymat == id_doublon) 
+
+doublons_corr <- doublons %>% 
+  select(-id_anonymat, id_anonymat = id_keep) %>% 
+  mutate(id_keep = id_anonymat) %>% 
+  relocate(id_anonymat, id_doublon, id_keep)
+
+M5_S2 <- M5_S1 %>% 
+  filter_out(id_anonymat %in% doublons$id_anonymat) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat)
 ```
 
