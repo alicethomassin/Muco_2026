@@ -4,6 +4,7 @@ format: html
 ---
 
 ```{r}
-lgt0 <- readr::read_csv("../../data_hors_git/clean_data/aut26/thoa_logement_notag.csv", show_col_types = FALSE)
+lgt0 <- readr::read_csv("../../data_hors_git/to_tag/thoa_logement_tt.csv", 
+                        show_col_types = FALSE)
 ```
 
