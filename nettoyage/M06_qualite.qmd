@@ -1,0 +1,13 @@
+---
+title: "M06_qualite"
+format: html
+---
+
+```{r Setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
+
