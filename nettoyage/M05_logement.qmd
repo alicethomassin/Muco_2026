@@ -41,7 +41,13 @@ M5_A1 <- M5_A0 %>%
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
-  ))
+  )) %>% 
+  mutate(
+    id_prenom = replace_when(
+      id_prenom,
+      id_prenom == "NA" ~ "NAA"
+    )
+  )
 
 # Remplir les données manquantes de l'identité
 
@@ -370,7 +376,7 @@ M5_D1 <- M5_D0 %>%
 
 ```
 
-## Recoder QCM
+## NAs QCM
 
 ```{r fonctions_qcm}
 
@@ -407,6 +413,7 @@ rcd_qcm_borne <- function(df, borne, vars, complet){
           {{borne}} == -2 ~ -2,
           {{borne}} == 0 & all_na_vars ~ -1,
           {{borne}} == 1 & all_na_vars ~ -9,
+          {{borne}} == -9 & all_na_vars ~ -9,
           {{borne}} == 1 & is.na(.x) ~ 0,
           TRUE ~ -999                           
         ))
@@ -445,8 +452,83 @@ M5_D2 <- M5_D1 %>%
   ) %>% 
   rcd_qcm_borne(lo_demenag, all_of(vars_L11), lo_complet)
 
-rm(list = c("vars_simples", "vars_L8", "vars_L5", "vars_L11"))
-  
+# rm(list = c("vars_simples", "vars_L8", "vars_L5", "vars_L11"))
+
+```
+
+## NAs texte
+
+```{r}
+
+rcd_texte_autre <- function(df, borne, reponse){
+  df %>% 
+    mutate(
+      {{reponse}} := case_when(
+        !is.na({{reponse}}) ~ {{reponse}},
+        {{borne}} == 999 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -2 & is.na({{reponse}}) ~ "-2",
+        {{borne}} == -9 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -1 & is.na({{reponse}}) ~ "-1",
+        {{borne}} >= 0 & {{borne}} <= 90 & is.na({{reponse}}) ~ "-1",
+        TRUE ~ "-999"
+      )
+    )
+}
+
+rcd_texte_borne1 <- function(df, borne, reponse){
+  df %>% 
+    mutate(
+      {{reponse}} := case_when(
+        !is.na({{reponse}}) ~ {{reponse}},
+        ({{borne}} == 1 | {{borne}} == 2) & is.na({{reponse}}) ~ "-9",
+        {{borne}} == 0 & is.na({{reponse}}) ~ "-1",
+        {{borne}} == -2 & is.na({{reponse}}) ~ "-2",
+        {{borne}} == -9 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -1 & is.na({{reponse}}) ~ "-1",
+        TRUE ~ "-999"
+      )
+    )
+}
+
+rcd_texte_qcm <- function(df, borne, reponse){
+  df %>% 
+    mutate(
+      {{reponse}} := case_when(
+        !is.na({{reponse}}) ~ {{reponse}},
+        {{borne}} == 1 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == 0 & is.na({{reponse}}) ~ "-1",
+        {{borne}} == -2 & is.na({{reponse}}) ~ "-2",
+        {{borne}} == -9 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -1 & is.na({{reponse}}) ~ "-1",
+        TRUE ~ "-999"
+      )
+    )
+}
+
+
+```
+
+
+```{r M5_D2 to M5_D3}
+
+M5_D3 <- M5_D2 %>% 
+  rcd_texte_autre(lo_type_logement, lo_type_logement_autre) %>% 
+  rcd_texte_autre(lo_statut_occup, lo_statut_occup_autre) %>% 
+  rcd_texte_qcm(lo_occup_cause_999, lo_occup_cause_autre) %>% 
+  rcd_texte_borne1(lo_amenag_logement, lo_amenag_logement_precis) %>% 
+  rcd_texte_qcm(lo_emprunt_4, lo_emprunt_precis) %>% 
+  rcd_texte_qcm(lo_demenag_cause_999, lo_demenag_cause_autre)
+
+
+
+```
+
+
+## Export
+
+```{r}
+
+write_csv(M5_D3, "../../data_hors_git/to_tag/thoa_logement_tt.csv")
 
 ```
 
