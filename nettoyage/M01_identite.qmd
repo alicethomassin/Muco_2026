@@ -134,6 +134,8 @@ M1_A3 <- M1_A2 %>%
 
 write_csv(M1_A2, "../../data_hors_git/clean_data/aut26/thoa_M1_A2.csv")
 
+write_csv(M1_A2, "../../data_hors_git/to_tag/thoa_identite_tt.csv")
+
 write_csv(M1_A3, "../../data_hors_git/process_data/thoa_M1_A3.csv")
 
 
