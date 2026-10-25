@@ -23,7 +23,9 @@ M5_S0 <- haven::read_sas("../../../raw_data/gb_ddb_logement_05.sas7bdat")
 
 ```
 
-# Corriger données d'identité
+# id_01_lo_05
+
+## Corriger données d'identité
 
 ```{r M5_A0 to M5_A2}
 
@@ -56,8 +58,8 @@ M5_A2 <- M5_A1 %>%
 
 ```
 
-# Travailler sur les colonnes
-## Renommer et réordonner
+## Travailler sur les colonnes
+### Renommer et réordonner
 
 ```{r M5_A2 to M5_B0}
 
@@ -91,7 +93,7 @@ M5_B0 <- M5_A2 %>%
 rm(vars_sub_la)
 ```
 
-## Identifier absents
+### Identifier absents
 
 ```{r M5_B0 to M5_B1}
 
@@ -126,9 +128,9 @@ M5_B1 <- M5_B0 %>%
 
 ```
 
-# Travailler sur les lignes
+## Travailler sur les lignes
 
-## Retirer les doublons
+### Retirer les doublons
 
 ```{r M5_B1 to M5_C0}
 
@@ -154,5 +156,15 @@ M5_C0 <- M5_B1 %>%
   bind_rows(doublons_corr) %>% 
   arrange(id_anonymat)
 
+```
+
+## Export de la base avant le recodage
+
+```{r}
+
+write_csv(M5_C0, "../../data_hors_git/process_data/thoa_M5_C0.csv")
+
+rm(list = c("M5_A0", "M5_A1", "M5_A2", "M5_B0", "M5_B1", "M5_C0", "vars_check",
+            "doublons", "doublons_corr"))
 ```
 
