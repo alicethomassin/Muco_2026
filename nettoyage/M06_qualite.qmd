@@ -106,3 +106,30 @@ M6_B0 <- M6_A2 %>%
   select(-qv_sa_autre_precisez)
 ```
 
+# Identifier absents
+
+```{r}
+
+vars_check <- M6_B0 %>%
+  select(qv_sa_etat:qv_am_rac_pour_autre) %>%
+  names()
+
+M6_B1 <- M6_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    qv_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+```
+
