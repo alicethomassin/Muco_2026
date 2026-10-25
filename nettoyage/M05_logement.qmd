@@ -113,7 +113,15 @@ M5_B1 <- M5_B0 %>%
     ),
     .after = id_anonymat
   ) %>% 
-  select(-absent)
+  select(-absent) %>% 
+  
+  # Ajouter petit changement unique
+  mutate(
+    lo_dep_centre1 = replace_when(
+      lo_dep_centre1,
+      id_anonymat == "WUJIE" ~ -8L
+    )
+  )
 
 ```
 
