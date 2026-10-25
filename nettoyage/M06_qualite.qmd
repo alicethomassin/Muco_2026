@@ -58,3 +58,51 @@ M6_A2 <- M6_A1 %>%
   select(-(qv_type:id_age_cat_3))
 ```
 
+# Renommer et réordonner
+
+```{r}
+add_qv <- M6_A2 %>% 
+  select(all_of(starts_with("sa_")),
+         all_of(starts_with("sc_")),
+         all_of(starts_with("am_")),
+         ad_besoin,
+         ad_lien,
+         ad_type,
+         ad_lien_autre) %>% 
+  colnames()
+
+M6_B0 <- M6_A2 %>% 
+  rename_with(~ paste0("qv_", .x), all_of(add_qv)) %>%
+  rename("qv_commentaires" = "commentaires_qual",
+         "qv_ad_act01" = "VAR11",
+         "qv_ad_act02" = "VAR2",
+         "qv_ad_act03" = "VAR3",
+         "qv_ad_act04" = "VAR4",
+         "qv_ad_act05" = "VAR5",
+         "qv_ad_act06" = "VAR6",
+         "qv_ad_act07" = "VAR7",
+         "qv_ad_act08" = "VAR8",
+         "qv_ad_act09" = "VAR9",
+         "qv_ad_act10" = "VAR10",
+         "qv_ad_act999" = "ad_activites_999",
+         "qv_ad_act_autre" = "ad_activites_autre") %>% 
+  
+  # Mettre toutes les variables en ordre
+  relocate(id_anonymat, id_doublon, id_keep, qv_date_creation,
+           qv_sa_etat, qv_sa_mobilite, qv_sa_autonomie, qv_sa_activites,
+           qv_sa_douleurs, qv_sa_anxiete, 
+           qv_sa_compl, qv_sa_medic, qv_sa_antibio, qv_sa_kine, qv_sa_hospi, qv_sa_transp,
+           qv_ad_besoin, qv_ad_act01, qv_ad_act02:qv_ad_act10, qv_ad_act999, qv_ad_act_autre,
+           qv_ad_type, qv_ad_lien, qv_ad_lien_autre, 
+           qv_sc_travailleur, qv_sc_difficultes, qv_sc_sport, qv_sc_spectacle, 
+           qv_sc_vacances, qv_sc_contacts, qv_sc_heberger, qv_sc_aide_materielle,
+           qv_am_regime, qv_am_regime_autre, qv_am_complement, 
+           qv_am_type_1, qv_am_type_2, qv_am_type_999, qv_am_type_autre,
+           qv_am_ald, qv_am_rac, qv_am_rac_montant, 
+           qv_am_rac_pour_1:qv_am_rac_pour_autre, qv_commentaires, id_date_creation,
+           id_centre1:id_sexe) %>% 
+  
+  # Retirer variable inutile
+  select(-qv_sa_autre_precisez)
+```
+
