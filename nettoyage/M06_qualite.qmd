@@ -162,6 +162,8 @@ M6_C0 <- M6_B1 %>%
 
 # Recoder les NAs
 
+## Modalités de réponse
+
 ```{r}
 
 rcd_simple_1 <- function(df, vars, complet){
@@ -289,6 +291,76 @@ M6_C1 <- M6_C0 %>%
   rcd_qcm_borne(qv_am_rac, all_of(QV22))
 
 rm(list = c("quest_simples", "QV18", "QV22", "QV5", "vars_check"))
+rm(list = c("doublons", "doublons_corr", "M1_A3", "M6_A0", "M6_A1", "M6_A2",
+            "M6_B0", "M6_B1", "M6_C0", "add_qv", "out_V7", "rcd_borne_bin",
+            "rcd_borne_opt1", "rcd_qcm_borne", "rcd_simple_1"))
+
+```
+
+## Réponses textuelles
+
+```{r}
+
+rcd_texte_qcm <- function(df, borne, reponse){
+  df %>% 
+    mutate(
+      {{reponse}} := case_when(
+        !is.na({{reponse}}) ~ {{reponse}},
+        {{borne}} == 1 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == 0 & is.na({{reponse}}) ~ "-1",
+        {{borne}} == -2 & is.na({{reponse}}) ~ "-2",
+        {{borne}} == -9 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -1 & is.na({{reponse}}) ~ "-1",
+        TRUE ~ "-999"
+      )
+    )
+}
+
+rcd_texte_autre <- function(df, borne, reponse){
+  df %>% 
+    mutate(
+      {{reponse}} := case_when(
+        !is.na({{reponse}}) ~ {{reponse}},
+        {{borne}} == 999 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -2 & is.na({{reponse}}) ~ "-2",
+        {{borne}} == -9 & is.na({{reponse}}) ~ "-9",
+        {{borne}} == -1 & is.na({{reponse}}) ~ "-1",
+        {{borne}} >= 0 & {{borne}} <= 90 & is.na({{reponse}}) ~ "-1",
+        TRUE ~ "-999"
+      )
+    )
+}
+
+
+```
+
+```{r M6_C1 to M6_C2}
+
+M6_C2 <- M6_C1 %>% 
+  rcd_texte_qcm(qv_ad_act999, qv_ad_act_autre) %>% 
+  select(-qv_ad_lien_autre) %>% 
+  rcd_texte_autre(qv_am_regime, qv_am_regime_autre) %>% 
+  rcd_texte_qcm(qv_am_type_999, qv_am_type_autre) %>% 
+  rcd_texte_qcm(qv_am_rac_pour_999, qv_am_rac_pour_autre)
+
+```
+
+Verifier que tout est recodé
+
+```{r}
+
+verif <- M6_C2 %>% 
+  filter(if_any(qv_sa_etat:qv_am_rac_pour_autre, ~ is.na(.)))
+
+
+```
+
+
+# Export
+
+```{r}
+
+write_csv(M6_C2, "../../data_hors_git/to_tag/thoa_qualite_tt.csv")
 
 ```
 
