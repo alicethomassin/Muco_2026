@@ -133,3 +133,30 @@ M6_B1 <- M6_B0 %>%
 
 ```
 
+# Retirer doublons
+
+```{r M6_B1 to M6_C0}
+
+# Identifier les doublons
+doublons <- M6_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  relocate(c("id_doublon", "id_keep"), .after = id_anonymat)
+
+# Corriger les données d'identité issues du questionnaire
+
+doublons_corr <- doublons %>%
+  mutate(
+    id_anonymat = id_keep
+  ) %>% 
+  filter(qv_complet == 1)
+
+# Joindre les données propres
+M6_C0 <- M6_B1 %>% 
+  filter_out(id_keep %in% doublons$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat)
+
+```
+
