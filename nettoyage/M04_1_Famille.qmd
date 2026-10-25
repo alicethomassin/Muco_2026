@@ -213,4 +213,4 @@ M4_B1 <- M4_B0 %>%
   select(-absent)
 ```
 
- 
+ # Retirer les doublons
