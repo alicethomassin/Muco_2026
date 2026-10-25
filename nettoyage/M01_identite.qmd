@@ -9,7 +9,7 @@ library(questionr)
 
 ```
 
-```{r M1_F0 to M1_F1}
+```{r M1_A0 to M1_A1}
 # Importer la base brute de l'identité
 M1_A0 <- haven::read_sas("../../../raw_data/gb_ddb_identite_01.sas7bdat")
 
@@ -38,5 +38,60 @@ M1_A1 <- M1_A0 %>%
              "id_date_nais", "id_age", "id_lieu_nais", "id_dep_nais"
   ), .after = id_sep) 
 
+
+```
+
+```{r M1_A1 to M1_A2}
+
+M1_A2 <- M1_A1 %>%
+  
+  # Compter le nombre de centres suivis
+  # Ceux qui n'ont pas répondu ont -9
+  mutate(
+    id_nb_centres = case_when(
+      is.na(id_centre1) ~ -9L,
+      TRUE ~ rowSums(across(id_centre1:id_centre3, ~ !is.na(.)))
+  )) %>% 
+  
+  # Identifier ceux qui n'ont pas répondu aux centres
+  mutate(
+    tout_na = if_all(id_centre1:id_centre2, is.na)
+  ) %>% 
+  
+  # Recoder les NAs pour les centres
+  mutate(
+    across(
+      id_centre1:id_centre3,
+      ~ case_when(
+        !is.na(.) ~ .,
+        tout_na ~ "-9",
+        is.na(.) ~ "-1",
+        TRUE ~ "ERR"
+      )
+    )
+  ) %>% 
+  
+  # Retirer notre variable intermédiaire
+  select(-tout_na) %>% 
+  
+  # Recoder ceux qui n'ont pas répondu au dep de naissance
+  mutate(
+    id_dep_nais = replace_when(
+      id_dep_nais,
+      is.na(id_dep_nais) ~ "-9"
+    )
+  ) %>% 
+  
+  # Creer les identifiants pour lier les doublons
+  mutate(
+    id_doublon = case_when(
+      !is.na(id_sep) ~ str_sub(id_sep, 7, 11),
+      TRUE ~ NA_character_
+    ),
+    id_keep = id_anonymat,
+    .after = id_anonymat
+  ) %>% 
+  select(-id_sep)
+  
 
 ```
