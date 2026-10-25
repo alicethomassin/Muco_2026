@@ -56,4 +56,34 @@ M5_A2 <- M5_A1 %>%
 
 ```
 
+# Renommer et réordonner
+
+```{r M5_A2 to M5_B0}
+
+vars_sub_la <- M5_A2 %>% 
+  select(all_of(starts_with("la_"))) %>% 
+  colnames()
+
+M5_B0 <- M5_A2 %>% 
+  rename_with(~ gsub("^la_", "lo_", .x), all_of(vars_sub_la)) %>% 
+  rename("lo_commentaires" = "commentaires_loge",
+         "lo_dep_centre1" = "dep_centre1",
+         "lo_statut_occup" = "lo_occup_logement",
+         "lo_statut_occup_autre" = "lo_occup_logement_autre",
+         "lo_dep_situ_centre1" = "dep_la_situ_centre1") %>% 
+  relocate(c("lo_date_creation", "lo_an_logement",
+             "lo_situ_logement", "lo_situ_dep", "lo_dep_situ_centre1", "lo_situ_pays"),
+           .after = id_age) %>% 
+  relocate(lo_dep_situ_centre1, .after = lo_dep_centre1) %>%
+  relocate(c("lo_type_logement", "lo_type_logement_autre", "lo_statut_occup",
+             "lo_statut_occup_autre", "lo_occup_cause_1", "lo_occup_cause_2",
+             "lo_occup_cause_3", "lo_occup_cause_999", "lo_occup_cause_autre",
+             "lo_amenag_logement", "lo_amenag_logement_precis", "lo_emprunt_1",
+             "lo_emprunt_2", "lo_emprunt_3", "lo_emprunt_4", "lo_emprunt_5",
+             "lo_emprunt_6", "lo_emprunt_precis", "lo_demenag", "lo_demenag_cause_1",
+             "lo_demenag_cause_2", "lo_demenag_cause_999", "lo_demenag_cause_autre"),
+           .after = lo_dep_situ_centre1) %>% 
+  relocate(lo_commentaires, .after = last_col()) %>% 
+  select(-fa_amenag)
+```
 
