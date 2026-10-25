@@ -84,6 +84,36 @@ M5_B0 <- M5_A2 %>%
              "lo_demenag_cause_2", "lo_demenag_cause_999", "lo_demenag_cause_autre"),
            .after = lo_dep_situ_centre1) %>% 
   relocate(lo_commentaires, .after = last_col()) %>% 
-  select(-fa_amenag)
+  select(-fa_amenag) %>% 
+  relocate(id_doublon:id_age, .after = last_col())
+
+rm(vars_sub_la)
+```
+
+# Identifier absents
+
+```{r M5_B0 to M5_B1}
+
+vars_check <- M5_B0 %>%
+  select(lo_an_logement:lo_situ_pays, lo_type_logement:lo_demenag_cause_autre) %>%
+  names()
+
+M5_B1 <- M5_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    lo_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
 ```
 
