@@ -160,3 +160,135 @@ M6_C0 <- M6_B1 %>%
 
 ```
 
+# Recoder les NAs
+
+```{r}
+
+rcd_simple_1 <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        ))
+      )
+    )
+}
+
+rcd_borne_bin <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == 1 ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == 0 ~ -1,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcd_borne_opt1 <- function(df, borne, x, out, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == x ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          is.na(.) & {{borne}} %in% {{out}} ~ -1,
+        )
+      )
+    )
+}
+
+```
+
+```{r}
+
+rcd_qcm_borne <- function(df, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & all_na_vars ~ -1,
+          {{borne}} == 1 & all_na_vars ~ -9,
+          {{borne}} == -9 & all_na_vars ~ -9,
+          {{borne}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+```
+
+
+```{r M6_C0 to M6_C1}
+
+quest_simples <- M6_C0 %>% 
+  select(qv_sa_etat:qv_ad_besoin, qv_sc_travailleur:qv_am_regime,
+         qv_am_complement, qv_am_ald:qv_am_rac) %>% 
+  colnames()
+
+QV5 <- M6_C0 %>% 
+  select(qv_ad_act01:qv_ad_act999) %>% 
+  colnames()
+
+out_V7 <- c(2, 3)
+
+QV18 <- M6_C0 %>% 
+  select(qv_am_type_1:qv_am_type_999) %>% 
+  colnames()
+
+QV22 <- M6_C0 %>% 
+  select(qv_am_rac_pour_1:qv_am_rac_pour_999) %>% 
+  colnames()
+
+M6_C1 <- M6_C0 %>% 
+  rcd_simple_1(all_of(quest_simples), qv_complet) %>% 
+  
+  # Corriger à la main pcq option dans le questionnaire pour jsp et ne pas répondre
+  # donc lui remettre notre codification
+  mutate(
+    qv_sa_etat = replace_when(
+      qv_sa_etat,
+      qv_sa_etat == 99 ~ -8,
+      qv_sa_etat == 88 ~ -9
+    )
+  ) %>% 
+  rcd_borne_bin(qv_ad_besoin, qv_ad_type) %>%
+  rcd_borne_opt1(qv_ad_type, 1, out_V7, qv_ad_lien) %>% 
+  rcd_qcm_borne(qv_ad_besoin, all_of(QV5)) %>% 
+  rcd_qcm_borne(qv_am_complement, all_of(QV18)) %>% 
+  mutate(
+    qv_am_rac = replace_when(
+      qv_am_rac,
+      qv_am_rac == 0 & qv_am_rac_montant > 0 ~ 1
+    )
+  ) %>% 
+  rcd_borne_bin(qv_am_rac, qv_am_rac_montant) %>% 
+  rcd_qcm_borne(qv_am_rac, all_of(QV22))
+
+rm(list = c("quest_simples", "QV18", "QV22", "QV5", "vars_check"))
+
+```
+
