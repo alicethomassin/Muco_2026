@@ -288,9 +288,9 @@ M5_C0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M5_C0.csv",
 
 ## NAs uniques
 
-```{r M5_C0 to M5_C1}
+```{r M5_C0 to M5_D0}
 
-M5_C1 <- M5_C0 %>% 
+M5_D0 <- M5_C0 %>% 
   mutate(
     
     # lo_situ_pays est particulier parce qu'une modalité ne figure que si la
@@ -316,7 +316,7 @@ M5_C1 <- M5_C0 %>%
       is.na(lo_situ_dep) & lo_complet == 0 ~ -2,
       is.na(lo_situ_dep) & lo_situ_logement == 2 ~ -1,
       is.na(lo_situ_dep) & lo_complet == 1 ~ -9,
-      TRUE ~ 999
+      TRUE ~ -999
     ),
     
     # Ici on remplace à la main, parce que la donnée est aussi unique.
@@ -328,10 +328,125 @@ M5_C1 <- M5_C0 %>%
       lo_complet == 0 ~ "-2",
       lo_situ_dep == -9 ~ "-9",
       lo_situ_dep != lo_dep_centre1 ~ "Departement different",
-      TRUE ~ "999"
+      TRUE ~ "-999"
     )
   ) %>% 
   relocate(lo_situation_cor, .after = lo_dep_situ_centre1) %>% 
   select(-lo_dep_situ_centre1)
+```
+
+## NAs simples
+
+```{r fonction_simple}
+
+rcd_simple_1 <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        ))
+      )
+    )
+}
+
+```
+
+```{r M5_D0 to M5_D1}
+
+vars_simples <- M5_D0 %>% 
+  select(lo_an_logement, lo_situ_logement, lo_type_logement:lo_demenag,
+         -ends_with("_autre"), -contains("occup_cause_"),
+         -contains("emprunt"), -contains("demenag_cause_"), 
+         -contains("precis")) %>% 
+  names()
+
+M5_D1 <- M5_D0 %>% 
+  rcd_simple_1(all_of(vars_simples), lo_complet)
+
+```
+
+## Recoder QCM
+
+```{r fonctions_qcm}
+
+rcd_qcm_simple <- function(df, vars, complet){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{complet}} == 0 ~ -2,
+          {{complet}} == 1 & all_na_vars ~ -9,
+          {{complet}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+
+rcd_qcm_borne <- function(df, borne, vars, complet){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ (case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & all_na_vars ~ -1,
+          {{borne}} == 1 & all_na_vars ~ -9,
+          {{borne}} == 1 & is.na(.x) ~ 0,
+          TRUE ~ -999                           
+        ))
+      )
+    ) %>%
+    select(-all_na_vars)
+}
+
+```
+
+```{r M5_D1 to M5_D2}
+vars_L5 <- M5_D1 %>% 
+  select(lo_occup_cause_1:lo_occup_cause_999) %>% 
+  names()
+
+vars_L8 <- M5_D1 %>% 
+  select(lo_emprunt_1:lo_emprunt_6) %>% 
+  names()
+
+vars_L11 <- M5_D1 %>% 
+  select(lo_demenag_cause_1:lo_demenag_cause_999) %>% 
+  names()
+
+M5_D2 <- M5_D1 %>% 
+  rcd_qcm_simple(all_of(vars_L5), lo_complet) %>% 
+  rcd_qcm_simple(all_of(vars_L8), lo_complet) %>% 
+  
+  # Il y a deux personnes qui ont dit ne pas vouloir déménager, mais ont quand
+  # meme répondu à la question suivante et ont donné la raison de leur désire
+  # de déménager donc j'ai changé leur réponse pour mettre oui.
+  mutate(
+    lo_demenag = replace_when(
+      lo_demenag,
+      lo_demenag == 0 & lo_demenag_cause_999 == 1 ~ 1
+    )
+  ) %>% 
+  rcd_qcm_borne(lo_demenag, all_of(vars_L11), lo_complet)
+
+rm(list = c("vars_simples", "vars_L8", "vars_L5", "vars_L11"))
+  
+
 ```
 
