@@ -243,7 +243,7 @@ rm(vars_sub_la)
 
 ## Identifier les absents
 
-```{r}
+```{r M5_T0 to M5_T1}
 
 vars_check <- M5_T0 %>%
   select(lo_an_logement:lo_demenag_cause_autre) %>%
@@ -267,5 +267,71 @@ M5_T1 <- M5_T0 %>%
   select(-absent) %>% 
   filter(lo_complet == 1)
 
+rm(vars_check)
+
+```
+
+## Export de la base avant le recodage
+
+```{r}
+write_csv(M5_T0, "../../data_hors_git/process_data/thoa_M5_T0.csv")
+```
+
+# Corriger NAs M5_C0
+
+```{r}
+
+M5_C0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M5_C0.csv",
+                         show_col_types = F)
+
+```
+
+## NAs uniques
+
+```{r M5_C0 to M5_C1}
+
+M5_C1 <- M5_C0 %>% 
+  mutate(
+    
+    # lo_situ_pays est particulier parce qu'une modalité ne figure que si la
+    # personne a déclaré vivre à l'étranger. Donc le recodage doit se faire à
+    # la main puisqu'elle se comporte de manière unique.
+    lo_situ_pays = case_when(
+      !is.na(lo_situ_pays) ~ lo_situ_pays,
+      is.na(lo_situ_pays) & !is.na(lo_situ_dep) ~ 1,
+      is.na(lo_situ_pays) & lo_complet == 0 ~ -2,
+      is.na(lo_situ_pays) & is.na(lo_situ_dep) & lo_complet == 1 ~ -9,
+      TRUE ~ 999
+    ),
+    
+    # Ici on applique -9 parce que c'est pour toutes les personnes qui n'ont pas
+    # renseigné un premier centre de suivi. On ignore donc le departement.
+    lo_dep_centre1 = replace_when(
+      lo_dep_centre1,
+      is.na(lo_dep_centre1) ~ -9
+    ),
+    
+    lo_situ_dep = case_when(
+      !is.na(lo_situ_dep) ~ lo_situ_dep,
+      is.na(lo_situ_dep) & lo_complet == 0 ~ -2,
+      is.na(lo_situ_dep) & lo_situ_logement == 2 ~ -1,
+      is.na(lo_situ_dep) & lo_complet == 1 ~ -9,
+      TRUE ~ 999
+    ),
+    
+    # Ici on remplace à la main, parce que la donnée est aussi unique.
+    lo_situation_cor = case_when(
+      lo_situ_dep == -9 & lo_dep_centre1 == -9 ~ "-9",
+      lo_situ_dep == lo_dep_centre1 ~ "Meme departement",
+      lo_dep_centre1 == -9 & lo_complet == 0 ~ "-2",
+      lo_dep_centre1 == -9 & lo_complet == 1 ~ "-9",
+      lo_complet == 0 ~ "-2",
+      lo_situ_dep == -9 ~ "-9",
+      lo_situ_dep != lo_dep_centre1 ~ "Departement different",
+      TRUE ~ "999"
+    )
+  ) %>% 
+  relocate(lo_situation_cor, .after = lo_dep_situ_centre1) %>% 
+  select(-lo_dep_situ_centre1)
 ```
 
