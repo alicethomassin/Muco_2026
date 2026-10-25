@@ -187,4 +187,30 @@ rm(list = c("add_fa_fo", "add_fa_sf", "bouge", "mere", "pere", "parents",
 
 ```
  
+# Identifier les absents
+
+```{r M4_B0 to M4_B1}
+
+vars_check <- M4_B0 %>%
+  select(fa_cp_couple_1an:fa_sf_fratrie_adopte_nb) %>%
+  colnames()
+
+M4_B1 <- M4_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    fa_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+```
+
  
