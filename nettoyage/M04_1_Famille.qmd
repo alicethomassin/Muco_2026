@@ -1,0 +1,190 @@
+---
+title: "M4_1_Famille"
+format: html
+---
+
+```{r setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
+
+```{r}
+
+M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
+                         show_col_types = F)
+
+M4_A0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bdat")
+
+```
+
+# Corriger données d'identité
+
+```{r}
+
+# Ajouter id_doublon
+M4_A1 <- M4_A0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -id_type, -tab_db) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+  mutate(
+    id_prenom = replace_when(
+      id_prenom,
+      id_prenom == "NA" ~ "NAA"
+    )
+  )
+
+# Remplir les données manquantes de l'identité
+
+M4_A2 <- M4_A1 %>% 
+  rows_patch(
+    M1_A3 %>% 
+      select(any_of(colnames(M4_A1))),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  ) %>% 
+  select(-(fa_type:id_age_cat_3))
+
+
+```
+
+# Retirer les colonnes vides
+
+```{r}
+
+empty_cols_M4_A2 <- M4_A2 %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "nb_empty_cells") %>% 
+  filter(nb_empty_cells == nrow(M4_A2))
+
+### 1.1.3 Créer vecteur avec le nom des variables à retirer
+vars_vides <- empty_cols_M4_A2$variable
+
+### 1.1.4 Retirer les variables, corriger les formats et les NA character
+M4_A3 <- M4_A2 %>%
+  select(-all_of(vars_vides))
+
+rm(list = c("empty_cols_M4_A2", "M4_A0", "M4_A1", "M4_A2", "vars_vides"))
+
+```
+
+ # Réordonner et renommer
+ 
+```{r}
+
+sub_pf <- M4_A3 %>% 
+  select(pf_pere_prenom, pf_pere_mois_nais, pf_pere_an_nais, pf_pere_decede,
+         pf_pere_mois_deces, pf_pere_an_deces, pf_pere_etudes, pf_pere_prof,
+         pf_pere_statut, pf_pere_entreprise, pf_pere_qual, 
+         pf_mere_prenom,
+         pf_mere_mois_nais, pf_mere_an_nais, pf_mere_decede, pf_mere_mois_deces,
+         pf_mere_an_deces, pf_mere_etudes, pf_mere_prof, pf_mere_statut,
+         pf_mere_entreprise, pf_mere_qual,
+         pf_union_parents, pf_union_mois, pf_union_an, pf_parents_interromp,
+         pf_interromp_par, pf_interromp_mois, pf_interromp_an,
+         pf_raison_muco) %>% 
+  colnames()
+
+pere <- M4_A3 %>% 
+  select(starts_with("pf_pere")) %>% 
+  colnames()
+
+mere <- M4_A3 %>% 
+  select(starts_with("pf_mere")) %>% 
+  colnames()
+
+parents <- dplyr::setdiff(sub_pf, union(pere, mere))
+
+bouge <- M4_A3 %>% 
+  select(pf_pere_prenom, pf_pere_mois_nais, pf_pere_an_nais, pf_pere_decede,
+         pf_pere_mois_deces, pf_pere_an_deces, pf_pere_etudes, pf_pere_prof,
+         pf_pere_statut, pf_pere_entreprise, pf_pere_qual, 
+         pf_mere_prenom,
+         pf_mere_mois_nais, pf_mere_an_nais, pf_mere_decede, pf_mere_mois_deces,
+         pf_mere_an_deces, pf_mere_etudes, pf_mere_prof, pf_mere_statut,
+         pf_mere_entreprise, pf_mere_qual,
+         pf_union_parents, pf_union_mois, pf_union_an, pf_parents_interromp,
+         pf_interromp_par, pf_interromp_mois, pf_interromp_an,
+         pf_raison_muco) %>% 
+  colnames()
+
+add_fa_fo <- M4_A3 %>% 
+  select(starts_with("fo_")) %>% 
+  colnames()
+
+add_fa_sf <- M4_A3 %>% 
+  select(starts_with("sf_"), -sf_couple_1an, -sf_enfants) %>% 
+  colnames()
+
+
+M4_B0 <- M4_A3 %>%
+  relocate(id_centre1:id_age, .after = last_col()) %>% 
+  relocate(commentaires_fam, .before = id_centre1) %>% 
+  relocate(all_of(bouge), .after = fa_date_creation) %>% 
+  relocate(c("sf_couple_1an", "sf_enfants"), .after = fa_date_creation) %>% 
+  relocate(pf_fratrie, .after = pf_raison_muco) %>% 
+  relocate(c("fo_vie", "fo_vie_autre", "fo_conjt_prof", "fo_conjt_ress", 
+             "fo_parent_prof", "fo_parent_ress", "fo_pere_prof", "fo_mere_prof",
+             "fo_vos_parents_ress", "fo_membres_prof", "fo_membres_ress", "fo_vous_ress",
+             "fo_revenus", "fo_revenus_mois", "fo_revenus_an", "fo_revenus_corr",
+             "sf_matrimoniale", "sf_enf_bio_nb", "sf_enf_adopte_nb", "sf_fratrie_bio_nb",
+             "pf_rang_nais", "sf_fratrie_demi_nb", "sf_fratrie_adopte_nb"), .after = pf_fratrie) %>% 
+  rename_with(~ gsub("^pf_pere", "fa_pap", .x), all_of(pere)) %>% 
+  rename_with(~ gsub("^pf_mere", "fa_pam", .x), all_of(mere)) %>% 
+  rename_with(~ gsub("^pf_", "fa_par_", .x), all_of(parents)) %>% 
+  rename_with(~ gsub("^fo_", "fa_fo_", .x), all_of(add_fa_fo)) %>% 
+  rename_with(~ gsub("^sf_", "fa_sf_", .x), all_of(add_fa_sf)) %>% 
+  rename(
+    "fa_cp_couple_1an" = "sf_couple_1an",
+    "fa_en_enfants" = "sf_enfants",
+    "fa_pap_nais_mois" = "fa_pap_mois_nais",
+    "fa_pap_nais_an" = "fa_pap_an_nais",
+    "fa_pap_deces" = "fa_pap_decede",
+    "fa_pap_deces_mois" = "fa_pap_mois_deces",
+    "fa_pap_deces_an" = "fa_pap_an_deces",
+    "fa_pam_nais_mois" = "fa_pam_mois_nais",
+    "fa_pam_nais_an" = "fa_pam_an_nais",
+    "fa_pam_deces" = "fa_pam_decede",
+    "fa_pam_deces_mois" = "fa_pam_mois_deces",
+    "fa_pam_deces_an" = "fa_pam_an_deces",
+    "fa_par_union" = "fa_par_union_parents",
+    "fa_par_union_int" = "fa_par_parents_interromp",
+    "fa_par_union_int_nat" = "fa_par_interromp_par",
+    "fa_par_union_int_mois" = "fa_par_interromp_mois",
+    "fa_par_union_int_an" = "fa_par_interromp_an",
+    "fa_par_union_int_muco" = "fa_par_raison_muco",
+    "fa_fr_fratrie" = "pf_fratrie",
+    "fa_sf_rang_nais" = "pf_rang_nais"
+  ) %>% 
+  mutate(
+    fa_pam_prenom = str_to_upper(fa_pam_prenom),
+    fa_pap_prenom = str_to_upper(fa_pap_prenom),
+   fa_pam_prenom = replace_when(
+      fa_pam_prenom,
+      fa_pam_prenom == "NA" ~ "NAA"
+    ))
+
+rm(list = c("add_fa_fo", "add_fa_sf", "bouge", "mere", "pere", "parents",
+            "sub_pf"))
+
+```
+ 
+ 
