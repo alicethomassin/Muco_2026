@@ -93,5 +93,33 @@ M1_A2 <- M1_A1 %>%
   ) %>% 
   select(-id_sep)
   
+rm(list = c("corr_chr", "corr_fact", "vars_id_rmv"))
+```
+
+Ajouter les lignes pour les doublons aussi et faciliter les corrections des doublons dans les prochaines bases
+
+```{r}
+
+doublons <- M1_A2 %>% 
+  
+  # Ne garder que les doublons
+  filter(!is.na(id_doublon)) %>% 
+  
+  # Modifier le id_anonymat
+  select(-id_anonymat, id_anonymat = id_doublon) %>% 
+  mutate(
+    id_doublon = id_anonymat,
+    .before = id_keep
+  )
+
+# Ajouter à la base générale
+
+M1_A3 <- M1_A2 %>% 
+  bind_rows(
+    doublons
+  ) %>% 
+  arrange(id_anonymat)
+
 
 ```
+
