@@ -91,7 +91,13 @@ M1_A2 <- M1_A1 %>%
     id_keep = id_anonymat,
     .after = id_anonymat
   ) %>% 
-  select(-id_sep)
+  select(-id_sep) %>% 
+  mutate(
+    id_prenom = replace_when(
+      id_prenom,
+      id_prenom == "NA" ~ "NAA"
+    )
+  )
   
 rm(list = c("corr_chr", "corr_fact", "vars_id_rmv"))
 ```
