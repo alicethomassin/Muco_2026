@@ -98,7 +98,7 @@ rm(list = c("corr_chr", "corr_fact", "vars_id_rmv"))
 
 Ajouter les lignes pour les doublons aussi et faciliter les corrections des doublons dans les prochaines bases
 
-```{r}
+```{r M1_A2 to M1_A3}
 
 doublons <- M1_A2 %>% 
   
@@ -119,6 +119,16 @@ M1_A3 <- M1_A2 %>%
     doublons
   ) %>% 
   arrange(id_anonymat)
+
+
+```
+
+
+```{r Export}
+
+write_csv(M1_A2, "../../data_hors_git/clean_data/aut26/thoa_M1_A2.csv")
+
+write_csv(M1_A3, "../../data_hors_git/process_data/thoa_M1_A3.csv")
 
 
 ```
