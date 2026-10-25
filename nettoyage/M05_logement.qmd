@@ -241,3 +241,31 @@ M5_T0 <- M5_S2 %>%
 rm(vars_sub_la)
 ```
 
+## Identifier les absents
+
+```{r}
+
+vars_check <- M5_T0 %>%
+  select(lo_an_logement:lo_demenag_cause_autre) %>%
+  names()
+
+M5_T1 <- M5_T0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    lo_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent) %>% 
+  filter(lo_complet == 1)
+
+```
+
