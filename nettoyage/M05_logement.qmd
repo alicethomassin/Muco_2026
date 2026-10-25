@@ -56,7 +56,8 @@ M5_A2 <- M5_A1 %>%
 
 ```
 
-# Renommer et réordonner
+# Travailler sur les colonnes
+## Renommer et réordonner
 
 ```{r M5_A2 to M5_B0}
 
@@ -90,7 +91,7 @@ M5_B0 <- M5_A2 %>%
 rm(vars_sub_la)
 ```
 
-# Identifier absents
+## Identifier absents
 
 ```{r M5_B0 to M5_B1}
 
@@ -122,6 +123,36 @@ M5_B1 <- M5_B0 %>%
       id_anonymat == "WUJIE" ~ -8L
     )
   )
+
+```
+
+# Travailler sur les lignes
+
+## Retirer les doublons
+
+```{r M5_B1 to M5_C0}
+
+# Identifier les doublons
+doublons <- M5_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  relocate(c("id_doublon", "id_keep"), .after = id_anonymat)
+
+# Corriger les données d'identité issues du questionnaire
+
+doublons_corr <- doublons %>% 
+  fill(lo_dep_centre1:lo_dep_situ_centre1, .direction = "up") %>% 
+  mutate(
+    id_anonymat = id_keep
+  ) %>% 
+  filter(lo_complet == 1)
+
+# Joindre les données propres
+M5_C0 <- M5_B1 %>% 
+  filter_out(id_keep %in% doublons$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat)
 
 ```
 
