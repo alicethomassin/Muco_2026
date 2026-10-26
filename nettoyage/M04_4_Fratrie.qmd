@@ -81,3 +81,32 @@ F4_B0 <- F4_A2 %>%
 rm(list = c("F4_A0", "F4_A1", "F4_A2"))
 
 ```
+
+# Identifier les absents
+
+```{r}
+
+vars_check <- F4_B0 %>%
+  select(pf_fratrie_prenom:pf_fratrie_an_deces) %>%
+  colnames()
+
+F4_B1 <- F4_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    fr_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent) %>% 
+  relocate(fr_complet, .after = fratrie_date_creation)
+
+rm(list = c("vars_check", "F4_B0"))
+```
