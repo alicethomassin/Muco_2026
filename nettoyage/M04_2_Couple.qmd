@@ -1,0 +1,15 @@
+---
+title: "M04_2_Couple"
+format: html
+---
+
+```{r setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
+
+
+
