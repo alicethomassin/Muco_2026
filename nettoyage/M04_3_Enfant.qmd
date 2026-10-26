@@ -91,3 +91,33 @@ E4_B0 <- E4_A2 %>%
   select(-(id_date_creation:etat_mat))
 
 ```
+
+
+# Identifier les absents
+
+```{r}
+
+vars_check <- E4_B0 %>%
+  select(sf_enf_conjt_prenom:sf_enf_an_deces) %>%
+  colnames()
+
+E4_B1 <- E4_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    en_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent) %>% 
+  relocate(en_complet, .after = enfants_date_creation)
+
+rm(vars_check)
+```
