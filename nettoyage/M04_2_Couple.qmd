@@ -56,6 +56,24 @@ C4_A1 <- C4_A0 %>%
     )
   )
 
+commentaires <- C4_A1 %>% 
+  select(id_anonymat, id_doublon, id_keep, commentaires_fam) %>% 
+  distinct() %>% 
+  mutate(
+    id_og = if_else(id_anonymat == id_doublon, 0, 1)
+  ) %>% 
+  arrange(id_keep, id_og) %>% 
+  filter(
+    !is.na(id_doublon)
+  ) %>% 
+  group_by(id_keep) %>% 
+  filter(any(!is.na(commentaires_fam))) %>% 
+  fill(commentaires_fam,
+       .direction = "up") %>% 
+  select(id_keep, commentaires_fam) %>% 
+  ungroup() %>% 
+  distinct()
+
 # Remplir les données manquantes de l'identité
 
 C4_A2 <- C4_A1 %>% 
@@ -65,7 +83,13 @@ C4_A2 <- C4_A1 %>%
     by = "id_anonymat",
     unmatched = "ignore"
   ) %>% 
-  select(-(fa_type:fa_couple_cat), -couple_type)
+  select(-(fa_type:fa_couple_cat), -couple_type) %>% 
+  rows_patch(
+    commentaires,
+    by = "id_keep"
+  )
+
+rm(commentaires)
 
 ```
 
@@ -316,7 +340,7 @@ rm(list = c("M4_C0_bornes0", "M4_C0_bornes1", "M4_C0_bornes2"))
 C4_C3 <- C4_C2 %>% 
   filter(cp_complet == 1)
 
-write_csv(C4_C3, "../../data_hors_git/process_data/thoa_C4_C3.csv")
+# write_csv(C4_C3, "../../data_hors_git/process_data/thoa_C4_C3.csv")
 ```
 
 # Nouveau point de départ
