@@ -323,11 +323,38 @@ write_csv(M4_C2_bornes0, "../../data_hors_git/process_data/thoa_M4_C2_bornes0.cs
 
 ```
 
-# Nouveau point de départ
+
+# Ajouter borne pour la fratrie
 
 ```{r}
 
 M4_C2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2.csv",
                          show_col_types = F)
+
+M4_C2_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bornes2.csv",
+                                 show_col_types = F)
+
 ```
 
+```{r}
+
+M4_C3 <- M4_C2 %>% 
+  select(-fa_fr_fratrie) %>% 
+  left_join(
+    M4_C2_bornes2 %>% 
+      select(id_anonymat, fa_fr_fratrie, fr_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("fa_fr_fratrie", "fr_complet"), .after = fa_par_union_int_muco)
+
+# write_csv(M4_C3, "../../data_hors_git/process_data/thoa_M4_C3.csv")
+
+```
+
+# Nouveau point de départ
+
+```{r}
+
+M4_C3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C3.csv",
+                         show_col_types = F)
+```
