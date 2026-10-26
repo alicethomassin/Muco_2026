@@ -355,10 +355,173 @@ M4_C3 <- M4_C2 %>%
 
 ```
 
-# NETTOYAGE
+# NETTOYAGE REPRENDRE ICI
 
 ```{r}
 
 M4_C3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C3.csv",
                          show_col_types = F)
 ```
+
+```{r}
+rcd_simple_2 <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          . == 99 ~ -8,
+          . == 88 ~ -9,
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcd_vars_text <- function(df, vars, complet){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ "-9",
+          is.na(.) & {{complet}} == 0 ~ "-2",
+          TRUE ~ "-999"
+        )
+      )
+    )
+}
+
+rcd_vars_borne1 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          {{borne}} == -2 ~ -2,
+          {{borne}} == 0 & is.na(.) ~ -1,
+          ({{borne}} == 1 | {{borne}} == -9) & is.na(.) ~ -9,
+          TRUE ~ 999
+        )
+      )
+    )
+}
+
+rcd_borne_bin <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == 1 ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == 0 ~ -1,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcd_borne_opt1 <- function(df, borne, x, out, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          . == 99 ~ -8,
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == x ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          is.na(.) & {{borne}} %in% {{out}} ~ -1,
+        )
+      )
+    )
+}
+
+rcd_borne_opt2 <- function(df, borne, inc, y, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} %in% {{inc}} ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          is.na(.) & {{borne}} == y ~ -1,
+        )
+      )
+    )
+}
+
+```
+
+
+```{r}
+
+simple <- M4_C3 %>% 
+  select(fa_pap_nais_mois:fa_pap_deces, fa_pap_etudes, fa_pap_statut,
+         fa_pam_nais_mois:fa_pam_deces, fa_pam_etudes, fa_pam_statut,
+         fa_par_union:fa_par_union_int,
+         fa_fo_vie, fa_fo_vous_ress:fa_fo_revenus_an,
+         fa_sf_matrimoniale:fa_sf_fratrie_adopte_nb) %>% 
+  colnames()
+
+texte <- M4_C3 %>% 
+  select(fa_pap_prenom, fa_pap_prof, fa_pam_prenom, fa_pam_prof) %>% 
+  colnames()
+
+deces_pere <- M4_C3 %>% 
+  select(contains("pap_deces_")) %>% 
+  colnames()
+
+deces_mere <- M4_C3 %>% 
+  select(contains("pam_deces_")) %>% 
+  colnames()
+
+job_pere <- M4_C3 %>% 
+  select(fa_pap_entreprise, fa_pap_qual) %>% 
+  colnames()
+
+job_mere <- M4_C3 %>% 
+  select(fa_pam_entreprise, fa_pam_qual) %>% 
+  colnames()
+
+inc_job <- c(-9, -8, 2, 3)
+
+separation <- M4_C3 %>% 
+  select(fa_par_union_int_nat:fa_par_union_int_muco) %>% 
+  colnames()
+
+out_interruption <- c(0)
+
+M4_D0 <- M4_C3 %>% 
+  rcd_simple_2(all_of(simple), fa_complet) %>% 
+  rcd_vars_text(all_of(texte), fa_complet) %>% 
+  rcd_borne_bin(fa_pap_deces, all_of(deces_pere)) %>% 
+  rcd_borne_bin(fa_pam_deces, all_of(deces_mere)) %>% 
+  rcd_borne_opt2(fa_pap_statut, inc_job, 1, all_of(job_pere)) %>% 
+  rcd_borne_opt2(fa_pam_statut, inc_job, 1, all_of(job_mere)) %>% 
+  rcd_borne_opt1(fa_par_union_int, 1, out_interruption, all_of(separation))
+```
+
+```{r}
+
+verif <- M4_D0 %>% 
+  filter(if_any(any_of(separation), ~ . == 99))
+
+verif <- M4_D0 %>% 
+  filter(if_any(any_of(texte), ~ . == "-999"))
+```
+
