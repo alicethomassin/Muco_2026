@@ -11,7 +11,11 @@ library(tidyverse)
 library(questionr)
 ```
 
-```{r}
+# PRÉ NETTOYAGE
+
+## BASE UNIQUE
+
+```{r Import1}
 
 M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
                          show_col_types = F)
@@ -20,9 +24,9 @@ M4_A0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_id_01_fa_04.sas7bd
 
 ```
 
-# Corriger données d'identité
+### Corriger données d'identité
 
-```{r}
+```{r M4_A0 to M4_A2}
 
 # Ajouter id_doublon
 M4_A1 <- M4_A0 %>%
@@ -60,9 +64,9 @@ M4_A2 <- M4_A1 %>%
 
 ```
 
-# Retirer les colonnes vides
+### Retirer les colonnes vides
 
-```{r}
+```{r M4_A2 to M4_A3}
 
 empty_cols_M4_A2 <- M4_A2 %>%
   mutate(across(
@@ -86,9 +90,9 @@ rm(list = c("empty_cols_M4_A2", "M4_A0", "M4_A1", "M4_A2", "vars_vides"))
 
 ```
 
- # Réordonner et renommer
+### Réordonner et renommer
  
-```{r}
+```{r M4_A3 to M4_B0}
 
 sub_pf <- M4_A3 %>% 
   select(pf_pere_prenom, pf_pere_mois_nais, pf_pere_an_nais, pf_pere_decede,
@@ -187,7 +191,7 @@ rm(list = c("add_fa_fo", "add_fa_sf", "bouge", "mere", "pere", "parents",
 
 ```
  
-# Identifier les absents
+### Identifier les absents
 
 ```{r M4_B0 to M4_B1}
 
@@ -215,9 +219,9 @@ M4_B1 <- M4_B0 %>%
 rm(vars_check)
 ```
 
- # Retirer les doublons
+### Retirer les doublons
  
-```{r}
+```{r M4_B1 to M4_C0}
 
 # Identifier les doublons
 doublons <- M4_B1 %>% 
@@ -247,7 +251,7 @@ rm(list = c("M4_A3", "M4_B0", "M4_B1"))
 ```
  
 
-```{r}
+```{r M4_C0_bornes0}
 
 # write_csv(M4_C0, "../../data_hors_git/process_data/thoa_M4_C0.csv")
 
@@ -258,10 +262,10 @@ M4_C0_bornes0 <- M4_C0 %>%
 # write_csv(M4_C0_bornes0, "../../data_hors_git/process_data/thoa_M4_C0_bornes0.csv")
 ```
 
+## AJOUTER COUPLES
+### Ajouter borne pour les couples
 
-# Ajouter borne pour les couples
-
-```{r}
+```{r Import2}
 
 M4_C0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0.csv",
                          show_col_types = F)
@@ -271,7 +275,7 @@ M4_C0_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0_bo
 
 ```
 
-```{r}
+```{r M4_C0 to M4_C1}
 
 M4_C1 <- M4_C0 %>% 
   select(-fa_cp_couple_1an) %>% 
@@ -290,10 +294,10 @@ M4_C1_bornes0 <- M4_C1 %>%
 
 ```
 
+## AJOUTER ENFANTS
+### Ajouter borne pour les enfants
 
-# Ajouter borne pour les enfants
-
-```{r}
+```{r Import3}
 
 M4_C1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1.csv",
                          show_col_types = F)
@@ -303,7 +307,7 @@ M4_C1_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1_bo
 
 ```
 
-```{r}
+```{r M4_C1 to M4_C2}
 
 M4_C2 <- M4_C1 %>% 
   select(-fa_en_enfants) %>% 
@@ -323,10 +327,10 @@ write_csv(M4_C2_bornes0, "../../data_hors_git/process_data/thoa_M4_C2_bornes0.cs
 
 ```
 
+## AJOUTER FRATRIE
+### Ajouter borne pour la fratrie
 
-# Ajouter borne pour la fratrie
-
-```{r}
+```{r Import4}
 
 M4_C2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2.csv",
                          show_col_types = F)
@@ -336,7 +340,7 @@ M4_C2_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bo
 
 ```
 
-```{r}
+```{r M4_C2 to M4_C3}
 
 M4_C3 <- M4_C2 %>% 
   select(-fa_fr_fratrie) %>% 
@@ -351,7 +355,7 @@ M4_C3 <- M4_C2 %>%
 
 ```
 
-# Nouveau point de départ
+# NETTOYAGE
 
 ```{r}
 
