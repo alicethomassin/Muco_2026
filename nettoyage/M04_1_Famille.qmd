@@ -285,8 +285,41 @@ M4_C1 <- M4_C0 %>%
 M4_C1_bornes0 <- M4_C1 %>% 
   select(colnames(M4_C0_bornes2))
 
-write_csv(M4_C1, "../../data_hors_git/process_data/thoa_M4_C1.csv")
-write_csv(M4_C1_bornes0, "../../data_hors_git/process_data/thoa_M4_C1_bornes0.csv")
+# write_csv(M4_C1, "../../data_hors_git/process_data/thoa_M4_C1.csv")
+# write_csv(M4_C1_bornes0, "../../data_hors_git/process_data/thoa_M4_C1_bornes0.csv")
+
+```
+
+
+# Ajouter borne pour les enfants
+
+```{r}
+
+M4_C1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1.csv",
+                         show_col_types = F)
+
+M4_C1_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1_bornes2.csv",
+                                 show_col_types = F)
+
+```
+
+```{r}
+
+M4_C2 <- M4_C1 %>% 
+  select(-fa_en_enfants) %>% 
+  left_join(
+    M4_C1_bornes2 %>% 
+      select(id_anonymat, fa_en_enfants, en_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("fa_en_enfants", "en_complet"), .after = cp_complet) %>% 
+  relocate(fa_complet, .after = fa_date_creation)
+
+M4_C2_bornes0 <- M4_C2 %>% 
+  select(colnames(M4_C1_bornes2))
+
+write_csv(M4_C2, "../../data_hors_git/process_data/thoa_M4_C2.csv")
+write_csv(M4_C2_bornes0, "../../data_hors_git/process_data/thoa_M4_C2_bornes0.csv")
 
 ```
 
@@ -294,7 +327,7 @@ write_csv(M4_C1_bornes0, "../../data_hors_git/process_data/thoa_M4_C1_bornes0.cs
 
 ```{r}
 
-M4_C1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1.csv",
+M4_C2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2.csv",
                          show_col_types = F)
 ```
 
