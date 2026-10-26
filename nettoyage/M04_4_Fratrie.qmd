@@ -237,6 +237,24 @@ F4_C1 <- F4_C0 %>%
   bind_rows(corr) %>% 
   arrange(id_anonymat, pf_fratrie_an_nais, pf_fratrie_mois_nais)
   
-
+rm(list = c("verif", "corr", "F4_B1"))
 ```
 
+# Vérifier la variable borne 
+
+```{r}
+
+F4_D0 <- left_join(
+  F4_C1,
+  M4_C2_bornes0 %>% 
+    select(id_keep, cp_complet, en_complet, fa_complet, fa_fr_fratrie),
+  by = "id_keep"
+) %>% 
+  relocate(c("cp_complet", "en_complet", "fr_complet", "fa_complet", "fa_fr_fratrie", "pf_fratrie",
+             "fratrie_pf_fratrie"), .after = fratrie_date_creation) %>% 
+  select(-pf_fratrie, -fratrie_pf_fratrie)
+
+
+
+
+```
