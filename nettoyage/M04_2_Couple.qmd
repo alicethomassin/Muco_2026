@@ -19,7 +19,7 @@ M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
 
 C4_A0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_fa_04_couple_04.sas7bdat")
 
-M4_C0_bornes <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0_bornes.csv",
+M4_C0_bornes0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0_bornes0.csv",
                                 show_col_types = F)
 
 ```
@@ -236,6 +236,74 @@ rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4",
             "doublons_corr"))
 rm(list = c("C4_A3", "C4_B0", "C4_B1"))
 
+
+```
+
+# Vérifier la variable borne 
+
+```{r}
+
+C4_C1 <- left_join(
+  C4_C0,
+  M4_C0_bornes %>% 
+    select(id_keep, fa_complet, fa_cp_couple_1an),
+  by = "id_keep"
+) %>% 
+  relocate(c("cp_complet", "fa_complet", "fa_cp_couple_1an", "sf_couple_1an",
+             "couple_sf_couple_1an"), .after = couple_date_creation) 
+
+C4_C2 <- C4_C1 %>% 
+  mutate(
+    fa_cp_couple_1an = 1
+  ) %>% 
+  select(-sf_couple_1an, -couple_sf_couple_1an)
+
+
+
+
+```
+
+
+# Mettre à jour variable borne
+
+```{r}
+
+M4_C0_bornes1 <- M4_C0_bornes0 %>% 
+  rows_update(
+    C4_C2 %>% 
+      select(id_keep, fa_cp_couple_1an) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  left_join(
+    C4_C2 %>% 
+      select(id_keep, cp_complet) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  relocate(cp_complet, .after = fa_cp_couple_1an) %>% 
+  relocate(fa_complet, .before = fa_cp_couple_1an)
+
+M4_C0_bornes2 <- M4_C0_bornes1 %>% 
+  mutate(
+    fa_cp_couple_1an = case_when(
+      !is.na(fa_cp_couple_1an) ~ fa_cp_couple_1an,
+      is.na(fa_cp_couple_1an) & fa_complet == 0 ~ -2,
+      is.na(fa_cp_couple_1an) & fa_complet == 1 ~ -9,
+      TRUE ~ -999
+    ),
+    cp_complet = replace_when(
+      cp_complet,
+      is.na(cp_complet) ~ 0
+    )
+  )
+
+
+```
+
+```{r}
+
+write_csv(M4_C0_bornes2, "../../data_hors_git/process_data/thoa_M4_C0_bornes2.csv")
 
 ```
 
