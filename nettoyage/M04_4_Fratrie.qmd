@@ -110,3 +110,77 @@ F4_B1 <- F4_B0 %>%
 
 rm(list = c("vars_check", "F4_B0"))
 ```
+
+# Retirer les doublons
+
+```{r}
+
+# Identifier les doublons
+doublons_1 <- F4_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(any(id_anonymat == id_doublon)) %>% 
+  ungroup() %>% 
+  
+  arrange(id_keep, pf_fratrie_an_nais) 
+  
+
+# Garder que les lignes différentes ------------------------------------------------
+  
+doublons_2 <- doublons_1 %>% 
+  filter(fr_complet == 1) %>% 
+  group_by(id_keep) %>% 
+  
+  # Retirer les lignes pareilles
+  distinct(
+    pick(pf_fratrie_prenom:pf_fratrie_an_deces),
+    .keep_all = TRUE
+  ) %>% 
+  
+  # Trouver ceux qui ont plus d'une ligne pour une meme personne
+  group_by(id_keep, pf_fratrie_prenom, pf_fratrie_sexe, pf_frsr_issu) %>% 
+  mutate(
+    id_sibling = cur_group_id()
+  ) %>% 
+  ungroup()
+
+# Trier parmis ceux qui ont renseigné plus d'une fois une meme relation --------
+
+doublons_3 <- doublons_2 %>%
+  group_by(id_sibling) %>% 
+  filter(n() > 1) %>% 
+  arrange(id_keep, id_sibling) %>% 
+  ungroup()
+
+doublons_4 <- doublons_3 %>% 
+  filter_out(is.na(pf_fratrie_an_nais)) %>% 
+  group_by(id_sibling) %>% 
+  filter(fratrie_date_creation == min(fratrie_date_creation)) %>% 
+  ungroup()
+
+# Réunir les doublons ----------------------------------------------------------
+doublons_5 <- doublons_2 %>% 
+  
+  # Retirer ceux qu'on a modifiés
+  filter_out(id_sibling %in% doublons_3$id_sibling) %>% 
+  bind_rows(doublons_4) %>% 
+  select(-id_sibling)
+
+
+# Corriger id_anonymat des doublons --------------------------------------------
+
+doublons_corr <- doublons_5 %>%  
+  mutate(
+    id_anonymat = id_keep
+  )
+
+# Joindre les données propres
+F4_C0 <- F4_B1 %>% 
+  filter_out(id_keep %in% doublons_1$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat, pf_fratrie_an_nais, pf_fratrie_mois_nais)
+
+rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4", "doublons_5",
+            "doublons_corr"))
+
+
+```
