@@ -23,3 +23,45 @@ M4_C2_bornes0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bo
 
 ```
 
+# Corriger données d'identité
+
+```{r}
+
+# Ajouter id_doublon
+F4_A1 <- F4_A0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -id_type, -tab_db) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+  mutate(
+    pf_fratrie_prenom = str_to_upper(pf_fratrie_prenom),
+    pf_fratrie_prenom = replace_when(
+      pf_fratrie_prenom,
+      pf_fratrie_prenom == "NA" ~ "NAA"
+    )
+  )
+
+# Remplir les données manquantes de l'identité
+
+E4_A2 <- E4_A1 %>% 
+  rows_patch(
+    M1_A3 %>% 
+      select(any_of(colnames(E4_A1))),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  ) %>% 
+  select(-(fa_type:fa_enfants_cat), -enfants_type)
+
+rm(vars_prenom)
+rm(rcd_prenom)
+
+```
