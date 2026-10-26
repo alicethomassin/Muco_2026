@@ -12,4 +12,85 @@ library(questionr)
 ```
 
 
+```{r}
 
+M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
+                         show_col_types = F)
+
+C4_A0 <- haven::read_sas("../../data_hors_git/raw_data/gb_ddb_fa_04_couple_04.sas7bdat")
+
+M4_C0_bornes <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0_bornes.csv",
+                                show_col_types = F)
+
+```
+
+
+# Corriger données d'identité
+
+```{r}
+
+# Ajouter id_doublon
+C4_A1 <- C4_A0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -id_type, -tab_db) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+  mutate(
+    id_prenom = replace_when(
+      id_prenom,
+      id_prenom == "NA" ~ "NAA"
+    ),
+    sf_conjt_prenom = str_to_upper(sf_conjt_prenom),
+    sf_conjt_prenom = replace_when(
+      sf_conjt_prenom,
+      sf_conjt_prenom == "NA" ~ "NAA"
+    )
+  )
+
+# Remplir les données manquantes de l'identité
+
+C4_A2 <- C4_A1 %>% 
+  rows_patch(
+    M1_A3 %>% 
+      select(any_of(colnames(C4_A1))),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  ) %>% 
+  select(-(fa_type:fa_couple_cat), -couple_type)
+
+```
+
+# Retirer les colonnes vides
+
+```{r}
+
+empty_cols_C4_A2 <- C4_A2 %>%
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "nb_empty_cells") %>% 
+  filter(nb_empty_cells == nrow(C4_A2))
+
+### 1.1.3 Créer vecteur avec le nom des variables à retirer
+vars_vides <- empty_cols_C4_A2$variable
+
+### 1.1.4 Retirer les variables, corriger les formats et les NA character
+C4_A3 <- C4_A2 %>%
+  select(-all_of(vars_vides))
+
+rm(list = c("empty_cols_C4_A2", "C4_A0", "C4_A1", "C4_A2", "vars_vides"))
+
+```
