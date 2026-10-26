@@ -249,14 +249,39 @@ rm(list = c("M4_A3", "M4_B0", "M4_B1"))
 
 ```{r}
 
-write_csv(M4_C0, "../../data_hors_git/process_data/thoa_M4_C0.csv")
+# write_csv(M4_C0, "../../data_hors_git/process_data/thoa_M4_C0.csv")
 
 M4_C0_bornes0 <- M4_C0 %>% 
   select(id_anonymat:id_keep, fa_complet, fa_date_creation, fa_cp_couple_1an,
          fa_en_enfants, fa_fr_fratrie)
 
-write_csv(M4_C0_bornes0, "../../data_hors_git/process_data/thoa_M4_C0_bornes0.csv")
+# write_csv(M4_C0_bornes0, "../../data_hors_git/process_data/thoa_M4_C0_bornes0.csv")
 ```
 
+
+# Ajouter borne pour les couples
+
+```{r}
+
+M4_C0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0.csv",
+                         show_col_types = F)
+
+M4_C0_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C0_bornes2.csv",
+                                 show_col_types = F)
+
+```
+
+```{r}
+
+M4_C1 <- M4_C0 %>% 
+  select(-fa_cp_couple_1an) %>% 
+  left_join(
+    M4_C0_bornes2 %>% 
+      select(id_anonymat, fa_cp_couple_1an, cp_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("fa_cp_couple_1an", "cp_complet"), .after = fa_date_creation)
+
+```
 
 
