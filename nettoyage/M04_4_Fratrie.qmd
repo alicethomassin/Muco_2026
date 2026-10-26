@@ -52,16 +52,32 @@ F4_A1 <- F4_A0 %>%
 
 # Remplir les données manquantes de l'identité
 
-E4_A2 <- E4_A1 %>% 
+F4_A2 <- F4_A1 %>% 
   rows_patch(
     M1_A3 %>% 
-      select(any_of(colnames(E4_A1))),
+      select(any_of(colnames(F4_A1))),
     by = "id_anonymat",
     unmatched = "ignore"
   ) %>% 
-  select(-(fa_type:fa_enfants_cat), -enfants_type)
+  select(-(fa_type:fa_fratrie_cat), -fratrie_type)
 
-rm(vars_prenom)
-rm(rcd_prenom)
+
+```
+
+# Garder les colonnes du module
+
+```{r}
+
+F4_B0 <- F4_A2 %>% 
+  relocate(
+    c("id_date_nais", "id_sexe", "fratrie_date_creation", "fratrie_pf_fratrie", "pf_fratrie",
+      "pf_fratrie_prenom", "pf_fratrie_sexe", "pf_fratrie_mois_nais", "pf_fratrie_an_nais",
+      "pf_frsr_issu", "pf_frsr_mois_adopte", "pf_frsr_an_adopte", "pf_fratrie_diag_avt_nais",
+      "pf_fratrie_muco", "pf_fratrie_decede", "pf_fratrie_mois_deces", "pf_fratrie_an_deces",
+      "commentaires_fam"), 
+    .after = id_keep) %>% 
+  select(-(id_date_creation:sf_raison_muco))
+
+rm(list = c("F4_A0", "F4_A1", "F4_A2"))
 
 ```
