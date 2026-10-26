@@ -147,3 +147,95 @@ C4_B1 <- C4_B0 %>%
 rm(vars_check)
 ```
 
+# Retirer les doublons
+
+```{r}
+
+# Identifier les doublons
+doublons_1 <- C4_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(any(id_anonymat == id_doublon)) %>% 
+  ungroup() %>% 
+  
+  # Ajouter variable pour identifier doublons et permettre d'ordonner les lignes
+  
+  mutate(
+    is_og = if_else(
+      id_anonymat == id_doublon, 0, 1
+    ),
+    .after = couple_date_creation
+  ) %>% 
+  
+  arrange(id_keep, is_og) %>% 
+  
+  # Remplir sf_couple_1an pcq vient du module famille
+  
+  group_by(id_keep) %>% 
+  fill(sf_couple_1an,
+       .direction = "up") %>% 
+  ungroup() %>% 
+  select(-is_og)
+  
+
+# Garder que les lignes différentes ------------------------------------------------
+  
+doublons_2 <- doublons_1 %>% 
+  group_by(id_keep) %>% 
+  
+  # Retirer les lignes pareilles
+  distinct(
+    pick(sf_conjt_prenom:sf_conjt_enf),
+    .keep_all = TRUE
+  ) %>% 
+  
+  # Trouver ceux qui ont plus d'une ligne pour un conjoint avec meme prenom
+  group_by(id_keep, sf_conjt_prenom) %>% 
+  mutate(
+    n = n()
+  ) %>% 
+  ungroup()
+
+# Trier parmis ceux qui ont renseigné plus d'une fois une meme relation --------
+
+doublons_3 <- doublons_2 %>%
+  group_by(id_keep) %>% 
+  filter(n == 2) %>% 
+  
+  # Garder l'année d'union la plus ancienne
+  filter(sf_conjt_an_union == min(sf_conjt_an_union)) %>% 
+  ungroup()
+
+# Réunir les doublons ----------------------------------------------------------
+doublons_4 <- doublons_2 %>% 
+  
+  # Retirer ceux qu'on a modifiés
+  filter_out(id_keep %in% doublons_3$id_keep) %>% 
+  bind_rows(doublons_3) %>% 
+  
+  # Retirer variable inutile
+  select(-n) %>% 
+  
+  # Retirer un doublon completement vide
+  filter_out(id_anonymat == "GCXSD")
+
+
+# Corriger id_anonymat des doublons --------------------------------------------
+
+doublons_corr <- doublons_4 %>%  
+  mutate(
+    id_anonymat = id_keep
+  )
+
+# Joindre les données propres
+C4_C0 <- C4_B1 %>% 
+  filter_out(id_keep %in% doublons_1$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat, sf_conjt_an_union, desc(sf_interromp))
+
+rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4",
+            "doublons_corr"))
+rm(list = c("C4_A3", "C4_B0", "C4_B1"))
+
+
+```
+
