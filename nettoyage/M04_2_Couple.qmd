@@ -349,10 +349,40 @@ Je me suis arrêtée ici. C'est pour ça que j'ai exporté la base, comme ça, j
 ## Dernières corrections
 
 ### Vérifier dates de saisie
-```{r}
+```{r Import2}
 
 C4_C3 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_C3.csv",
                          show_col_types = F)
 ```
+
+```{r C4_C3 to C4_C4}
+
+verif <- C4_C3 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    n_lignes = n()
+  ) %>% 
+  group_by(id_anonymat, couple_date_creation) %>% 
+  mutate(
+    n_dates = n()
+  ) %>% 
+  group_by(id_anonymat) %>% 
+  filter(any(n_lignes != n_dates)) %>% 
+  relocate(c("n_lignes", "n_dates"), .after = couple_date_creation)
+
+corr <- verif %>% 
+  group_by(id_anonymat) %>% 
+  mutate(couple_date_creation = min(couple_date_creation)) %>% 
+  select(-n_lignes, -n_dates)
+
+C4_C4 <- C4_C3 %>% 
+  filter_out(id_anonymat %in% verif$id_anonymat) %>% 
+  bind_rows(corr) %>% 
+  arrange(id_anonymat, sf_conjt_an_union, sf_interromp)
+  
+rm(list = c("verif", "corr", "C4_C3"))
+
+```
+
 
 ### Ajout des bornes des autres modules
