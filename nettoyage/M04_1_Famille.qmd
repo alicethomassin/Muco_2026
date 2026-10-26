@@ -211,6 +211,37 @@ M4_B1 <- M4_B0 %>%
     .after = id_anonymat
   ) %>% 
   select(-absent)
+
+rm(vars_check)
 ```
 
  # Retirer les doublons
+ 
+```{r}
+
+# Identifier les doublons
+doublons <- M4_B1 %>% 
+  group_by(id_keep) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  relocate(c("id_doublon", "id_keep"), .after = id_anonymat) %>% 
+  arrange(id_keep)
+
+# Corriger les données d'identité issues du questionnaire
+
+doublons_corr <- doublons %>%  
+  mutate(
+    id_anonymat = id_keep
+  ) %>% 
+  filter(fa_complet == 1)
+
+# Joindre les données propres
+M4_C0 <- M4_B1 %>% 
+  filter_out(id_keep %in% doublons$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat)
+
+
+```
+ 
+ 
