@@ -207,12 +207,42 @@ E4_C2 <- E4_C1 %>%
 
 ## Dernières corrections
 
-### Vérifier dates de saisie
+### Vérifier dates de saisie (all good)
 
-```{r}
+```{r Import2}
 
 E4_C2 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_C2.csv",
                          show_col_types = F)
+
+M4_C2_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bornes2.csv",
+                                 show_col_types = F)
 ```
 
 ### Ajout des bornes des autres modules
+
+```{r E4_C2 to E4_D0}
+
+E4_D0 <- left_join(
+  E4_C2,
+  M4_C2_bornes2 %>% 
+    filter(id_keep %in% E4_C2$id_keep) %>% 
+    select(id_keep, fr_complet),
+  by = "id_keep"
+) %>% 
+  relocate(id_doublon:enfants_date_creation, .after = last_col()) %>% 
+  relocate(c("fa_complet", "en_complet"), .after = id_anonymat) %>% 
+  relocate(cp_complet, .after = sf_enf_an_deces)
+
+# write_csv(E4_D0, "../../data_hors_git/process_data/thoa_E4_D0.csv")
+
+```
+
+# NETTOYAGE
+
+```{r}
+
+E4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_D0.csv",
+                         show_col_types = F)
+
+```
+
