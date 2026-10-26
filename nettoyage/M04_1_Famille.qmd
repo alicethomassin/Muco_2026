@@ -290,4 +290,11 @@ write_csv(M4_C1_bornes0, "../../data_hors_git/process_data/thoa_M4_C1_bornes0.cs
 
 ```
 
+# Nouveau point de départ
+
+```{r}
+
+M4_C1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1.csv",
+                         show_col_types = F)
+```
 
