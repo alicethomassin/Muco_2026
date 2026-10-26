@@ -299,3 +299,20 @@ M4_C2_bornes2 <- M4_C2_bornes1 %>%
 rm(list = c("M4_C2_bornes0", "M4_C2_bornes1", "M4_C2_bornes2"))
 
 ```
+
+# Garder que les participants
+
+```{r}
+
+F4_D1 <- F4_D0 %>% 
+  filter(fr_complet == 1)
+
+ write_csv(F4_D1, "../../data_hors_git/process_data/thoa_F4_D1.csv")
+```
+
+# Nouveau point de départ
+```{r}
+
+F4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_D1.csv",
+                         show_col_types = F)
+```
