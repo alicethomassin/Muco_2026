@@ -1,0 +1,12 @@
+---
+title: "M04_4_Fratrie"
+format: html
+---
+
+```{r setup}
+#| message: FALSE
+#| echo: False
+
+library(tidyverse)
+library(questionr)
+```
