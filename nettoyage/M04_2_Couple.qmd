@@ -119,3 +119,31 @@ C4_B0 <- C4_A3 %>%
 ```
 
 
+# Identifier les absents
+
+```{r}
+
+vars_check <- C4_B0 %>%
+  select(sf_conjt_prenom:sf_conjt_enf) %>%
+  colnames()
+
+C4_B1 <- C4_B0 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    cp_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+rm(vars_check)
+```
+
