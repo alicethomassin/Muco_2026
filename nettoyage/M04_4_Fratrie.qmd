@@ -11,7 +11,9 @@ library(tidyverse)
 library(questionr)
 ```
 
-```{r}
+# PRÉ NETTOYAGE
+
+```{r Import}
 
 M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
                          show_col_types = F)
@@ -23,9 +25,9 @@ M4_C2_bornes0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bo
 
 ```
 
-# Corriger données d'identité
+## Corriger données d'identité
 
-```{r}
+```{r F4_A0 to F4_A2}
 
 # Ajouter id_doublon
 F4_A1 <- F4_A0 %>%
@@ -89,9 +91,9 @@ rm(commentaires)
 
 ```
 
-# Garder les colonnes du module
+## Garder les colonnes du module
 
-```{r}
+```{r F4_A2 to F4_B0}
 
 F4_B0 <- F4_A2 %>% 
   relocate(
@@ -107,9 +109,9 @@ rm(list = c("F4_A0", "F4_A1", "F4_A2"))
 
 ```
 
-# Identifier les absents
+## Identifier les absents
 
-```{r}
+```{r F4_B0 to F4_B1}
 
 vars_check <- F4_B0 %>%
   select(pf_fratrie_prenom:pf_fratrie_an_deces) %>%
@@ -136,9 +138,9 @@ F4_B1 <- F4_B0 %>%
 rm(list = c("vars_check", "F4_B0"))
 ```
 
-# Retirer les doublons
+## Retirer les doublons
 
-```{r}
+```{r F4_B1 to F4_C0}
 
 # Identifier les doublons
 doublons_1 <- F4_B1 %>% 
@@ -210,9 +212,9 @@ rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4", "doublons_5"
 
 ```
 
-# Corriger date module
+## Corriger date module
 
-```{r}
+```{r F4_C0 to F4_C1}
 
 verif <- F4_C0 %>% 
   group_by(id_anonymat) %>% 
@@ -240,9 +242,9 @@ F4_C1 <- F4_C0 %>%
 rm(list = c("verif", "corr", "F4_B1"))
 ```
 
-# Vérifier la variable borne 
+## Vérifier la variable borne 
 
-```{r}
+```{r F4_C1 to F4_D0}
 
 F4_D0 <- left_join(
   F4_C1,
@@ -256,9 +258,9 @@ F4_D0 <- left_join(
 
 ```
 
-# Mettre à jour variable borne
+## Mettre à jour variable borne
 
-```{r}
+```{r M4_C2_bornes0 to M4_C2_bornes2}
 
 M4_C2_bornes1 <- M4_C2_bornes0 %>% 
   rows_update(
@@ -292,7 +294,7 @@ M4_C2_bornes2 <- M4_C2_bornes1 %>%
 
 ```
 
-```{r}
+```{r export1}
 
  write_csv(M4_C2_bornes2, "../../data_hors_git/process_data/thoa_M4_C2_bornes2.csv")
 
@@ -300,17 +302,17 @@ rm(list = c("M4_C2_bornes0", "M4_C2_bornes1", "M4_C2_bornes2"))
 
 ```
 
-# Garder que les participants
+## Garder que les participants
 
-```{r}
+```{r F4_D0 to F4_D1}
 
 F4_D1 <- F4_D0 %>% 
   filter(fr_complet == 1)
 
- write_csv(F4_D1, "../../data_hors_git/process_data/thoa_F4_D1.csv")
+# write_csv(F4_D1, "../../data_hors_git/process_data/thoa_F4_D1.csv")
 ```
 
-# Nouveau point de départ
+# NETTOYAGE
 ```{r}
 
 F4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_D1.csv",
