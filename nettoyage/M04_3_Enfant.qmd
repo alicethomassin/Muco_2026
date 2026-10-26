@@ -72,4 +72,22 @@ E4_A2 <- E4_A1 %>%
   ) %>% 
   select(-(fa_type:fa_enfants_cat), -enfants_type)
 
+rm(vars_prenom)
+
+```
+
+# Garder les colonnes du module
+
+```{r}
+
+E4_B0 <- E4_A2 %>% 
+  relocate(
+    c("id_date_nais", "id_sexe", "enfants_date_creation", "enfants_sf_enfants", "sf_enfants",
+      "sf_enf_conjt_prenom", "sf_enf_prenom", "sf_enf_sexe", "sf_enf_mois_nais",
+      "sf_enf_an_nais", "sf_enf_issu", "sf_enf_mois_adopte", "sf_enf_an_adopte",
+      "sf_enf_diag_avt", "sf_enf_muco", "sf_enf_decede", "sf_enf_mois_deces",
+      "sf_enf_an_deces", "commentaires_fam"), 
+    .after = id_keep) %>% 
+  select(-(id_date_creation:etat_mat))
+
 ```
