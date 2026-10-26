@@ -245,7 +245,7 @@ rm(list = c("C4_A3", "C4_B0", "C4_B1"))
 
 C4_C1 <- left_join(
   C4_C0,
-  M4_C0_bornes %>% 
+  M4_C0_bornes0 %>% 
     select(id_keep, fa_complet, fa_cp_couple_1an),
   by = "id_keep"
 ) %>% 
@@ -303,7 +303,26 @@ M4_C0_bornes2 <- M4_C0_bornes1 %>%
 
 ```{r}
 
-write_csv(M4_C0_bornes2, "../../data_hors_git/process_data/thoa_M4_C0_bornes2.csv")
+# write_csv(M4_C0_bornes2, "../../data_hors_git/process_data/thoa_M4_C0_bornes2.csv")
 
+rm(list = c("M4_C0_bornes0", "M4_C0_bornes1", "M4_C0_bornes2"))
+
+```
+
+# Garder que les participants
+
+```{r}
+
+C4_C3 <- C4_C2 %>% 
+  filter(cp_complet == 1)
+
+write_csv(C4_C3, "../../data_hors_git/process_data/thoa_C4_C3.csv")
+```
+
+# Nouveau point de départ
+```{r}
+
+C4_C3 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_C3.csv",
+                         show_col_types = F)
 ```
 
