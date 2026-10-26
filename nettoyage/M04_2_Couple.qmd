@@ -386,3 +386,38 @@ rm(list = c("verif", "corr", "C4_C3"))
 
 
 ### Ajout des bornes des autres modules
+
+```{r Import3}
+
+M4_C2_bornes2 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C2_bornes2.csv",
+                                 show_col_types = F)
+```
+
+```{r C4_C4 to C4_D0}
+
+C4_D0 <- left_join(
+  C4_C4,
+  M4_C2_bornes2 %>% 
+    filter(id_keep %in% C4_C4$id_keep) %>% 
+    select(id_keep, en_complet, fr_complet),
+  by = "id_keep"
+) %>% 
+  relocate(id_doublon:couple_date_creation, .after = last_col()) %>% 
+  relocate(c("fa_complet", "cp_complet"), .after = id_anonymat) %>% 
+  relocate(en_complet, .after = sf_conjt_enf)
+
+```
+
+```{r Export2}
+# write_csv(C4_D0, "../../data_hors_git/process_data/thoa_C4_D0.csv")
+```
+
+# NETTOYAGE
+
+```{r}
+
+C4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_D0.csv",
+                         show_col_types = F)
+
+```
+
