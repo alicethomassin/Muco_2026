@@ -152,3 +152,39 @@ E4_C1 <- E4_C0 %>%
 
 
 ```
+
+# Mettre à jour variable borne
+
+```{r}
+
+M4_C1_bornes1 <- M4_C1_bornes0 %>% 
+  rows_update(
+    E4_C1 %>% 
+      select(id_keep, fa_en_enfants) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  left_join(
+    E4_C1 %>% 
+      select(id_keep, en_complet) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  relocate(en_complet, .after = fa_en_enfants)
+
+M4_C1_bornes2 <- M4_C1_bornes1 %>% 
+  mutate(
+    fa_en_enfants = case_when(
+      !is.na(fa_en_enfants) ~ fa_en_enfants,
+      is.na(fa_en_enfants) & fa_complet == 0 ~ -2,
+      is.na(fa_en_enfants) & fa_complet == 1 ~ -9,
+      TRUE ~ -999
+    ),
+    en_complet = replace_when(
+      en_complet,
+      is.na(en_complet) ~ 0
+    )
+  )
+
+
+```
