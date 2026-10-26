@@ -94,3 +94,28 @@ C4_A3 <- C4_A2 %>%
 rm(list = c("empty_cols_C4_A2", "C4_A0", "C4_A1", "C4_A2", "vars_vides"))
 
 ```
+
+# Garder que les colonnes du module
+
+```{r}
+
+C4_B0 <- C4_A3 %>% 
+  relocate(
+    c("id_date_nais", "id_sexe", "couple_date_creation", "couple_sf_couple_1an", "sf_couple_1an",
+      "sf_conjt_prenom", "sf_conjt_sexe", "sf_conjt_mois_nais", "sf_an_conjt_nais",
+      "sf_conjt_an_nais", "sf_nature_union", "sf_conjt_mois_union", "sf_conjt_an_union",
+      "sf_conjt_muco", "sf_interromp", "sf_interromp_par", "sf_mois_interromp",
+      "sf_an_interromp", "sf_raison_muco", "sf_conjt_enf", "commentaires_fam"), 
+    .after = id_keep) %>% 
+  select(-(id_date_creation:sf_matrimoniale)) %>% 
+  mutate(
+    sf_conjt_an_nais = replace_when(
+      sf_conjt_an_nais,
+      is.na(sf_conjt_an_nais) & !is.na(sf_an_conjt_nais) ~ sf_an_conjt_nais
+    )
+  ) %>% 
+  select(-sf_an_conjt_nais)
+
+```
+
+
