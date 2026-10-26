@@ -11,7 +11,8 @@ library(tidyverse)
 library(questionr)
 ```
 
-```{r}
+# PRÉ NETTOYAGE
+```{r Import}
 
 M1_A3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M1_A3.csv",
                          show_col_types = F)
@@ -23,9 +24,9 @@ M4_C1_bornes0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C1_bo
 
 ```
 
-# Corriger données d'identité
+## Corriger données d'identité
 
-```{r}
+```{r fonction prenom}
 
 rcd_prenom <- function(df, vars){
   df %>% 
@@ -38,7 +39,7 @@ rcd_prenom <- function(df, vars){
 ```
 
 
-```{r}
+```{r E4_A0 to E4_A2}
 
 vars_prenom <- E4_A0 %>% 
   select(sf_enf_prenom, sf_enf_conjt_prenom) %>% 
@@ -77,9 +78,9 @@ rm(rcd_prenom)
 
 ```
 
-# Garder les colonnes du module
+## Garder les colonnes du module
 
-```{r}
+```{r E4_A2 to E4_B0}
 
 E4_B0 <- E4_A2 %>% 
   relocate(
@@ -94,9 +95,9 @@ E4_B0 <- E4_A2 %>%
 ```
 
 
-# Identifier les absents
+##  Identifier les absents
 
-```{r}
+```{r E4_B0 to E4_B1}
 
 vars_check <- E4_B0 %>%
   select(sf_enf_conjt_prenom:sf_enf_an_deces) %>%
@@ -124,11 +125,11 @@ rm(vars_check)
 rm(list = c("E4_A0", "E4_A1", "E4_A2", "E4_B0"))
 ```
 
-# pas de doublons
+## pas de doublons
 
-# Vérifier la variable borne 
+## Vérifier la variable borne 
 
-```{r}
+```{r E4_C0 to E4_C1}
 
 E4_C0 <- left_join(
   E4_B1,
@@ -148,14 +149,11 @@ E4_C1 <- E4_C0 %>%
   ) %>% 
   select(-sf_enfants, -enfants_sf_enfants)
 
-
-
-
 ```
 
-# Mettre à jour variable borne
+## Mettre à jour variable borne
 
-```{r}
+```{r M4_C1_bornes0 to M4_C1_bornes2}
 
 M4_C1_bornes1 <- M4_C1_bornes0 %>% 
   rows_update(
@@ -189,7 +187,7 @@ M4_C1_bornes2 <- M4_C1_bornes1 %>%
 
 ```
 
-```{r}
+```{r Export1}
 
  write_csv(M4_C1_bornes2, "../../data_hors_git/process_data/thoa_M4_C1_bornes2.csv")
 
@@ -197,9 +195,9 @@ rm(list = c("M4_C1_bornes0", "M4_C1_bornes1", "M4_C1_bornes2"))
 
 ```
 
-# Garder que les participants
+## Garder que les participants
 
-```{r}
+```{r E4_C1 to E4_C2}
 
 E4_C2 <- E4_C1 %>% 
   filter(en_complet == 1)
@@ -207,9 +205,14 @@ E4_C2 <- E4_C1 %>%
 # write_csv(E4_C2, "../../data_hors_git/process_data/thoa_E4_C2.csv")
 ```
 
-# Nouveau point de départ
+## Dernières corrections
+
+### Vérifier dates de saisie
+
 ```{r}
 
 E4_C2 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_C2.csv",
                          show_col_types = F)
 ```
+
+### Ajout des bornes des autres modules
