@@ -254,7 +254,48 @@ F4_D0 <- left_join(
              "fratrie_pf_fratrie"), .after = fratrie_date_creation) %>% 
   select(-pf_fratrie, -fratrie_pf_fratrie)
 
+```
+
+# Mettre à jour variable borne
+
+```{r}
+
+M4_C2_bornes1 <- M4_C2_bornes0 %>% 
+  rows_update(
+    F4_D0 %>% 
+      select(id_keep, fa_fr_fratrie) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  left_join(
+    F4_D0 %>% 
+      select(id_keep, fr_complet) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  relocate(fr_complet, .after = fa_fr_fratrie)
+
+M4_C2_bornes2 <- M4_C2_bornes1 %>% 
+  mutate(
+    fa_fr_fratrie = case_when(
+      !is.na(fa_fr_fratrie) ~ fa_fr_fratrie,
+      is.na(fa_fr_fratrie) & fa_complet == 0 ~ -2,
+      is.na(fa_fr_fratrie) & fa_complet == 1 ~ -9,
+      TRUE ~ -999
+    ),
+    fr_complet = replace_when(
+      fr_complet,
+      is.na(fr_complet) ~ 0
+    )
+  )
 
 
+```
+
+```{r}
+
+ write_csv(M4_C2_bornes2, "../../data_hors_git/process_data/thoa_M4_C2_bornes2.csv")
+
+rm(list = c("M4_C2_bornes0", "M4_C2_bornes1", "M4_C2_bornes2"))
 
 ```
