@@ -241,7 +241,20 @@ M4_C0 <- M4_B1 %>%
   bind_rows(doublons_corr) %>% 
   arrange(id_anonymat)
 
+rm(list = c("doublons", "doublons_corr"))
+rm(list = c("M4_A3", "M4_B0", "M4_B1"))
 
 ```
  
- 
+
+```{r}
+
+write_csv(M4_C0, "../../data_hors_git/process_data/thoa_M4_C0.csv")
+
+M4_C0_bornes <- M4_C0 %>% 
+  select(id_anonymat:id_keep, fa_complet, fa_date_creation, fa_cp_couple_1an,
+         fa_en_enfants, fa_fr_fratrie)
+
+write_csv(M4_C0_bornes, "../../data_hors_git/process_data/thoa_M4_C0_bornes.csv")
+```
+
