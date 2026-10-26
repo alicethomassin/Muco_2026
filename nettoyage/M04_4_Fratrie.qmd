@@ -47,8 +47,28 @@ F4_A1 <- F4_A0 %>%
     pf_fratrie_prenom = replace_when(
       pf_fratrie_prenom,
       pf_fratrie_prenom == "NA" ~ "NAA"
-    )
+    ),
+    pf_fratrie_prenom = str_replace(
+      pf_fratrie_prenom, "É", "E")
   )
+
+commentaires <- F4_A1 %>% 
+  select(id_anonymat, id_doublon, id_keep, commentaires_fam) %>% 
+  distinct() %>% 
+  mutate(
+    id_og = if_else(id_anonymat == id_doublon, 0, 1)
+  ) %>% 
+  arrange(id_keep, id_og) %>% 
+  filter(
+    !is.na(id_doublon)
+  ) %>% 
+  group_by(id_keep) %>% 
+  filter(any(!is.na(commentaires_fam))) %>% 
+  fill(commentaires_fam,
+       .direction = "up") %>% 
+  select(id_keep, commentaires_fam) %>% 
+  ungroup() %>% 
+  distinct()
 
 # Remplir les données manquantes de l'identité
 
@@ -59,8 +79,13 @@ F4_A2 <- F4_A1 %>%
     by = "id_anonymat",
     unmatched = "ignore"
   ) %>% 
-  select(-(fa_type:fa_fratrie_cat), -fratrie_type)
+  select(-(fa_type:fa_fratrie_cat), -fratrie_type) %>% 
+  rows_patch(
+    commentaires,
+    by = "id_keep"
+  )
 
+rm(commentaires)
 
 ```
 
@@ -184,3 +209,34 @@ rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4", "doublons_5"
 
 
 ```
+
+# Corriger date module
+
+```{r}
+
+verif <- F4_C0 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    n_lignes = n()
+  ) %>% 
+  group_by(id_anonymat, fratrie_date_creation) %>% 
+  mutate(
+    n_dates = n()
+  ) %>% 
+  group_by(id_anonymat) %>% 
+  filter(any(n_lignes != n_dates)) %>% 
+  relocate(c("n_lignes", "n_dates"), .after = fratrie_date_creation)
+
+corr <- verif %>% 
+  group_by(id_anonymat) %>% 
+  mutate(fratrie_date_creation = min(fratrie_date_creation)) %>% 
+  select(-n_lignes, -n_dates)
+
+F4_C1 <- F4_C0 %>% 
+  filter_out(id_anonymat %in% verif$id_anonymat) %>% 
+  bind_rows(corr) %>% 
+  arrange(id_anonymat, pf_fratrie_an_nais, pf_fratrie_mois_nais)
+  
+
+```
+
