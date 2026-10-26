@@ -73,6 +73,7 @@ E4_A2 <- E4_A1 %>%
   select(-(fa_type:fa_enfants_cat), -enfants_type)
 
 rm(vars_prenom)
+rm(rcd_prenom)
 
 ```
 
@@ -120,4 +121,34 @@ E4_B1 <- E4_B0 %>%
   relocate(en_complet, .after = enfants_date_creation)
 
 rm(vars_check)
+rm(list = c("E4_A0", "E4_A1", "E4_A2", "E4_B0"))
+```
+
+# pas de doublons
+
+# Vérifier la variable borne 
+
+```{r}
+
+E4_C0 <- left_join(
+  E4_B1,
+  M4_C1_bornes0 %>% 
+    select(id_keep, cp_complet, fa_complet, fa_en_enfants),
+  by = "id_keep"
+) %>% 
+  relocate(c("cp_complet", "en_complet", "fa_complet", "fa_en_enfants", "sf_enfants",
+             "enfants_sf_enfants"), .after = enfants_date_creation) 
+
+E4_C1 <- E4_C0 %>% 
+  mutate(
+    fa_en_enfants = replace_when(
+      fa_en_enfants,
+      is.na(fa_en_enfants) & en_complet == 1 ~ 1
+    )
+  ) %>% 
+  select(-sf_enfants, -enfants_sf_enfants)
+
+
+
+
 ```
