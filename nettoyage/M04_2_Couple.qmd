@@ -541,3 +541,13 @@ C4_E0 <- C4_D3 %>%
   )
 ```
 
+# Réordonner
+
+```{r}
+
+C4_E1 <- C4_E0 %>% 
+  relocate(c("en_complet", "fr_complet", "fa_complet", "cp_complet", "commentaires_fam"), .after = last_col()) %>% 
+  select(-id_doublon, -id_keep) %>% 
+  relocate(c("couple_date_creation", "id_date_nais", "id_sexe"), .after = last_col())
+```
+
