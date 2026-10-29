@@ -315,7 +315,8 @@ E4_D3 <- E4_D2 %>%
       TRUE ~ -999
     ),
     .after = nb_enf
-  )
+  ) %>% 
+  ungroup()
 
 ```
 
@@ -351,7 +352,96 @@ E4_D4 <- E4_D3 %>%
   filter_out(id_anonymat %in% verif0$id_anonymat) %>% 
   bind_rows(verif1) %>% 
   arrange(desc(nb_enf), id_anonymat, rang_enf) %>% 
-  select(-(nb_declare:fa_sf_enf_adopte_nb))
+  select(-(nb_declare:fa_sf_enf_adopte_nb)) %>% 
+  ungroup()
+
+rm(list = c("info_enfants", "M4_D1", "verif0", "verif1",
+            "E4_D0", "E4_D1", "E4_D2"))
+```
+
+## Recoder les NAs
+
+```{r}
+rcdSM_vars_simple1 <- function(df, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) ~ -9,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcdSM_txt_simple1 <- function(df, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) ~ "-9",
+          TRUE ~ "-999"
+        )
+      )
+    )
+}
+
+
+rcdSM_vars_borne_opt1 <- function(df, borne, x, vars){
+  
+  out <- df %>% 
+    filter_out({{borne}} == x|
+                 {{borne}} < 0) %>% 
+    distinct({{borne}}) %>% 
+    pull()
+  
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == x ~ -9,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} %in% out ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+```
+
+
+```{r}
+
+vars_simples <- E4_D4 %>% 
+  select(sexe:issu, diag_avt:decede) %>% 
+  colnames()
+
+vars_txt <- E4_D4 %>% 
+  select(prenom_conjt, prenom) %>% 
+  colnames()
+
+vars_adp <- E4_D4 %>% 
+  select(adpt_mois, adpt_an) %>% 
+  colnames()
+
+vars_dcd <- E4_D4 %>% 
+  select(decd_mois:decd_an) %>% 
+  colnames()
+
+E4_E0 <- E4_D4 %>% 
+  rcdSM_vars_simple1(all_of(vars_simples)) %>% 
+  rcdSM_txt_simple1(all_of(vars_txt)) %>% 
+  rcdSM_vars_borne_opt1(issu, 4, all_of(vars_adp)) %>% 
+  rcdSM_vars_borne_opt1(decede, 1, all_of(vars_dcd))
+
+rm(list = c("vars_txt", "vars_simples", "vars_dcd", "vars_adp",
+            "rcdSM_txt_simple1", "rcdSM_vars_borne_opt1", "rcdSM_vars_simple1"))
 
 ```
 
