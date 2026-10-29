@@ -347,5 +347,11 @@ verif1 <- verif0 %>%
   ungroup() %>% 
   arrange(desc(nb_enf), id_anonymat, rang_enf)
 
+E4_D4 <- E4_D3 %>% 
+  filter_out(id_anonymat %in% verif0$id_anonymat) %>% 
+  bind_rows(verif1) %>% 
+  arrange(desc(nb_enf), id_anonymat, rang_enf) %>% 
+  select(-(nb_declare:fa_sf_enf_adopte_nb))
+
 ```
 
