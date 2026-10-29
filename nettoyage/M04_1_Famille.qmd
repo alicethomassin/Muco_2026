@@ -406,7 +406,7 @@ rcd_vars_borne1 <- function(df, borne, vars){
           {{borne}} == -2 ~ -2,
           {{borne}} == 0 & is.na(.) ~ -1,
           ({{borne}} == 1 | {{borne}} == -9) & is.na(.) ~ -9,
-          TRUE ~ 999
+          TRUE ~ -999
         )
       )
     )
@@ -443,6 +443,30 @@ rcd_borne_opt1 <- function(df, borne, x, out, vars){
           is.na(.) & {{borne}} == -9 ~ -9,
           is.na(.) & {{borne}} == -1 ~ -1,
           is.na(.) & {{borne}} %in% {{out}} ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcd_borne_opt3 <- function(df, borne, x, out, vars){
+  
+  out[! out %in% x]
+  
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          . == 99 ~ -8,
+          . == 88 ~ -9,
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == x ~ -9,
+          is.na(.) & {{borne}} == -2 ~ -2,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == -1 ~ -1,
+          is.na(.) & {{borne}} %in% {{out}} ~ -1,
+          TRUE ~ -999
         )
       )
     )
@@ -460,6 +484,7 @@ rcd_borne_opt2 <- function(df, borne, inc, y, vars){
           is.na(.) & {{borne}} == -9 ~ -9,
           is.na(.) & {{borne}} == -1 ~ -1,
           is.na(.) & {{borne}} == y ~ -1,
+          TRUE ~ -999
         )
       )
     )
@@ -506,6 +531,23 @@ separation <- M4_C3 %>%
 
 out_interruption <- c(0)
 
+out_fo_vie <- c(1:6)
+fo_conjt <- M4_C3 %>% 
+  select(fa_fo_conjt_prof, fa_fo_conjt_ress) %>% 
+  colnames()
+
+fo_parent <- M4_C3 %>% 
+  select(fa_fo_parent_prof, fa_fo_parent_ress) %>% 
+  colnames()
+
+fo_both <- M4_C3 %>% 
+  select(fa_fo_pere_prof, fa_fo_mere_prof, fa_fo_vos_parents_ress) %>% 
+  colnames()
+
+fo_autre <- M4_C3 %>% 
+  select(fa_fo_membres_prof, fa_fo_membres_ress) %>% 
+  colnames()
+
 M4_D0 <- M4_C3 %>% 
   rcd_simple_2(all_of(simple), fa_complet) %>% 
   rcd_vars_text(all_of(texte), fa_complet) %>% 
@@ -513,13 +555,23 @@ M4_D0 <- M4_C3 %>%
   rcd_borne_bin(fa_pam_deces, all_of(deces_mere)) %>% 
   rcd_borne_opt2(fa_pap_statut, inc_job, 1, all_of(job_pere)) %>% 
   rcd_borne_opt2(fa_pam_statut, inc_job, 1, all_of(job_mere)) %>% 
-  rcd_borne_opt1(fa_par_union_int, 1, out_interruption, all_of(separation))
+  rcd_borne_opt1(fa_par_union_int, 1, out_interruption, all_of(separation)) %>% 
+  rcd_borne_opt3(fa_fo_vie, 3, out_fo_vie, all_of(fo_conjt)) %>% 
+  rcd_borne_opt3(fa_fo_vie, 4, out_fo_vie, all_of(fo_parent)) %>% 
+  rcd_borne_opt3(fa_fo_vie, 5, out_fo_vie, all_of(fo_both)) %>% 
+  rcd_borne_opt3(fa_fo_vie, 6, out_fo_vie, all_of(fo_autre))
+
+rm(list = c("simple", "texte", "deces_mere", "deces_pere", "job_pere",
+            "job_mere", "separation", "fo_conjt", "fo_parent", 
+            "fo_both", "fo_autre", "inc_job", "out_interruption",
+            "out_fo_vie"))
+  
 ```
 
 ```{r}
 
 verif <- M4_D0 %>% 
-  filter(if_any(any_of(separation), ~ . == 99))
+  filter(if_any(any_of(separation), ~ . == -2))
 
 verif <- M4_D0 %>% 
   filter(if_any(any_of(texte), ~ . == "-999"))
