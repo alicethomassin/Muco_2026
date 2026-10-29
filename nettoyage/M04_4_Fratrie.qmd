@@ -318,3 +318,26 @@ F4_D1 <- F4_D0 %>%
 F4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_D1.csv",
                          show_col_types = F)
 ```
+
+## Réordonner et renommer
+
+```{r F4_D1 to F4_D2}
+
+rm_pf_fr <- colnames(select(F4_D1,
+                    pf_fratrie_prenom:pf_fratrie_an_deces))
+
+rm_frsr <- colnames(select(F4_D1,
+                           pf_frsr_issu:pf_frsr_an_adopte))
+  
+F4_D2 <- F4_D1 %>% 
+  rename_with(.cols = all_of(rm_pf_fr), ~ gsub("pf_fratrie_", "", .x)) %>% 
+  rename_with(.cols = all_of(rm_frsr), ~ gsub("pf_frsr_", "", .x)) %>% 
+  relocate(id_anonymat, prenom:commentaires_fam) %>% 
+  mutate(
+    id_an_nais = str_sub(id_date_nais, 1, 4),
+    id_mois_nais = str_sub(id_date_nais, 6, 7),
+    .after = id_anonymat
+  )
+
+
+```
