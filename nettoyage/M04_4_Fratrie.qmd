@@ -373,10 +373,12 @@ verif1 <- verif0 %>%
   mutate(
     an_nais = replace_when(
       an_nais,
-      id_anonymat == "GCXSD" & is.na(an_nais) ~ 1000
+      id_anonymat == "GCXSD" & is.na(an_nais) ~ 1000,
+      id_anonymat == "VBSNT" & is.na(an_nais) ~ 2004
     )
   ) %>% 
   group_by(id_anonymat) %>% 
+  filter_out(id_anonymat == "AVLPV" & rang_frt != "fa_frt01_") %>% 
   arrange(an_nais, mois_nais) %>% 
   mutate(
     frt_doc = n(),
