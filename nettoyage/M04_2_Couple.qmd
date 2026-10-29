@@ -449,7 +449,7 @@ C4_D2 <- C4_D1 %>%
   arrange(union_an, desc(union_int)) %>% 
   mutate(
     nb_rlt = n(),
-    rang_rlt = glue::glue("fa_cp{row_number()}_"),
+    rang_rlt = glue::glue("fa_cpl{row_number()}_"),
     .before = conjt_prenom
   ) %>% 
   ungroup()
@@ -511,5 +511,33 @@ C4_D3 <- C4_D2 %>%
 
 rm(list = c("vars_simples", "vars_int", "rcdSM_vars_simple1",
             "rcdSM_vars_borne1"))
+```
+
+# Pivoter
+
+```{r}
+
+vars_wider <- C4_D3 %>% 
+  select(conjt_prenom:union_enf) %>% 
+  colnames()
+
+C4_E0 <- C4_D3 %>% 
+  pivot_wider(
+    names_from = rang_rlt,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_rlt}{.value}"
+  ) %>% 
+  mutate(
+    across(
+      starts_with("fa_cpl") & where(is.character), ~ replace_when(
+        .x, is.na(.x) ~ "-1"
+      )
+    ),
+    across(
+      starts_with("fa_cpl") & where(is.numeric), ~ replace_when(
+        .x, is.na(.x) ~ -1
+      )
+    )
+  )
 ```
 
