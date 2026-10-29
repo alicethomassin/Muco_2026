@@ -570,6 +570,36 @@ rm(list = c("simple", "texte", "deces_mere", "deces_pere", "job_pere",
 
 ```{r}
 
+M4_D1 <- M4_D0 %>% 
+  mutate(
+    fa_fo_vie_autre = case_when(
+      !is.na(fa_fo_vie_autre) ~ fa_fo_vie_autre,
+      is.na(fa_fo_vie_autre) & fa_fo_vie == -2 ~ "-2",
+      is.na(fa_fo_vie_autre) & fa_fo_vie == -9 ~ "-9",
+      is.na(fa_fo_vie_autre) & fa_fo_vie %in% c(1:6) ~ "-1",
+      TRUE ~ "-999"
+    ),
+    fa_fo_revenus_corr = case_when(
+      !is.na(fa_fo_revenus_corr) ~ fa_fo_revenus_corr,
+      is.na(fa_fo_revenus_corr) & fa_complet == 0 ~ "F-[MODULE SAUTÉ]",
+      is.na(fa_fo_revenus_corr) & fa_complet == 1 ~ "E-[NSPR - NSP]",
+      TRUE ~ "-999"
+    )
+  ) %>% 
+  # Variable inutile
+  select(-fa_fo_revenus)
+```
+
+# Export
+
+```{r}
+write_csv(M4_D1, "../../data_hors_git/process_data/thoa_M4_D1_tt.csv")
+```
+
+
+
+```{r}
+
 verif <- M4_D0 %>% 
   filter(if_any(any_of(separation), ~ . == -2))
 
