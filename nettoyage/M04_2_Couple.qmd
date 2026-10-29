@@ -515,7 +515,7 @@ rm(list = c("vars_simples", "vars_int", "rcdSM_vars_simple1",
 
 # Pivoter
 
-```{r}
+```{r C4_D3 to C4_E0}
 
 vars_wider <- C4_D3 %>% 
   select(conjt_prenom:union_enf) %>% 
@@ -543,11 +543,26 @@ C4_E0 <- C4_D3 %>%
 
 # Réordonner
 
-```{r}
+```{r C4_E0 to C4_E1}
 
 C4_E1 <- C4_E0 %>% 
   relocate(c("en_complet", "fr_complet", "fa_complet", "cp_complet", "commentaires_fam"), .after = last_col()) %>% 
   select(-id_doublon, -id_keep) %>% 
   relocate(c("couple_date_creation", "id_date_nais", "id_sexe"), .after = last_col())
+```
+
+```{r}
+
+write_csv(C4_E1, "../../data_hors_git/process_data/thoa_C4_E1_tt.csv")
+
+```
+
+# POINT DE DÉPART
+
+```{r}
+
+C4_E1 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_E1_tt.csv",
+                         show_col_types = FALSE)
+
 ```
 
