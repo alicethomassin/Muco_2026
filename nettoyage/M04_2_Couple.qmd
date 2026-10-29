@@ -421,3 +421,95 @@ C4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_D0.csv",
 
 ```
 
+## Renommer et réordonner
+```{r C4_D0 to C4_D1}
+C4_D1 <- C4_D0 %>% 
+  rename(
+         "conjt_prenom"  = "sf_conjt_prenom",
+         "conjt_sexe"  = "sf_conjt_sexe",
+         "conjt_nais_an" = "sf_conjt_an_nais",
+         "conjt_nais_mois" = "sf_conjt_mois_nais",
+         "union_nature" = "sf_nature_union",
+         "union_mois" = "sf_conjt_mois_union",
+         "union_an" = "sf_conjt_an_union",
+         "conjt_muco" = "sf_conjt_muco",
+         "union_int" = "sf_interromp",
+         "union_int_par" = "sf_interromp_par",
+         "union_int_mois" = "sf_mois_interromp",
+         "union_int_an" = "sf_an_interromp",
+         "union_int_muco" = "sf_raison_muco",
+         "union_enf" = "sf_conjt_enf")
+```
+
+
+```{r C4_D1 to C4_D2}
+
+C4_D2 <- C4_D1 %>% 
+  group_by(id_anonymat) %>% 
+  arrange(union_an, desc(union_int)) %>% 
+  mutate(
+    nb_rlt = n(),
+    rang_rlt = glue::glue("fa_cp{row_number()}_"),
+    .before = conjt_prenom
+  ) %>% 
+  ungroup()
+
+
+```
+
+## Corriger les NAs
+```{r}
+
+rcdSM_vars_simple1 <- function(df, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) ~ -9,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcdSM_vars_borne1 <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == 1 ~ -9,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} == 0 ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+```
+
+```{r C4_D2 to C4_D3}
+
+vars_simples <- C4_D2 %>% 
+  select(conjt_sexe:union_int, union_enf) %>% 
+  colnames()
+
+vars_int <- C4_D2 %>% 
+  select(union_int_par:union_int_muco) %>% 
+  colnames()
+
+C4_D3 <- C4_D2 %>% 
+  mutate(
+    conjt_prenom = if_else(is.na(conjt_prenom), "-9", conjt_prenom)
+  ) %>% 
+  rcdSM_vars_simple1(all_of(vars_simples)) %>% 
+  rcdSM_vars_borne1(union_int, all_of(vars_int))
+
+rm(list = c("vars_simples", "vars_int", "rcdSM_vars_simple1",
+            "rcdSM_vars_borne1"))
+```
+
