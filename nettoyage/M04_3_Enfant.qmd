@@ -445,3 +445,32 @@ rm(list = c("vars_txt", "vars_simples", "vars_dcd", "vars_adp",
 
 ```
 
+## Pivoter
+
+```{r}
+
+vars_wider <- E4_E0 %>% 
+  select(prenom_conjt:decd_an) %>% 
+  colnames()
+
+E4_F0 <- E4_E0 %>% 
+  pivot_wider(
+    names_from = rang_enf,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_enf}{.value}"
+  ) %>% 
+  mutate(
+    across(
+      starts_with("fa_enf") & where(is.character), ~ replace_when(
+        .x, is.na(.x) ~ "-1"
+      )
+    ),
+    across(
+      starts_with("fa_enf") & where(is.numeric), ~ replace_when(
+        .x, is.na(.x) ~ -1
+      )
+    )
+  )
+
+```
+
