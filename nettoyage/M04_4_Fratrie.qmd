@@ -341,3 +341,47 @@ F4_D2 <- F4_D1 %>%
 
 
 ```
+
+## Vérifier nb fratrie
+
+```{r}
+
+M4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_D1_tt.csv",
+                         show_col_types = FALSE)
+vars_dcl <- M4_D1 %>% 
+  select(fa_sf_fratrie_bio_nb, fa_sf_fratrie_demi_nb,
+         fa_sf_fratrie_adopte_nb) %>% 
+  colnames()
+
+info_frt <- M4_D1 %>% 
+  filter(id_anonymat %in% F4_D2$id_anonymat) %>% 
+  select(id_anonymat, fa_sf_rang_nais, fa_sf_fratrie_bio_nb, fa_sf_fratrie_demi_nb,
+         fa_sf_fratrie_adopte_nb) %>% 
+  mutate(
+    frt_decl = case_when(
+      if_all(.cols = fa_sf_fratrie_bio_nb:fa_sf_fratrie_adopte_nb, ~ .x < 0) ~ -9,
+      if_all(.cols = fa_sf_fratrie_bio_nb:fa_sf_fratrie_adopte_nb, ~ .x >= 0) ~ 
+        rowSums(pick(fa_sf_fratrie_bio_nb:fa_sf_fratrie_adopte_nb)),
+      if_any(.cols = fa_sf_fratrie_bio_nb:fa_sf_fratrie_adopte_nb, ~ .x >= 0) ~ 
+        rowSums(across(fa_sf_fratrie_bio_nb:fa_sf_fratrie_adopte_nb, ~ if_else(.x >= 0, .x, 0)))
+    )
+  )
+
+F4_D3 <- F4_D2 %>% 
+  left_join(
+    info_frt,
+    by = "id_anonymat"
+  ) %>% 
+  relocate(fa_sf_rang_nais:frt_decl, .after = id_mois_nais) %>% 
+  group_by(id_anonymat) %>% 
+  arrange(an_nais, mois_nais) %>% 
+  mutate(
+    frt_doc = n(),
+    rang_frt = sprintf("fa_frt%02d_", row_number()),
+    .after = frt_decl
+  ) %>% 
+  ungroup() %>% 
+  arrange(desc(frt_doc), id_anonymat, rang_frt)
+
+```
+
