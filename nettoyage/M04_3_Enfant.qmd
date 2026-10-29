@@ -266,6 +266,86 @@ E4_D1 <- E4_D0 %>%
     "decd_an" = "an_deces"
   )
 
-rm(list = c("rm_sf_enf", "E4_T3"))
+rm(rm_sf_enf)
+```
+
+## Vérifier le nombre d'enfants
+
+
+```{r}
+
+E4_D2 <- E4_D1 %>% 
+  group_by(id_anonymat) %>% 
+  arrange(nais_an) %>% 
+  mutate(
+    nb_enf = n(),
+    rang_enf = glue::glue("fa_enf{row_number()}_"),
+    .before = prenom_conjt
+  ) %>% 
+  ungroup()
+```
+
+```{r}
+
+M4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_D1_tt.csv",
+                         show_col_types = FALSE)
+
+info_enfants <- M4_D1 %>% 
+  filter(id_anonymat %in% E4_D1$id_anonymat) %>% 
+  select(id_anonymat, fa_sf_enf_bio_nb, fa_sf_enf_adopte_nb)
+
+```
+
+
+```{r}
+
+
+E4_D3 <- E4_D2 %>% 
+  left_join(
+    info_enfants,
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("fa_sf_enf_bio_nb", "fa_sf_enf_adopte_nb"), .after = nb_enf) %>%
+  group_by(id_anonymat) %>% 
+  mutate(
+    nb_declare = case_when(
+      fa_sf_enf_bio_nb >= 0 & fa_sf_enf_adopte_nb >= 0 ~ fa_sf_enf_bio_nb + fa_sf_enf_adopte_nb,
+      fa_sf_enf_bio_nb >= 0 & fa_sf_enf_adopte_nb < 0 ~ fa_sf_enf_bio_nb,
+      fa_sf_enf_bio_nb < 0 & fa_sf_enf_adopte_nb < 0 ~ -9,
+      TRUE ~ -999
+    ),
+    .after = nb_enf
+  )
+
+```
+
+
+```{r}
+
+verif0 <- E4_D3 %>% 
+  group_by(id_anonymat) %>% 
+  filter(nb_enf != nb_declare) %>% 
+  ungroup() %>% 
+  arrange(desc(nb_enf), id_anonymat, rang_enf)
+
+verif1 <- verif0 %>% 
+  filter_out(
+    (id_anonymat == "HYFFS" & rang_enf == "fa_enf2_")|
+    (id_anonymat == "JNDTO" &  rang_enf == "fa_enf1_")|
+    (id_anonymat == "JNDTO" &  rang_enf == "fa_enf3_")|
+      (id_anonymat == "RSMJV" &  rang_enf != "fa_enf3_")|
+      (id_anonymat == "GVIZV" &  rang_enf == "fa_enf2_")|
+      (id_anonymat == "RICJW" &  rang_enf == "fa_enf2_")
+  ) %>% 
+  group_by(id_anonymat) %>% 
+  arrange(nais_an) %>% 
+  mutate(
+    nb_enf = n(),
+    rang_enf = glue::glue("fa_enf{row_number()}_"),
+    .before = prenom_conjt
+  ) %>%
+  ungroup() %>% 
+  arrange(desc(nb_enf), id_anonymat, rang_enf)
+
 ```
 
