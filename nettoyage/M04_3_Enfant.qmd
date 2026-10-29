@@ -246,3 +246,26 @@ E4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_D0.csv",
 
 ```
 
+## Renommer
+
+```{r}
+
+
+rm_sf_enf <- colnames(select(E4_D0,
+                    sf_enf_conjt_prenom:sf_enf_an_deces))
+  
+E4_D1 <- E4_D0 %>% 
+  rename_with(.cols = all_of(rm_sf_enf), ~gsub("sf_enf_", "", .x)) %>% 
+  rename(
+    "prenom_conjt" = "conjt_prenom",
+    "nais_mois" = "mois_nais",
+    "nais_an" = "an_nais",
+    "adpt_mois" = "mois_adopte",
+    "adpt_an" = "an_adopte",
+    "decd_mois" = "mois_deces",
+    "decd_an" = "an_deces"
+  )
+
+rm(list = c("rm_sf_enf", "E4_T3"))
+```
+
