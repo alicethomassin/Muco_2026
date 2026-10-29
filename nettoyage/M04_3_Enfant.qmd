@@ -248,7 +248,7 @@ E4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_D0.csv",
 
 ## Renommer
 
-```{r}
+```{r E4_D0 to E4_D1}
 
 
 rm_sf_enf <- colnames(select(E4_D0,
@@ -272,7 +272,7 @@ rm(rm_sf_enf)
 ## Vérifier le nombre d'enfants
 
 
-```{r}
+```{r E4_D1 to E4_D2}
 
 E4_D2 <- E4_D1 %>% 
   group_by(id_anonymat) %>% 
@@ -297,7 +297,7 @@ info_enfants <- M4_D1 %>%
 ```
 
 
-```{r}
+```{r E4_D2 to E4_D3}
 
 
 E4_D3 <- E4_D2 %>% 
@@ -321,7 +321,7 @@ E4_D3 <- E4_D2 %>%
 ```
 
 
-```{r}
+```{r E4_D3 to E4_D4}
 
 verif0 <- E4_D3 %>% 
   group_by(id_anonymat) %>% 
@@ -416,7 +416,7 @@ rcdSM_vars_borne_opt1 <- function(df, borne, x, vars){
 ```
 
 
-```{r}
+```{r E4_D4 to E4_E0}
 
 vars_simples <- E4_D4 %>% 
   select(sexe:issu, diag_avt:decede) %>% 
@@ -447,7 +447,7 @@ rm(list = c("vars_txt", "vars_simples", "vars_dcd", "vars_adp",
 
 ## Pivoter
 
-```{r}
+```{r E4_E0 to E4_F0}
 
 vars_wider <- E4_E0 %>% 
   select(prenom_conjt:decd_an) %>% 
@@ -473,4 +473,32 @@ E4_F0 <- E4_E0 %>%
   )
 
 ```
+
+## Réordonner
+
+```{r E4_F0 to E4_F1}
+
+E4_F1 <- E4_F0 %>% 
+  relocate(commentaires_fam, .after = last_col()) %>% 
+  select(-id_doublon, -id_keep) %>% 
+  relocate(c("id_date_nais", "id_sexe", "fa_complet", "cp_complet", "en_complet",
+             "fr_complet", "enfants_date_creation"), .after = commentaires_fam)
+
+
+```
+
+```{r}
+
+write_csv(E4_F1, "../../data_hors_git/process_data/thoa_E4_F1_tt.csv")
+```
+
+# POINT DE DÉPART
+
+```{r}
+
+E4_F1 <- readr::read_csv("../../data_hors_git/process_data/thoa_E4_F1_tt.csv",
+                         show_col_types = FALSE)
+
+```
+
 
