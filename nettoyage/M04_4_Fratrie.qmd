@@ -399,11 +399,120 @@ verif1 <- verif0 %>%
 F4_D4 <- F4_D3 %>% 
   filter_out(id_anonymat %in% verif0$id_anonymat) %>% 
   bind_rows(verif1) %>% 
-  arrange(desc(frt_doc), id_anonymat, rang_frt)
+  arrange(desc(frt_doc), id_anonymat, rang_frt) %>% 
+  rename(
+    "nais_mois" = "mois_nais",
+    "nais_an" = "an_nais",
+    "deces_mois" = "mois_deces",
+    "deces_an" = "an_deces",
+    "adpt_mois" = "mois_adopte",
+    "adpt_an" = "an_adopte"
+  )
 
 rm(list = c("verif0", "verif1", "rm_frsr", "rm_pf_fr"))
 ```
 
+## Recoder les NAs
+
+```{r}
+
+rcdSM_vars_simple2 <- function(df, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          . == 99 ~ -8,
+          !is.na(.) ~ .,
+          is.na(.) ~ -9,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcdSM_vars_borne_opt1 <- function(df, borne, x, vars){
+  
+  out <- df %>% 
+    filter_out({{borne}} == x|
+                 {{borne}} < 0) %>% 
+    distinct({{borne}}) %>% 
+    pull()
+  
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ case_when(
+          !is.na(.) ~ .,
+          is.na(.) & {{borne}} == x ~ -9,
+          is.na(.) & {{borne}} == -9 ~ -9,
+          is.na(.) & {{borne}} %in% out ~ -1,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+```
+
+
+```{r F4_D4 to F4_E0}
+
+vars_simple <- F4_D4 %>% 
+  select(sexe:issu, diag_avt_nais:decede) %>% 
+  colnames()
+
+vars_adpt <- F4_D4 %>% 
+  select(adpt_mois:adpt_an) %>% 
+  colnames()
+
+vars_decd <- F4_D4 %>% 
+  select(deces_mois:deces_an) %>% 
+  colnames()
+
+F4_E0 <- F4_D4 %>% 
+  mutate(
+    prenom = replace_when(
+      prenom,
+      is.na(prenom) ~ "-9"
+    )
+  ) %>% 
+  rcdSM_vars_simple2(all_of(vars_simple)) %>% 
+  rcdSM_vars_borne_opt1(issu, 3, all_of(vars_adpt)) %>% 
+  rcdSM_vars_borne_opt1(decede, 1, all_of(vars_decd))
+
+```
+
+## Pivoter
+
+```{r F4_E0 to F4_F0}
+
+vars_wider <- F4_E0 %>% 
+  select(prenom:deces_an) %>% 
+  colnames()
+
+
+F4_F0 <- F4_E0 %>% 
+  pivot_wider(
+    names_from = rang_frt,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_frt}{.value}"
+  ) %>% 
+  mutate(
+    across(
+      starts_with("fa_frt") & where(is.character), ~ replace_when(
+        .x, is.na(.x) ~ "-1"
+      )
+    ),
+    across(
+      starts_with("fa_frt") & where(is.numeric), ~ replace_when(
+        .x, is.na(.x) ~ -1
+      )
+    )
+  )
+
+```
 
 
 
