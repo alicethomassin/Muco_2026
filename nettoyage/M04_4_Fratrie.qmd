@@ -361,7 +361,7 @@ F4_D3 <- F4_D2 %>%
 
 ### Corriger ceux sans ddn
 
-```{r}
+```{r F4_D3 to F4_D4}
 
 verif0 <- F4_D3 %>% 
   group_by(id_anonymat) %>% 
@@ -374,7 +374,8 @@ verif1 <- verif0 %>%
     an_nais = replace_when(
       an_nais,
       id_anonymat == "GCXSD" & is.na(an_nais) ~ 1000,
-      id_anonymat == "VBSNT" & is.na(an_nais) ~ 2004
+      id_anonymat == "VBSNT" & is.na(an_nais) ~ 2004,
+      id_anonymat == "NQTXR" & is.na(an_nais) ~ 1000
     )
   ) %>% 
   group_by(id_anonymat) %>% 
@@ -390,10 +391,19 @@ verif1 <- verif0 %>%
   mutate(
     an_nais = replace_when(
       an_nais,
-      id_anonymat == "GCXSD" & prenom == "LI" ~ NA_integer_
+      id_anonymat == "GCXSD" & prenom == "LI" ~ NA_integer_,
+      id_anonymat == "NQTXR" & an_nais == 1000 ~ NA_integer_
     )
   )
+
+F4_D4 <- F4_D3 %>% 
+  filter_out(id_anonymat %in% verif0$id_anonymat) %>% 
+  bind_rows(verif1) %>% 
+  arrange(desc(frt_doc), id_anonymat, rang_frt)
+
+rm(list = c("verif0", "verif1", "rm_frsr", "rm_pf_fr"))
 ```
+
 
 
 
