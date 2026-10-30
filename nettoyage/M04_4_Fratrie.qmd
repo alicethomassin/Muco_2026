@@ -514,5 +514,34 @@ F4_F0 <- F4_E0 %>%
 
 ```
 
+## Réordonner
 
+```{r F4_F0 to F4_F1}
+
+F4_F1 <- F4_F0 %>% 
+  relocate(id_anonymat, frt_doc, commentaires_fam, id_date_nais, id_sexe, 
+           fratrie_date_creation, fa_complet, cp_complet, en_complet,
+           fr_complet, fa_fr_fratrie, fa_frt01_prenom:fa_frt11_deces_an) %>% 
+  select(-(id_an_nais:id_keep)) %>% 
+  rename(
+    "nb_frt" = "frt_doc"
+  )
+
+rm(list = c("vars_adpt", "vars_decd", "vars_simple", "vars_wider", "rcdSM_vars_borne_opt1",
+            "rcdSM_vars_simple2"))
+
+```
+
+```{r}
+
+write_csv(F4_F1, "../../data_hors_git/process_data/thoa_F4_F1_tt.csv")
+
+```
+
+# CODEBOOK
+
+```{r}
+F4_F1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_F1_tt.csv",
+                         show_col_types = FALSE)
+```
 
