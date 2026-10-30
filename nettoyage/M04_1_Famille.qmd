@@ -355,7 +355,7 @@ M4_C3 <- M4_C2 %>%
 
 ```
 
-# NETTOYAGE REPRENDRE ICI
+# NETTOYAGE
 
 ```{r}
 
@@ -363,6 +363,7 @@ M4_C3 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_C3.csv",
                          show_col_types = F)
 ```
 
+## Recoder NAs
 ```{r}
 rcd_simple_2 <- function(df, vars, complet){
   df %>% 
@@ -493,7 +494,7 @@ rcd_borne_opt2 <- function(df, borne, inc, y, vars){
 ```
 
 
-```{r}
+```{r M4_C3 to M4_D0}
 
 simple <- M4_C3 %>% 
   select(fa_pap_nais_mois:fa_pap_deces, fa_pap_etudes, fa_pap_statut,
@@ -568,7 +569,7 @@ rm(list = c("simple", "texte", "deces_mere", "deces_pere", "job_pere",
   
 ```
 
-```{r}
+```{r M4_D0 to M4_D1}
 
 M4_D1 <- M4_D0 %>% 
   mutate(
@@ -590,7 +591,7 @@ M4_D1 <- M4_D0 %>%
   select(-fa_fo_revenus)
 ```
 
-# Export
+ Export
 
 ```{r}
 write_csv(M4_D1, "../../data_hors_git/process_data/thoa_M4_D1_tt.csv")
@@ -605,5 +606,12 @@ verif <- M4_D0 %>%
 
 verif <- M4_D0 %>% 
   filter(if_any(any_of(texte), ~ . == "-999"))
+```
+
+# CODEBOOK
+
+```{r}
+M4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_M4_D1_tt.csv",
+                         show_col_types = FALSE)
 ```
 
