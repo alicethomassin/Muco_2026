@@ -638,7 +638,10 @@ library(labelled)
 M4_D2 <- M4_D1 %>% 
   select(-id_doublon, -id_keep, -id_date_creation) %>% 
   rename(
-    "fa_commentaires" = "commentaires_fam"
+    "fa_commentaires" = "commentaires_fam",
+    "fa_cp_complet" = "cp_complet",
+    "fa_en_complet" = "en_complet",
+    "fa_fr_complet" = "fr_complet"
   ) %>% 
   relocate(fa_date_creation, .after = fa_commentaires) %>% 
   relocate(c("id_age", "id_date_nais", "id_sexe"), .after = fa_date_creation) %>% 
@@ -646,4 +649,77 @@ M4_D2 <- M4_D1 %>%
 
 ```
 
+```{r}
+
+str_length("F01 - Have you ever lived as a couple for at least 1 year?")
+
+```
+
+
+```{r}
+
+M4_D3 <- M4_D2 %>% 
+  set_variable_labels(
+    fa_complet = "Family module completed",
+    fa_cp_couple_1an = "F01 - Ever lived with a partner for 1+ year",
+    fa_cp_complet = "Couple module completed",
+    fa_en_enfants = "F02 - Has biological or adopted children",
+    fa_en_complet = "Children module completed",
+    fa_pap_prenom = "F24 Father's first name",
+    fa_pap_nais_mois = "F25 Father's birth month",
+    fa_pap_nais_an = "F25 Father's birth year",
+    fa_pap_deces = "F26 Father deceased",
+    fa_pap_deces_mois = "F27 Father's death month",
+    fa_pap_deces_an = "F27 Father's death year",
+    fa_pap_etudes = "F28 Father's level of education",
+    fa_pap_prof = "F29 Father's profession",
+    fa_pap_statut = "F30 Father's work status ",
+    fa_pap_entreprise = "F31 Father's employer type",
+    fa_pap_qual = "F32 Father's qualification",
+    fa_pam_prenom = "F33 Mother's first name",
+    fa_pam_nais_mois = "F34 Mother's birth month",
+    fa_pam_nais_an = "F34 Mother's birth year",
+    fa_pam_deces = "F35 Mother deceased",
+    fa_pam_deces_mois = "F36 Mother's death month",
+    fa_pam_deces_an = "F36 Mother's death year",
+    fa_pam_etudes = "F37 Mother's level of education",
+    fa_pam_prof = "F38 Mother's profession",
+    fa_pam_statut = "F39 Mother's work status",
+    fa_pam_entreprise = "F40 Mother's employer type",
+    fa_pam_qual = "F41 Mother's qualification",
+    fa_par_union = "F42 Parent's union",
+    fa_par_union_mois = "F43 Parent's union start (month)",
+    fa_par_union_an = "F43 Parent's union start (year)",
+    fa_par_union_int = "F44 Parent's union interrupted",
+    fa_par_union_int_nat = "F45 Type of interruption",
+    fa_par_union_int_mois = "F46 Parent's union end (month)",
+    fa_par_union_int_an = "F46 Parent's union end (year)",
+    fa_par_union_int_muco = "F47 CF caused separation",
+    fa_fr_fratrie = "F48 Has siblings",
+    fa_fr_complet = "Siblings module completed",
+    fa_fo_vie = "F58 Living arrangement",
+    fa_fo_vie_autre = "F58 Living arrangement: other specified",
+    fa_fo_conjt_prof = "F59 Partner currently employed",
+    fa_fo_conjt_ress = "F60 Partner has own income",
+    fa_fo_parent_prof = "F61 Parent currently employed",
+    fa_fo_parent_ress = "F62 Parent has own income",
+    fa_fo_pere_prof = "F63 Father currently employed",
+    fa_fo_mere_prof = "F64 Mother currently employed",
+    fa_fo_vos_parents_ress = "F65 Parents have own income",
+    fa_fo_membres_prof = "F66 Family member currently employed",
+    fa_fo_membres_ress = "F67 Family member has own income",
+    fa_fo_vous_ress = "F68 ",
+    fa_fo_revenus_mois = "F69 ",
+    fa_fo_revenus_an = "F69 ",
+    fa_fo_revenus_corr = "F69 ",
+    fa_sf_matrimoniale = "F70 ",
+    fa_sf_enf_bio_nb = "F71 ",
+    fa_sf_enf_adopte_nb = "F72 ",
+    fa_sf_fratrie_bio_nb = "F73 ",
+    fa_sf_rang_nais = "F74 ",
+    fa_sf_fratrie_demi_nb = "75 ",
+    fa_sf_fratrie_adopte_nb = "76 "
+  )
+
+```
 
