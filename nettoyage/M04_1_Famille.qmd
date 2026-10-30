@@ -628,3 +628,22 @@ rm(taille_vars)
 
 ```
 
+
+## Variable labels
+
+```{r}
+library(labelled)
+
+
+M4_D2 <- M4_D1 %>% 
+  select(-id_doublon, -id_keep, -id_date_creation) %>% 
+  rename(
+    "fa_commentaires" = "commentaires_fam"
+  ) %>% 
+  relocate(fa_date_creation, .after = fa_commentaires) %>% 
+  relocate(c("id_age", "id_date_nais", "id_sexe"), .after = fa_date_creation) %>% 
+  select(-(id_centre1:id_prenom))
+
+```
+
+
