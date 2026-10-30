@@ -725,3 +725,89 @@ M4_D3 <- M4_D2 %>%
 
 ```
 
+## Value labels
+
+### Labels NAs
+
+```{r}
+
+rcd_tagged_na_dbl <- function(df, vars_dbl){
+  
+  df %>% 
+    mutate(
+      across(
+          {{vars_dbl}},
+          ~ replace_when(
+            .x,
+            .x >= 0 ~ .x,
+            .x == -1 ~ tagged_na("a"),
+            .x == -2 ~ tagged_na("b"),
+            .x == -8 ~ tagged_na("c"),
+            .x == -9 ~ tagged_na("d")
+          )
+        )
+      )
+}
+
+# Pas encore testée, je pense ne pas m'en servir pcq ça transformerait les 
+# réponses libres en facteurs
+rcd_tagged_na_txt <- function(df, vars_txt){
+  
+  df %>% 
+    mutate(
+      across(
+          {{vars_txt}},
+          ~ replace_when(
+            .x,
+            .x == "-1" ~ tagged_na("a"),
+            .x == "-2" ~ tagged_na("b"),
+            .x == "-8" ~ tagged_na("c"),
+            .x == "-9" ~ tagged_na("d")
+          )
+        )
+      )
+}
+
+rcd_levels_na <- function(df, var){
+  
+  df %>% 
+    set_value_labels(
+          {{var}} := c(
+            "Not applicable" = tagged_na("a"),
+            "Module not completed" = tagged_na("b"),
+            "Don’t know" = tagged_na("c"),
+            "No answer" = tagged_na("d")
+          )
+      )
+}
+
+```
+
+```{r}
+
+vars_dbl <- M4_D3 %>% 
+  select(fa_cp_couple_1an, fa_en_enfants, fa_pap_nais_mois, fa_pap_deces_mois, fa_par_union_int_nat) %>% 
+  colnames()
+
+# Peut-être pas pertinent
+vars_txt <- M4_D3 %>% 
+  select(fa_pap_prenom, fa_pap_prof, fa_pam_prenom, fa_pam_prof, fa_fo_vie_autre) %>% 
+  colnames()
+
+
+# Les deux fonctions fonctionnent!
+
+# Je dois reprendre de sorte à savoir quoi faire pour les variables textuelles
+# Je dois aussi déterminer si je fais le codebook avant ou après la transformation pour stata
+# Je devrai aussi repasser sur chaque variable pour mettre les value labels qui ne
+# correspondent pas aux NAs
+M4_T0 <- M4_D3 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(M4_T0$fa_par_union_int_nat), useNA = "ifany")
+
+```
+
+
+
