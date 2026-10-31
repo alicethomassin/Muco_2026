@@ -907,10 +907,12 @@ rcd_oui_non <- function(df, var_bin){
 ```
 
 
-```{r}
+```{r M4_E2 to M4_E3}
 
 vars_bin <- M4_E2 %>% 
-  select(fa_fo_conjt_prof:fa_fo_mere_prof, fa_fo_vous_ress) %>% 
+  select(fa_cp_couple_1an, fa_cp_complet, fa_en_enfants, fa_en_complet,
+         fa_fr_fratrie, fa_fr_complet, fa_fo_conjt_prof:fa_fo_mere_prof, 
+         fa_fo_vous_ress) %>% 
   colnames()
 
 M4_E3 <- M4_E2 %>% 
@@ -979,6 +981,22 @@ M4_E3 <- M4_E2 %>%
   )
 
 ```
+
+
+### Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- M4_E3 %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- M4_E3 %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
+
 
 
 ```{r}
