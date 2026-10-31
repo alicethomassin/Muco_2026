@@ -997,19 +997,11 @@ rm(list = c("verif_ch", "verif_db"))
 
 ```
 
+## Ajouter étiquette des variables
 
+```{r M4_E3 to M4_E4}
 
-```{r}
-
-str_length("F01 - Have you ever lived as a couple for at least 1 year?")
-
-```
-
-## Variable labels
-
-```{r}
-
-M4_D3 <- M4_D2 %>% 
+M4_E4 <- M4_E3 %>% 
   set_variable_labels(
     fa_complet = "Family module completed",
     fa_cp_couple_1an = "F01 Ever lived with a partner for 1+ year",
@@ -1062,7 +1054,7 @@ M4_D3 <- M4_D2 %>%
     fa_fo_vous_ress = "F68 Has own income",
     fa_fo_revenus_mois = "F69 Household monthly income (before tax)",
     fa_fo_revenus_an = "F69 Household annual income (before tax)",
-    fa_fo_revenus_corr = "F69 Household annual income (brackets)",
+    fa_fo_revenus_cat = "F69 Household annual income (brackets)",
     fa_sf_matrimoniale = "F70 Current marital status",
     fa_sf_enf_bio_nb = "F71 Number of biological children",
     fa_sf_enf_adopte_nb = "F72 Number of adopted children",
@@ -1076,9 +1068,6 @@ M4_D3 <- M4_D2 %>%
 
 ```
 
-## Value labels
-
-### Labels NAs
 
 
 
