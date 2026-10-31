@@ -628,6 +628,44 @@ rm(taille_vars)
 
 ```
 
+## Modifier NAs character
+
+```{r}
+
+vars_par <- c("fa_pap_prenom", "fa_pap_prof", "fa_pam_prenom",
+               "fa_pam_prof")
+
+M4_D2 <- M4_D1 %>% 
+  mutate(
+    across(
+      all_of(vars_par), ~ replace_when(
+                 .x,
+                 .x == "-2" ~ "b_Module not completed",
+                 .x == "-9" ~ "d_No answer"
+               )),
+    fa_fo_vie_autre = replace_when(
+      fa_fo_vie_autre,
+      fa_fo_vie_autre == "-1" ~ "a_Not applicable",
+      fa_fo_vie_autre == "-2" ~ "b_Module not completed",
+      fa_fo_vie_autre == "-9" ~ "d_No answer",
+    )) %>% 
+  mutate(
+    fa_fo_revenus_cat = case_when(
+      fa_fo_revenus_corr == "A-[<7.200 - <17.170]" ~ "[<7.200 - <17.170]",
+      fa_fo_revenus_corr == "B-[17.170 - <28.000]" ~ "[17.170 - <28.000]",
+      fa_fo_revenus_corr == "C-[28.000 - <45.400]" ~ "[28.000 - <45.400]",
+      fa_fo_revenus_corr == "D-[45.400 - >104.550]" ~ "[45.400 - >104.550]",
+      fa_fo_revenus_corr == "E-[NSPR - NSP]" ~ "c_Don't know or d_No answer",
+      fa_fo_revenus_corr == "F-[MODULE SAUTÉ]" ~ "b_Module not complete"
+    ),
+    .after = fa_fo_revenus_corr
+    ) %>% 
+  select(-fa_fo_revenus_corr)
+
+
+
+```
+
 
 ## Variable labels
 
