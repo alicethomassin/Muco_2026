@@ -910,7 +910,7 @@ rcd_oui_non <- function(df, var_bin){
 ```{r M4_E2 to M4_E3}
 
 vars_bin <- M4_E2 %>% 
-  select(fa_cp_couple_1an, fa_cp_complet, fa_en_enfants, fa_en_complet,
+  select(fa_complet, fa_cp_couple_1an, fa_cp_complet, fa_en_enfants, fa_en_complet,
          fa_fr_fratrie, fa_fr_complet, fa_fo_conjt_prof:fa_fo_mere_prof, 
          fa_fo_vous_ress) %>% 
   colnames()
@@ -1100,6 +1100,20 @@ haven::write_dta(M4_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 ```
 
 
+# Codebook peter
+
+```{r}
+
+M4_E5 <- haven::read_stata("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
+
+```
+
+
+```{r}
+
+print(codebookr::codebook(M4_E4), "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454R.docx")
+
+```
 
 
 
