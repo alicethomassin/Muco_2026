@@ -774,7 +774,7 @@ rcd_mois <- function(df, var){
 ```{r M4_E0 to M4_E1}
 
 all_mois <- M4_E0 %>% 
-  select(contains("mois")) %>% 
+  select(contains("mois"), -fa_fo_revenus_mois) %>% 
   colnames()
 
 M4_E1 <- M4_E0 %>% 
@@ -889,6 +889,96 @@ M4_E2 <- M4_E1 %>%
 
 ```
 
+### Foyer
+
+```{r}
+
+rcd_oui_non <- function(df, var_bin){
+  
+  df %>% 
+    add_value_labels(
+      {{var_bin}} := c(
+        "No" = 0,
+        "Yes" = 1
+      )
+    )
+}
+
+```
+
+
+```{r}
+
+vars_bin <- M4_E2 %>% 
+  select(fa_fo_conjt_prof:fa_fo_mere_prof, fa_fo_vous_ress) %>% 
+  colnames()
+
+M4_E3 <- M4_E2 %>% 
+  mutate(across(all_of(vars_bin), rcd_oui_non)) %>% 
+  add_value_labels(
+    fa_fo_vie = c(
+      "Alone" = 1,
+      "Single parent" = 2,
+      "With partner" = 3,
+      "With one parent" = 4,
+      "With both parents" = 5,
+      "With other relatives" = 6,
+      "Other" = 7
+    ),
+    fa_fo_vos_parents_ress = c(
+      "Yes, only one" = 1,
+      "Yes, both" = 2,
+      "No, neither" = 3
+    ),
+    fa_fo_membres_prof = c(
+      "Yes, some" = 1,
+      "Yes, all" = 2,
+      "No, none" = 3
+    ),
+    fa_fo_membres_ress = c(
+      "Yes, some" = 1,
+      "Yes, all" = 2,
+      "No, none" = 3
+    ),
+    fa_sf_matrimoniale = c(
+      "Single (never married)" = 1,
+      "Married" = 2,
+      "Cohabiting/PACS, not married" = 3,
+      "Divorced" = 4,
+      "Separated" = 5,
+      "Widowed" = 6
+    ),
+    fa_fo_revenus_mois = c(
+      "Less than 600" = 1,
+      "600 to <1,110" = 2,
+      "1,110 to <1,430" = 3,
+      "1,430 to <1,670" = 4,
+      "1,670 to <2,000" = 5,
+      "2,000 to <2,330" = 6,
+      "2,330 to <2,700" = 7,
+      "2,700 to <3,130" = 8,
+      "3,130 to <3,780" = 9,
+      "3,780 to <4,800" = 10,
+      "4,800 to <8,710" = 11,
+      "8,710 or more" = 12
+    ),
+    fa_fo_revenus_an = c(
+      "Less than 7,200" = 1,
+      "7,200 to <13,300" = 2,
+      "13,300 to <17,170" = 3,
+      "17,170 to <20,040" = 4,
+      "20,040 to <24,050" = 5,
+      "24,050 to <28,000" = 6,
+      "28,000 to <32,290" = 7,
+      "32,290 to <37,510" = 8,
+      "37,510 to <45,400" = 9,
+      "45,400 to <57,550" = 10,
+      "57,550 to <104,550" = 11,
+      "104,550 or more" = 12
+    )
+  )
+
+```
 
 
 ```{r}
