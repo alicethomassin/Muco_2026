@@ -742,6 +742,125 @@ rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
 ```
 
+## Recoder modalités autres
+
+```{r}
+
+rcd_mois <- function(df, var){
+  
+  df %>% 
+    add_value_labels(
+      {{var}} := c(
+        "January" = 1,
+        "February" = 2,
+        "March" = 3,
+        "April" = 4,
+        "May" = 5,
+        "June" = 6,
+        "July" = 7,
+        "August" = 8,
+        "September" = 9,
+        "October" = 10,
+        "November" = 11,
+        "December" = 12
+      )
+    )
+}
+
+```
+
+
+### Pere et Mere
+```{r M4_E0 to M4_E1}
+
+all_mois <- M4_E0 %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+M4_E1 <- M4_E0 %>% 
+  add_value_labels(
+    fa_pap_deces = c(
+      "No" = 0,
+      "Yes" = 1
+    ),
+    fa_pap_etudes = c(
+      "Never attended school" = 1,
+      "Primary cert. (CEP)" = 2,
+      "Some lower sec./vocational" = 3,
+      "CAP/BEP or some upper sec." = 4,
+      "Bac or some higher ed" = 5,
+      "2 yrs post-bac (BTS/DUT)" = 6,
+      "3-4 yrs post-bac (Licence)" = 7,
+      "5+ yrs post-bac (Master+)" = 8
+    ),
+    fa_pap_statut = c(
+      "Self-employed" = 1,
+      "Salaried owner-manager/CEO" = 2,
+      "Employee" = 3
+    ),
+    fa_pap_entreprise = c(
+      "Central government" = 1,
+      "Local govt/hospitals/housing" = 2,
+      "Social security funds" = 3,
+      "State-owned enterprises" = 4,
+      "Private sector" = 5
+    ),
+    fa_pap_qual = c(
+      "Unskilled/semi-skilled worker" = 1,
+      "Skilled worker" = 2,
+      "Supervisor/foreman" = 3,
+      "Top executive (CEO/deputy)" = 4,
+      "Technician/draftsman/sales rep" = 5,
+      "Primary teacher, nurse, cat B" = 6,
+      "Engineer/professional (cadre)" = 7,
+      "Sec./univ. teacher, cat A" = 8,
+      "Clerk/service worker, cat C/D" = 9
+    )
+  ) %>% 
+  mutate(across(all_of(all_mois), rcd_mois)) %>%
+  add_value_labels(
+    fa_pam_deces = c(
+      "No" = 0,
+      "Yes" = 1
+    ),
+    fa_pam_etudes = c(
+      "Never attended school" = 1,
+      "Primary cert. (CEP)" = 2,
+      "Some lower sec./vocational" = 3,
+      "CAP/BEP or some upper sec." = 4,
+      "Bac or some higher ed" = 5,
+      "2 yrs post-bac (BTS/DUT)" = 6,
+      "3-4 yrs post-bac (Licence)" = 7,
+      "5+ yrs post-bac (Master+)" = 8
+    ),
+    fa_pam_statut = c(
+      "Self-employed" = 1,
+      "Salaried owner-manager/CEO" = 2,
+      "Employee" = 3
+    ),
+    fa_pam_entreprise = c(
+      "Central government" = 1,
+      "Local govt/hospitals/housing" = 2,
+      "Social security funds" = 3,
+      "State-owned enterprises" = 4,
+      "Private sector" = 5
+    ),
+    fa_pam_qual = c(
+      "Unskilled/semi-skilled worker" = 1,
+      "Skilled worker" = 2,
+      "Supervisor/foreman" = 3,
+      "Top executive (CEO/deputy)" = 4,
+      "Technician/draftsman/sales rep" = 5,
+      "Primary teacher, nurse, cat B" = 6,
+      "Engineer/professional (cadre)" = 7,
+      "Sec./univ. teacher, cat A" = 8,
+      "Clerk/service worker, cat C/D" = 9
+    )
+  )
+
+
+```
+
 
 ```{r}
 
