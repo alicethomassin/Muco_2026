@@ -861,6 +861,35 @@ M4_E1 <- M4_E0 %>%
 
 ```
 
+### Parents
+
+```{r M4_E1 to M4_E2}
+
+M4_E2 <- M4_E1 %>% 
+  add_value_labels(
+    fa_par_union = c(
+      "Married" = 1,
+      "Cohabiting/PACS, not married" = 2,
+      "Never lived together" = 3
+    ),
+    fa_par_union_int = c(
+      "No" = 0,
+      "Yes" = 1
+    ),
+    fa_par_union_int_nat = c(
+      "Divorce" = 1,
+      "Breakup/separation" = 2,
+      "Widowhood" = 3
+    ),
+    fa_par_union_int_muco = c(
+      "No" = 0,
+      "Yes" = 1
+    )
+  )
+
+```
+
+
 
 ```{r}
 
