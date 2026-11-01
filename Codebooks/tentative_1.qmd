@@ -1,11 +1,12 @@
 ---
 title: "Test_1"
 author: "Alice"
+format: typst-pdf
 knitr:
   opts_chunk:
     collapse: true
 params:
-  species: Adelie
+  species: Gentoo
 ---
 
 dfjksdhfksjdf
@@ -23,7 +24,7 @@ library(tidyverse)
 
 ## Holala
 
-fsfsdfsd **Adelie**
+fsfsdfsd **`r params$species`**
 
 
 ```{r}
