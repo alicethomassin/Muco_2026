@@ -1117,17 +1117,11 @@ M4_cb <- M4_E5 %>%
     across(
       where(is.labelled), ~ as_factor(.x, levels = "both"))
     )
-
-print(codebookr::codebook(M4_cb), "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454R.docx")
-
-```
-
-
-```{r}
-
-print(codebookr::codebook(M4_E4), "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454R.docx")
+# Avant de refaire un codebook, le renommer sinon va écraser le précédent
+# print(codebookr::codebook(M4_cb), "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454R.docx")
 
 ```
+
 
 
 
