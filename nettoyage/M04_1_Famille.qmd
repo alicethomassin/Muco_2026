@@ -1109,6 +1109,10 @@ haven::write_dta(M4_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 # Codebook peter
 
 ```{r}
+library(labelled)
+library(questionr)
+library(dplyr)
+library(haven)
 
 M4_E5 <- haven::read_stata("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
 
