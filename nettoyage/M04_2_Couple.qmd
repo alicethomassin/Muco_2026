@@ -557,12 +557,47 @@ write_csv(C4_E1, "../../data_hors_git/process_data/thoa_C4_E1_tt.csv")
 
 ```
 
-# POINT DE DÉPART
+# Codebook Peter
 
 ```{r}
 
-C4_E1 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_E1_tt.csv",
+C4_E1 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E1_tt.csv",
                          show_col_types = FALSE)
 
 ```
 
+## Vérifier longueur nom vars
+
+```{r}
+
+source("Muco_2026/nettoyage/Fonctions.R")
+
+to_correct <- taille_vars(C4_E1)
+
+rm(to_correct)
+rm(taille_vars)
+
+```
+
+## Modifier NAs character
+
+```{r C4_E1 to C4_E2}
+
+vars_prenom <- C4_E1 %>% 
+  select(ends_with("prenom")) %>% 
+  colnames()
+
+C4_E2 <- C4_E1 %>% 
+  mutate(
+    across(
+      all_of(vars_prenom), ~ replace_when(
+                 .x,
+                 .x == "-1" ~ NA_character_,
+                 .x == "-2" ~ NA_character_,
+                 .x == "-9" ~ NA_character_
+               )))
+    
+
+rm(vars_prenom)
+
+```
