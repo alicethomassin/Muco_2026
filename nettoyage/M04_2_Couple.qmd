@@ -595,9 +595,70 @@ C4_E2 <- C4_E1 %>%
                  .x == "-1" ~ NA_character_,
                  .x == "-2" ~ NA_character_,
                  .x == "-9" ~ NA_character_
-               )))
+               ))) %>% 
+    rename(
+    "fa_commentaires" = "commentaires_fam",
+    "fa_cp_complet" = "cp_complet",
+    "fa_en_complet" = "en_complet",
+    "fa_fr_complet" = "fr_complet"
+  ) %>% 
+  relocate(c("id_date_nais", "id_sexe", "nb_rlt"), .after = id_anonymat)
     
 
 rm(vars_prenom)
+
+```
+
+## Recoder les NAs double pour Stata
+
+```{r}
+
+rcd_tagged_na_dbl_SM <- function(df, vars_dbl){
+  
+  df %>% 
+    mutate(
+      across(
+          {{vars_dbl}},
+          ~ replace_when(
+            .x,
+            .x >= 0 ~ .x,
+            .x == -1 ~ tagged_na("a"),
+            .x == -9 ~ tagged_na("d")
+          )
+        )
+      )
+}
+
+
+rcd_levels_na_SM <- function(df, var){
+  
+  df %>% 
+    set_value_labels(
+          {{var}} := c(
+            "Not applicable" = tagged_na("a"),
+            "No answer" = tagged_na("d")
+          )
+      )
+}
+
+```
+
+```{r C4_E2 to C4_F0}
+
+vars_dbl <- C4_E2 %>% 
+  select(where(is.double)) %>% 
+  select(-contains("complet"), -id_date_nais, -couple_date_creation) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+C4_F0 <- C4_E2 %>%
+  rcd_tagged_na_dbl_SM(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na_SM)) %>% 
+  select(-contains("fa_cpl4_union_int_"))
+
+table(as_factor(C4_F0$fa_cpl2_union_enf), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na_SM", "rcd_tagged_na_dbl_SM"))
 
 ```
