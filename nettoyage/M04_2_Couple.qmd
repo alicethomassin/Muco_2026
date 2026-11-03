@@ -829,10 +829,27 @@ C4_F2 <- C4_F1 %>%
     etiquettes_repeted(., "int_mois", "F10 Relationship ", " end date (month)") %>% 
     etiquettes_repeted(., "int_an", "F10 Relationship ", " end date (year)") %>% 
     etiquettes_repeted(., "int_muco", "F11 Relationship ", " end due to CF") %>% 
-    etiquettes_repeted(., "union_enf", "F12 Had children during relationship ", "")
+    etiquettes_repeted(., "union_enf", "F12 Had children during relationship ", "") %>% 
+    mutate(
+    fa_commentaires = replace_when(
+      fa_commentaires,
+      is.na(fa_commentaires) ~ ""
+    )
+  )
 
 
- 
+ commentaire <- C4_F2 %>% 
+  filter(if_any(where(is.character), ~ str_length(.) > 2045)) %>% 
+  select(id_anonymat, where(~ is.character(.x) && any(str_length(.x) > 2045, na.rm = TRUE)))
 
+rm(commentaire)
+```
+
+## Exporter
+
+
+```{r}
+
+haven::write_dta(C4_F2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
 
 ```
