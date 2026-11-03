@@ -765,3 +765,74 @@ C4_F1 <- C4_F0 %>%
 
 
 ```
+
+### Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- C4_F1 %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- C4_F1 %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
+
+## Ajouter étiquette des variables
+
+```{r C4_F1 to C4_F2}
+
+ etiquettes_repeted <- function(df, suffix, avant_n, post_n){
+    vars_repeted <- select({{df}}, ends_with({{suffix}})) %>% names()
+    
+    if (length(vars_repeted) < 1){
+      stop(paste("suffix", {{suffix}}, "invalide"))
+    }
+
+    num_obs <- str_extract(vars_repeted, "(?<=enf|cpl|frt0)\\d+")
+    labels_repeted <- set_names(paste0({{avant_n}}, num_obs, {{post_n}}), vars_repeted)
+    
+    {{df}} %>% 
+      set_variable_labels(., !!!labels_repeted)
+
+  }
+
+C4_F2 <- C4_F1 %>% 
+  rename(
+    "fa_cp_nb_cpl" = "nb_rlt"
+  ) %>% 
+  set_variable_labels(
+    id_anonymat = "Unique identifier",
+    id_date_nais = "PCF date of birth",
+    id_sexe = "PCF sex",
+    fa_cp_nb_cpl = "No. of relationships per PCF",
+    fa_cp_couple_1an = "F01 Ever lived with a partner for 1+ year",
+    fa_en_complet = "Children module completed",
+    fa_fr_complet = "Siblings module completed",
+    fa_cp_complet = "Couple module completed",
+    fa_complet = "Family module completed",
+    fa_commentaires = "Family module comments",
+    couple_date_creation = "Couple module date"
+  ) %>% 
+    etiquettes_repeted(., "conjt_prenom", "F02 Partner ", " name") %>% 
+    etiquettes_repeted(., "conjt_sexe", "F03 Partner ", " sex") %>% 
+    etiquettes_repeted(., "nais_mois", "F04 Partner ", " DOB (month)") %>% 
+    etiquettes_repeted(., "nais_an", "F04 Partner ", " DOB (year)") %>% 
+    etiquettes_repeted(., "union_nature", "F05 Relationship ", " type") %>% 
+    etiquettes_repeted(., "union_mois", "F06 Relationship ", " start date (month)") %>% 
+    etiquettes_repeted(., "union_an", "F06 Relationship ", " start date (year)") %>% 
+    etiquettes_repeted(., "conjt_muco", "F07 Partner ", " CF status") %>% 
+    etiquettes_repeted(., "union_int", "F08 Relationship ", " ended") %>% 
+    etiquettes_repeted(., "int_par", "F09 Relationship ", " end type") %>% 
+    etiquettes_repeted(., "int_mois", "F10 Relationship ", " end date (month)") %>% 
+    etiquettes_repeted(., "int_an", "F10 Relationship ", " end date (year)") %>% 
+    etiquettes_repeted(., "int_muco", "F11 Relationship ", " end due to CF") %>% 
+    etiquettes_repeted(., "union_enf", "F12 Had children during relationship ", "")
+
+
+ 
+
+
+```
