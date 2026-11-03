@@ -647,7 +647,8 @@ rcd_levels_na_SM <- function(df, var){
 
 vars_dbl <- C4_E2 %>% 
   select(where(is.double)) %>% 
-  select(-contains("complet"), -id_date_nais, -couple_date_creation) %>% 
+  select(
+    -contains("complet"), -id_date_nais, -couple_date_creation) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
@@ -657,8 +658,88 @@ C4_F0 <- C4_E2 %>%
   mutate(across(all_of(vars_dbl), rcd_levels_na_SM)) %>% 
   select(-contains("fa_cpl4_union_int_"))
 
-table(as_factor(C4_F0$fa_cpl2_union_enf), useNA = "ifany")
+table(as_factor(C4_F0$fa_cpl2_conjt_nais_mois), useNA = "ifany")
 
 rm(list = c("vars_dbl", "rcd_levels_na_SM", "rcd_tagged_na_dbl_SM"))
+
+```
+
+## Recoder modalités autres
+
+```{r}
+
+rcd_mois <- function(df, var){
+  
+  df %>% 
+    add_value_labels(
+      {{var}} := c(
+        "January" = 1,
+        "February" = 2,
+        "March" = 3,
+        "April" = 4,
+        "May" = 5,
+        "June" = 6,
+        "July" = 7,
+        "August" = 8,
+        "September" = 9,
+        "October" = 10,
+        "November" = 11,
+        "December" = 12
+      )
+    )
+}
+
+```
+
+
+### Pere et Mere
+```{r C4_F0 to C4_F1}
+
+all_mois <- C4_F0 %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+rcd_precis_SM <- function(x, ...){
+    add_value_labels(x, ...)
+}
+
+C4_F1 <- C4_F0 %>% 
+  mutate(
+    across(all_of(all_mois), rcd_mois)
+  ) %>% 
+    mutate(
+      across(contains("conjt_sexe"), 
+      ~ rcd_precis_SM(.x, "Male" = 1, "Female" = 2)),
+      across(contains("union_nature"),
+      ~ rcd_precis_SM(.x,
+      "Married" = 1,
+      "Cohabiting/PACS, not married" = 2,
+      "Never lived together" = 3)),
+      across(contains("conjt_muco"),
+      ~ rcd_precis_SM(.x,
+      "Yes" = 1,
+      "No" = 0)),
+      across(ends_with("union_int"),
+      ~ rcd_precis_SM(.x,
+      "Yes" = 1,
+      "No" = 0)),
+      across(ends_with("int_par"),
+      ~ rcd_precis_SM(.x,
+      "Divorce" = 1,
+      "Separation" = 2,
+      "Widowhood" = 3)),
+      across(ends_with("int_muco"),
+      ~ rcd_precis_SM(.x,
+      "Yes" = 1,
+      "No" = 0)),
+      across(ends_with("union_enf"),
+      ~ rcd_precis_SM(.x,
+      "Yes" = 1,
+      "No" = 0))
+      )
+  
+
+  table(as_factor(C4_F1$fa_cpl2_union_nature), useNA = "ifany")
+
 
 ```
