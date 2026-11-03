@@ -570,9 +570,9 @@ C4_E1 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E1_tt.csv",
 
 ```{r}
 
-source("Muco_2026/nettoyage/Fonctions.R")
+source("Muco_2026/Fonctions/taille_nom_vars.R")
 
-to_correct <- taille_vars(C4_E1)
+to_correct <- taille_nom_vars(C4_E1)
 
 rm(to_correct)
 rm(taille_vars)
@@ -837,7 +837,7 @@ C4_F2 <- C4_F1 %>%
     )
   )
 
-source("Muco_2026/nettoyage/Fonctions.R")
+source("Muco_2026/Fonctions/long_characters.R")
 
 to_verif <- long_characters(C4_F1)
 
