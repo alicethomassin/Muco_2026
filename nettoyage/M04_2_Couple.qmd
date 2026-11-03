@@ -837,16 +837,14 @@ C4_F2 <- C4_F1 %>%
     )
   )
 
+source("Muco_2026/nettoyage/Fonctions.R")
 
- commentaire <- C4_F2 %>% 
-  filter(if_any(where(is.character), ~ str_length(.) > 2045)) %>% 
-  select(id_anonymat, where(~ is.character(.x) && any(str_length(.x) > 2045, na.rm = TRUE)))
+to_verif <- long_characters(C4_F1)
 
-rm(commentaire)
+rm(to_verif)
 ```
 
 ## Exporter
-
 
 ```{r}
 
