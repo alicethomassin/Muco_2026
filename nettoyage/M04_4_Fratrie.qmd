@@ -538,10 +538,96 @@ write_csv(F4_F1, "../../data_hors_git/process_data/thoa_F4_F1_tt.csv")
 
 ```
 
-# CODEBOOK
+# CODEBOOK Peter
 
 ```{r}
-F4_F1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_F1_tt.csv",
+F4_F1 <- readr::read_csv("data_hors_git/process_data/thoa_F4_F1_tt.csv",
                          show_col_types = FALSE)
+```
+
+## Vérifier longueur nom vars
+
+```{r}
+
+source("Muco_2026/Fonctions/taille_nom_vars.R")
+
+to_correct <- taille_nom_vars(F4_F1)
+
+rm(to_correct)
+rm(taille_nom_vars)
+
+```
+
+## Modifier NAs character
+
+```{r F4_F1 to F4_F2}
+
+vars_prenom <- F4_F1 %>% 
+  select(contains("prenom")) %>% 
+  colnames()
+
+source("Muco_2026/Fonctions/long_characters.R")
+
+chr_to_verif <- long_characters(F4_F1)
+
+F4_F2 <- F4_F1 %>% 
+  mutate(
+    across(
+      all_of(vars_prenom), ~ replace_when(
+        .x,
+        str_starts(.x, "^-\\d") ~ NA_character_
+      )
+    )
+  ) %>% 
+    rename(
+    "fa_commentaires" = "commentaires_fam",
+    "fa_cp_complet" = "cp_complet",
+    "fa_en_complet" = "en_complet",
+    "fa_fr_complet" = "fr_complet",
+    "fa_fr_nb_siblings" = "nb_frt",
+    "fa_fr_date_creation" = "fratrie_date_creation"
+  ) %>% 
+  relocate(c("id_date_nais", "id_sexe", "fa_fr_nb_siblings"), .after = id_anonymat) %>% 
+    mutate(
+    fa_commentaires = replace_when(
+      fa_commentaires,
+      is.na(fa_commentaires) ~ ""
+    ),
+    across(
+      all_of(vars_prenom), ~ replace_when(
+        .x,
+        str_detect(., "\\d") ~ NA_character_
+      )
+    )
+  )
+    
+rm(list = c("vars_prenom", "chr_to_verif", "long_characters", "taille_nom_vars"))
+
+```
+
+## Recoder les NAs double pour Stata
+
+```{r F4_F2 to F4_G0}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
+
+vars_dbl <- F4_F2 %>% 
+  select(where(is.double)) %>% 
+  select(
+    -contains("complet"), -id_date_nais, -fa_fr_date_creation, -id_sexe,
+    -fa_fr_nb_siblings, -fa_fr_fratrie) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+F4_G0 <- F4_F2 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(F4_G0$fa_frt06_muco), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
 ```
 
