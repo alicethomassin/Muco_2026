@@ -549,3 +549,63 @@ E4_F2 <- E4_F1 %>%
 rm(list = c("vars_prenom", "chr_to_verif", "long_characters", "taille_nom_vars"))
 
 ```
+
+## Recoder les NAs double pour Stata
+
+```{r}
+
+rcd_tagged_na_dbl <- function(df, vars_dbl){
+  
+  df %>% 
+    mutate(
+      across(
+          {{vars_dbl}},
+          ~ replace_when(
+            .x,
+            .x >= 0 ~ .x,
+            .x == -1 ~ tagged_na("a"),
+            .x == -2 ~ tagged_na("b"),
+            .x == -8 ~ tagged_na("c"),
+            .x == -9 ~ tagged_na("d")
+          )
+        )
+      )
+}
+
+
+rcd_levels_na <- function(df, var){
+  
+  df %>% 
+    set_value_labels(
+          {{var}} := c(
+            "Not applicable" = tagged_na("a"),
+            "Module not completed" = tagged_na("b"),
+            "Don't know" = tagged_na("c"),
+            "No answer" = tagged_na("d")
+          )
+      ) %>% 
+        drop_unused_value_labels()
+}
+
+```
+
+```{r E4_F2 to E4_G0}
+
+vars_dbl <- E4_F2 %>% 
+  select(where(is.double)) %>% 
+  select(
+    -contains("complet"), -id_date_nais, -fa_en_date_creation, -id_sexe,
+    -fa_en_nb_enfants, -fa_en_enfants) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+E4_G0 <- E4_F2 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(E4_G0$fa_enf1_decede), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
+```
