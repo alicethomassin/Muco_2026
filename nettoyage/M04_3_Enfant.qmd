@@ -665,7 +665,7 @@ E4_G2 <- E4_G1 %>%
     etiquettes_repeted(., "_nais_an", "F17 Child ", " DOB (year)") %>% 
     etiquettes_repeted(., "_issu", "F18 How child ", " joined the family") %>% 
     etiquettes_repeted(., "adpt_mois", "F19 Child ", " date of adoption (month)") %>% 
-    etiquettes_repeted(., "adpt_an", "F19 Child ", "date of adoption (year)") %>% 
+    etiquettes_repeted(., "adpt_an", "F19 Child ", " date of adoption (year)") %>% 
     etiquettes_repeted(., "diag_avt", "F20 Child ", " prenatal CF diagnosis") %>% 
     etiquettes_repeted(., "_muco", "F21 Child ", " has/had CF") %>% 
     etiquettes_repeted(., "_decede", "F22 Child ", " deceased") %>% 
