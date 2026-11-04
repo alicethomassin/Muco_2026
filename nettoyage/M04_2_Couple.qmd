@@ -576,7 +576,7 @@ source("Muco_2026/Fonctions/taille_nom_vars.R")
 to_correct <- taille_nom_vars(C4_E1)
 
 rm(to_correct)
-rm(taille_vars)
+rm(taille_nom_vars)
 
 ```
 
@@ -592,11 +592,11 @@ C4_E2 <- C4_E1 %>%
   mutate(
     across(
       all_of(vars_prenom), ~ replace_when(
-                 .x,
-                 .x == "-1" ~ NA_character_,
-                 .x == "-2" ~ NA_character_,
-                 .x == "-9" ~ NA_character_
-               ))) %>% 
+        .x,
+        str_starts(.x, "-\\d") ~ NA_character_
+      )
+    )
+  ) %>% 
     rename(
     "fa_commentaires" = "commentaires_fam",
     "fa_cp_complet" = "cp_complet",
@@ -612,39 +612,10 @@ rm(vars_prenom)
 
 ## Recoder les NAs double pour Stata
 
-```{r}
-
-rcd_tagged_na_dbl_SM <- function(df, vars_dbl){
-  
-  df %>% 
-    mutate(
-      across(
-          {{vars_dbl}},
-          ~ replace_when(
-            .x,
-            .x >= 0 ~ .x,
-            .x == -1 ~ tagged_na("a"),
-            .x == -9 ~ tagged_na("d")
-          )
-        )
-      )
-}
-
-
-rcd_levels_na_SM <- function(df, var){
-  
-  df %>% 
-    set_value_labels(
-          {{var}} := c(
-            "Not applicable" = tagged_na("a"),
-            "No answer" = tagged_na("d")
-          )
-      )
-}
-
-```
-
 ```{r C4_E2 to C4_F0}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
 
 vars_dbl <- C4_E2 %>% 
   select(where(is.double)) %>% 
@@ -656,13 +627,13 @@ vars_dbl <- C4_E2 %>%
 # Les deux fonctions fonctionnent!
 
 C4_F0 <- C4_E2 %>%
-  rcd_tagged_na_dbl_SM(all_of(vars_dbl)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na_SM)) %>% 
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na)) %>% 
   select(-contains("fa_cpl4_union_int_"))
 
-table(as_factor(C4_F0$fa_cpl2_conjt_nais_mois), useNA = "ifany")
+table(as_factor(C4_F0$fa_cpl1_union_enf), useNA = "ifany")
 
-rm(list = c("vars_dbl", "rcd_levels_na_SM", "rcd_tagged_na_dbl_SM"))
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
 ```
 
@@ -697,13 +668,12 @@ rcd_mois <- function(df, var){
 ### Pere et Mere
 ```{r C4_F0 to C4_F1}
 
+source("Muco_2026/Fonctions/rcd_mois.R")
+source("Muco_2026/Fonctions/rcd_precis_SM.R")
+
 all_mois <- C4_F0 %>% 
   select(contains("mois")) %>% 
   colnames()
-
-rcd_precis_SM <- function(x, ...){
-    add_value_labels(x, ...)
-}
 
 C4_F1 <- C4_F0 %>% 
   mutate(
@@ -762,8 +732,9 @@ C4_F1 <- C4_F0 %>%
       )
   
 
-  table(as_factor(C4_F1$fa_cp_couple_1an), useNA = "ifany")
+  table(as_factor(C4_F1$fa_cpl1_union_int_par), useNA = "ifany")
 
+rm(list = c("rcd_mois", "rcd_precis_SM", "all_mois"))
 
 ```
 
@@ -785,24 +756,12 @@ rm(list = c("verif_ch", "verif_db"))
 
 ```{r C4_F1 to C4_F2}
 
- etiquettes_repeted <- function(df, suffix, avant_n, post_n){
-    vars_repeted <- select({{df}}, ends_with({{suffix}})) %>% names()
-    
-    if (length(vars_repeted) < 1){
-      stop(paste("suffix", {{suffix}}, "invalide"))
-    }
-
-    num_obs <- str_extract(vars_repeted, "(?<=enf|cpl|frt0)\\d+")
-    labels_repeted <- set_names(paste0({{avant_n}}, num_obs, {{post_n}}), vars_repeted)
-    
-    {{df}} %>% 
-      set_variable_labels(., !!!labels_repeted)
-
-  }
+source("Muco_2026/Fonctions/etiquettes_repeted.R")
 
 C4_F2 <- C4_F1 %>% 
   rename(
-    "fa_cp_nb_cpl" = "nb_rlt"
+    "fa_cp_nb_cpl" = "nb_rlt",
+    "fa_cp_date_creation" = "couple_date_creation"
   ) %>% 
   set_variable_labels(
     id_anonymat = "Unique identifier",
@@ -815,7 +774,7 @@ C4_F2 <- C4_F1 %>%
     fa_cp_complet = "Couple module completed",
     fa_complet = "Family module completed",
     fa_commentaires = "Family module comments",
-    couple_date_creation = "Couple module date"
+    fa_cp_date_creation = "Couple module date"
   ) %>% 
     etiquettes_repeted(., "conjt_prenom", "F02 Partner ", " name") %>% 
     etiquettes_repeted(., "conjt_sexe", "F03 Partner ", " sex") %>% 
