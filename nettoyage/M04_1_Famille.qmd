@@ -611,7 +611,7 @@ verif <- M4_D0 %>%
 # CODEBOOK PETER
 
 ```{r}
-M4_D1 <- readr::read_csv("../data_hors_git/process_data/thoa_M4_D1_tt.csv",
+M4_D1 <- readr::read_csv("data_hors_git/process_data/thoa_M4_D1_tt.csv",
                          show_col_types = FALSE)
 ```
 
@@ -632,37 +632,43 @@ rm(taille_vars)
 
 ```{r M4_D1 to M4_D2}
 
-vars_par <- c("fa_pap_prenom", "fa_pap_prof", "fa_pam_prenom",
-               "fa_pam_prof")
+vars_char_to_rcd <- M4_D1 %>% 
+  select(where(~ is.character(.) && any(str_starts(., "-\\d"), na.rm = T))) %>% 
+  colnames()
+
 
 M4_D2 <- M4_D1 %>% 
   mutate(
     across(
-      all_of(vars_par), ~ replace_when(
-                 .x,
-                 .x == "-2" ~ "b_Module not completed",
-                 .x == "-9" ~ "d_No answer"
-               )),
-    fa_fo_vie_autre = replace_when(
-      fa_fo_vie_autre,
-      fa_fo_vie_autre == "-1" ~ "a_Not applicable",
-      fa_fo_vie_autre == "-2" ~ "b_Module not completed",
-      fa_fo_vie_autre == "-9" ~ "d_No answer",
-    )) %>% 
+      all_of(vars_char_to_rcd), ~ replace_when(
+        .x,
+        str_starts(.x, "-\\d") ~ NA_character_
+      )
+    )
+  ) %>% 
   mutate(
     fa_fo_revenus_cat = case_when(
       fa_fo_revenus_corr == "A-[<7.200 - <17.170]" ~ "[<7.200 - <17.170]",
       fa_fo_revenus_corr == "B-[17.170 - <28.000]" ~ "[17.170 - <28.000]",
       fa_fo_revenus_corr == "C-[28.000 - <45.400]" ~ "[28.000 - <45.400]",
       fa_fo_revenus_corr == "D-[45.400 - >104.550]" ~ "[45.400 - >104.550]",
-      fa_fo_revenus_corr == "E-[NSPR - NSP]" ~ "c_Don't know or d_No answer",
-      fa_fo_revenus_corr == "F-[MODULE SAUTÉ]" ~ "b_Module not complete"
+      fa_fo_revenus_corr == "E-[NSPR - NSP]" ~ NA_character_,
+      fa_fo_revenus_corr == "F-[MODULE SAUTÉ]" ~ NA_character_
     ),
     .after = fa_fo_revenus_corr
     ) %>% 
-  select(-fa_fo_revenus_corr)
+  select(-fa_fo_revenus_corr)  
 
-rm(vars_par)
+# Pour vérifier
+M4_D1 %>% 
+  select(all_of(vars_char_to_rcd)) %>% 
+  summarise(across(all_of(vars_char_to_rcd), ~ sum(is.na(.))))
+
+M4_D2 %>% 
+  select(all_of(vars_char_to_rcd)) %>% 
+  summarise(across(all_of(vars_char_to_rcd), ~ sum(is.na(.))))
+
+rm(vars_char_to_rcd)
 
 ```
 
@@ -725,9 +731,12 @@ rcd_levels_na <- function(df, var){
 
 ```{r M4_D3 to M4_E0}
 
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
+
 vars_dbl <- M4_D3 %>% 
   select(where(is.double)) %>% 
-  select(-contains("complet"), -(fa_date_creation:id_sexe)) %>% 
+  select(-contains("complet"), -id_date_nais, -fa_date_creation) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
@@ -736,7 +745,7 @@ M4_E0 <- M4_D3 %>%
   rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
   mutate(across(all_of(vars_dbl), rcd_levels_na))
 
-table(as_factor(M4_E0$fa_sf_rang_nais), useNA = "ifany")
+table(as_factor(M4_E0$fa_par_union_int_nat), useNA = "ifany")
 
 rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
