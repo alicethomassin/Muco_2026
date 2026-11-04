@@ -583,16 +583,11 @@ rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
 source("Muco_2026/Fonctions/rcd_mois.R")
 source("Muco_2026/Fonctions/rcd_precis_SM.R")
+source("Muco_2026/Fonctions/lbl_oui_non.R")
 
 all_mois <- E4_G0 %>% 
   select(contains("mois")) %>% 
   colnames()
-
-lbl_oui_non <- function(x){
-  add_value_labels(
-    {{x}}, "Yes" = 1, "No" = 0 
-  )
-}
 
 E4_G1 <- E4_G0 %>% 
   mutate(
@@ -601,25 +596,10 @@ E4_G1 <- E4_G0 %>%
     add_value_labels(
       fa_en_enfants = c(
         "Yes" = 1
-      ),
-      fa_en_complet = c(
-        "Yes" = 1,
-        "No" = 0
-      ),
-      fa_fr_complet = c(
-        "Yes" = 1,
-        "No" = 0
-      ),
-      fa_cp_complet = c(
-        "Yes" = 1,
-        "No" = 0
-      ),
-      fa_complet = c(
-        "Yes" = 1,
-        "No" = 0
-      )
-    ) %>% 
-      mutate(
+      )) %>% 
+        mutate(
+          across(
+            contains("complet"), ~ lbl_oui_non(.)),
         across(
           contains("sexe"), ~ rcd_precis_SM(
             ., "Male" = 1, "Female" = 2
@@ -637,6 +617,7 @@ E4_G1 <- E4_G0 %>%
         across(fa_enf1_diag_avt:fa_enf3_decede, ~ lbl_oui_non(.))
       )
 
+rm(list = c("all_mois", "lbl_oui_non", "rcd_mois", "rcd_precis_SM"))
 
 
 ```
