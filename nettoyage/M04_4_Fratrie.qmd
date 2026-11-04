@@ -601,7 +601,7 @@ F4_F2 <- F4_F1 %>%
     )
   )
     
-rm(list = c("vars_prenom", "chr_to_verif", "long_characters", "taille_nom_vars"))
+rm(list = c("vars_prenom"))
 
 ```
 
@@ -727,3 +727,25 @@ F4_G2 <- F4_G1 %>%
     etiquettes_repeted(., "deces_an", "F57 Sibling ", " date of death (year)")
 
 ```
+
+## Retirer colonnes inutiles
+
+```{r}
+
+F4_G3 <- F4_G2 %>% 
+  select(-c(fa_frt02_adpt_mois:fa_frt11_adpt_mois),
+  -c(fa_frt02_adpt_an:fa_frt11_adpt_an),
+  -c(fa_frt06_deces_mois:fa_frt11_deces_mois),
+  -c(fa_frt06_deces_an:fa_frt11_deces_an))
+
+```
+
+## Export
+
+
+```{r}
+
+haven::write_dta(F4_G3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_295.dta")
+
+```
+
