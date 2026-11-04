@@ -631,3 +631,62 @@ rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
 ```
 
+## Value labels autre
+
+
+```{r F4_G0 to F4_G1}
+
+source("Muco_2026/Fonctions/rcd_mois.R")
+source("Muco_2026/Fonctions/rcd_precis_SM.R")
+source("Muco_2026/Fonctions/lbl_oui_non.R")
+
+all_mois <- F4_G0 %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+F4_G1 <- F4_G0 %>% 
+  mutate(
+    across(all_of(all_mois), rcd_mois)
+  ) %>% 
+    add_value_labels(
+      fa_fr_fratrie = c(
+        "Yes" = 1,
+        "No" = 0
+      )) %>% 
+        mutate(
+          across(
+            contains("complet"), ~ lbl_oui_non(.)),
+        across(
+          contains("sexe"), ~ rcd_precis_SM(
+            ., "Male" = 1, "Female" = 2
+          )
+        ),
+        across(
+          contains("_issu"), ~ rcd_precis_SM(
+            ., 
+            "Full sibling" = 1,
+            "Half-sibling" = 2,
+            "Adopted sibling" = 3
+          )
+        ),
+        across(fa_frt01_diag_avt_nais:fa_frt11_decede, ~ lbl_oui_non(.))
+      )
+
+rm(list = c("all_mois", "lbl_oui_non", "rcd_mois", "rcd_precis_SM"))
+
+
+```
+
+### Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- F4_G1 %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- F4_G1 %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
