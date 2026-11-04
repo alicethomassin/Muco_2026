@@ -648,12 +648,12 @@ M4_D2 <- M4_D1 %>%
   ) %>% 
   mutate(
     fa_fo_revenus_cat = case_when(
-      fa_fo_revenus_corr == "A-[<7.200 - <17.170]" ~ "[<7.200 - <17.170]",
-      fa_fo_revenus_corr == "B-[17.170 - <28.000]" ~ "[17.170 - <28.000]",
-      fa_fo_revenus_corr == "C-[28.000 - <45.400]" ~ "[28.000 - <45.400]",
-      fa_fo_revenus_corr == "D-[45.400 - >104.550]" ~ "[45.400 - >104.550]",
-      fa_fo_revenus_corr == "E-[NSPR - NSP]" ~ NA_character_,
-      fa_fo_revenus_corr == "F-[MODULE SAUTÉ]" ~ NA_character_
+      fa_fo_revenus_corr == "A-[<7.200 - <17.170]" ~ 1,
+      fa_fo_revenus_corr == "B-[17.170 - <28.000]" ~ 2,
+      fa_fo_revenus_corr == "C-[28.000 - <45.400]" ~ 3,
+      fa_fo_revenus_corr == "D-[45.400 - >104.550]" ~ 4,
+      fa_fo_revenus_corr == "E-[NSPR - NSP]" ~ NA_integer_,
+      fa_fo_revenus_corr == "F-[MODULE SAUTÉ]" ~ NA_integer_
     ),
     .after = fa_fo_revenus_corr
     ) %>% 
@@ -954,6 +954,16 @@ M4_E3 <- M4_E2 %>%
       "45,400 to <57,550" = 10,
       "57,550 to <104,550" = 11,
       "104,550 or more" = 12
+    ),
+    fa_fo_revenus_cat = c(
+      "[<7.200 - <17.170]" = 1,
+      "[17.170 - <28.000]" = 2,
+      "[28.000 - <45.400]" = 3,
+      "[45.400 - >104.550]" = 4
+    ),
+    id_sexe = c(
+      "Male" = 1,
+      "Female" = 2
     )
   )
 
@@ -990,23 +1000,23 @@ M4_E4 <- M4_E3 %>%
     fa_cp_complet = "Couple module completed",
     fa_en_enfants = "F02 Has biological or adopted children",
     fa_en_complet = "Children module completed",
-    fa_pap_prenom = "F24 Father's first name",
-    fa_pap_nais_mois = "F25 Father's birth month",
-    fa_pap_nais_an = "F25 Father's birth year",
+    fa_pap_prenom = "F24 Father's name",
+    fa_pap_nais_mois = "F25 Father's DOB (month)",
+    fa_pap_nais_an = "F25 Father's DOB (year)",
     fa_pap_deces = "F26 Father deceased",
-    fa_pap_deces_mois = "F27 Father's death month",
-    fa_pap_deces_an = "F27 Father's death year",
+    fa_pap_deces_mois = "F27 Father's date of death (month)",
+    fa_pap_deces_an = "F27 Father's date of death (year)",
     fa_pap_etudes = "F28 Father's level of education",
     fa_pap_prof = "F29 Father's profession",
     fa_pap_statut = "F30 Father's work status ",
     fa_pap_entreprise = "F31 Father's employer type",
     fa_pap_qual = "F32 Father's qualification",
-    fa_pam_prenom = "F33 Mother's first name",
-    fa_pam_nais_mois = "F34 Mother's birth month",
-    fa_pam_nais_an = "F34 Mother's birth year",
+    fa_pam_prenom = "F33 Mother's name",
+    fa_pam_nais_mois = "F34 Mother's DOB (month)",
+    fa_pam_nais_an = "F34 Mother's DOB (year)",
     fa_pam_deces = "F35 Mother deceased",
-    fa_pam_deces_mois = "F36 Mother's death month",
-    fa_pam_deces_an = "F36 Mother's death year",
+    fa_pam_deces_mois = "F36 Mother's date of death (month)",
+    fa_pam_deces_an = "F36 Mother's date of death (year)",
     fa_pam_etudes = "F37 Mother's level of education",
     fa_pam_prof = "F38 Mother's profession",
     fa_pam_statut = "F39 Mother's work status",
@@ -1034,9 +1044,9 @@ M4_E4 <- M4_E3 %>%
     fa_fo_membres_prof = "F66 Family member currently employed",
     fa_fo_membres_ress = "F67 Family member has own income",
     fa_fo_vous_ress = "F68 Has own income",
-    fa_fo_revenus_mois = "F69 Household monthly income (before tax)",
-    fa_fo_revenus_an = "F69 Household annual income (before tax)",
-    fa_fo_revenus_cat = "F69 Household annual income (brackets)",
+    fa_fo_revenus_mois = "F69 Household monthly income in euros (before tax)",
+    fa_fo_revenus_an = "F69 Household annual income in euros (before tax)",
+    fa_fo_revenus_cat = "F69 Household annual income in euros (brackets)",
     fa_sf_matrimoniale = "F70 Current marital status",
     fa_sf_enf_bio_nb = "F71 Number of biological children",
     fa_sf_enf_adopte_nb = "F72 Number of adopted children",
@@ -1080,27 +1090,6 @@ M4_E5 <- M4_E4 %>%
   )
 
 haven::write_dta(M4_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
-```
-
-
-# Codebook peter
-
-```{r}
-library(labelled)
-library(questionr)
-library(dplyr)
-library(haven)
-
-M4_E5 <- haven::read_stata("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
-
-M4_cb <- M4_E5 %>% 
-  mutate(
-    across(
-      where(is.labelled), ~ as_factor(.x, levels = "both"))
-    )
-# Avant de refaire un codebook, le renommer sinon va écraser le précédent
-# print(codebookr::codebook(M4_cb), "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454R.docx")
-
 ```
 
 
