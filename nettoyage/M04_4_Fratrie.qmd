@@ -690,3 +690,40 @@ verif_db <- F4_G1 %>%
 rm(list = c("verif_ch", "verif_db"))
 
 ```
+
+## Ajouter étiquette des variables
+
+
+```{r}
+
+source("Muco_2026/Fonctions/etiquettes_repeted.R")
+source("Muco_2026/Fonctions/etiquettes_repeted_regex.R")
+
+F4_G2 <- F4_G1 %>% 
+  set_variable_labels(
+    id_anonymat = "Unique identifier",
+    id_date_nais = "PCF date of birth",
+    id_sexe = "PCF sex",
+    fa_fr_nb_siblings = "PCF siblings count",
+    fa_fr_fratrie = "F48 Has siblings",
+    fa_en_complet = "Children module completed",
+    fa_fr_complet = "Siblings module completed",
+    fa_cp_complet = "Couple module completed",
+    fa_complet = "Family module completed",
+    fa_commentaires = "Family module comments",
+    fa_fr_date_creation = "Children module date"
+  ) %>% 
+    etiquettes_repeted(., "prenom", "F49 Sibling ", " name") %>% 
+    etiquettes_repeted_regex(., "\\d_sexe", "F50 Sibling ", " sex") %>% 
+    etiquettes_repeted(., "nais_mois", "F51 Sibling ", " DOB (month)") %>% 
+    etiquettes_repeted(., "nais_an", "F51 Sibling ", " DOB (year)") %>% 
+    etiquettes_repeted(., "_issu", "F52 How sibling ", " joined the family") %>% 
+    etiquettes_repeted(., "adpt_mois", "F53 Sibling ", " date of adoption (month)") %>% 
+    etiquettes_repeted(., "adpt_an", "F53 Sibling ", " date of adoption (year)") %>% 
+    etiquettes_repeted(., "avt_nais", "F54 Sibling ", " prenatal CF diagnosis") %>% 
+    etiquettes_repeted(., "_muco", "F55 Sibling ", " has/had CF") %>% 
+    etiquettes_repeted(., "decede", "F56 Sibling ", " deceased") %>% 
+    etiquettes_repeted(., "deces_mois", "F57 Sibling ", " date of death (month)") %>% 
+    etiquettes_repeted(., "deces_an", "F57 Sibling ", " date of death (year)")
+
+```
