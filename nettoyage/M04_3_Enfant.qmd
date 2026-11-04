@@ -511,7 +511,7 @@ source("Muco_2026/Fonctions/taille_nom_vars.R")
 to_correct <- taille_nom_vars(E4_F1)
 
 rm(to_correct)
-rm(taille_vars)
+rm(taille_nom_vars)
 
 ```
 
