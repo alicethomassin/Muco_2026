@@ -670,6 +670,21 @@ E4_G2 <- E4_G1 %>%
     etiquettes_repeted(., "_muco", "F21 Child ", " has/had CF") %>% 
     etiquettes_repeted(., "_decede", "F22 Child ", " deceased") %>% 
     etiquettes_repeted(., "decd_mois", "F23 Child ", " date of death (month)") %>% 
-    etiquettes_repeted(., "decd_an", "F23 Child ", " date of death (year)")
+    etiquettes_repeted(., "decd_an", "F23 Child ", " date of death (year)") %>% 
+    mutate(
+    fa_commentaires = replace_when(
+      fa_commentaires,
+      is.na(fa_commentaires) ~ ""
+    )
+  )
+
+```
+
+## Export
+
+
+```{r}
+
+haven::write_dta(E4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
 
 ```
