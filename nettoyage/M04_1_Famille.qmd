@@ -621,7 +621,7 @@ M4_D1 <- readr::read_csv("data_hors_git/process_data/thoa_M4_D1_tt.csv",
 
 source("Fonctions.R")
 
-to_correct <- taille_vars(M4_D1)
+to_correct <- taille_nom_vars(M4_D1)
 
 rm(to_correct)
 rm(taille_vars)
@@ -753,34 +753,10 @@ rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
 
 ## Recoder modalités autres
 
-```{r}
-
-rcd_mois <- function(df, var){
-  
-  df %>% 
-    add_value_labels(
-      {{var}} := c(
-        "January" = 1,
-        "February" = 2,
-        "March" = 3,
-        "April" = 4,
-        "May" = 5,
-        "June" = 6,
-        "July" = 7,
-        "August" = 8,
-        "September" = 9,
-        "October" = 10,
-        "November" = 11,
-        "December" = 12
-      )
-    )
-}
-
-```
-
-
 ### Pere et Mere
 ```{r M4_E0 to M4_E1}
+
+source("Muco_2026/Fonctions/rcd_mois.R")
 
 all_mois <- M4_E0 %>% 
   select(contains("mois"), -fa_fo_revenus_mois) %>% 
@@ -906,23 +882,9 @@ M4_E2 <- M4_E1 %>%
 
 ### Foyer
 
-```{r}
-
-rcd_oui_non <- function(df, var_bin){
-  
-  df %>% 
-    add_value_labels(
-      {{var_bin}} := c(
-        "No" = 0,
-        "Yes" = 1
-      )
-    )
-}
-
-```
-
-
 ```{r M4_E2 to M4_E3}
+
+source("Muco_2026/Fonctions/lbl_oui_non.R")
 
 vars_bin <- M4_E2 %>% 
   select(fa_complet, fa_cp_couple_1an, fa_cp_complet, fa_en_enfants, fa_en_complet,
@@ -931,7 +893,7 @@ vars_bin <- M4_E2 %>%
   colnames()
 
 M4_E3 <- M4_E2 %>% 
-  mutate(across(all_of(vars_bin), rcd_oui_non)) %>% 
+  mutate(across(all_of(vars_bin), lbl_oui_non)) %>% 
   add_value_labels(
     fa_fo_vie = c(
       "Alone" = 1,
@@ -995,6 +957,7 @@ M4_E3 <- M4_E2 %>%
     )
   )
 
+rm(list = c("all_mois", "vars_bin", "lbl_oui_non", "rcd_mois"))
 ```
 
 
@@ -1018,6 +981,10 @@ rm(list = c("verif_ch", "verif_db"))
 
 M4_E4 <- M4_E3 %>% 
   set_variable_labels(
+    id_anonymat = "Unique identifier",
+    id_date_nais = "PCF date of birth",
+    id_sexe = "PCF sex",
+    id_age = "PCQ age",
     fa_complet = "Family module completed",
     fa_cp_couple_1an = "F01 Ever lived with a partner for 1+ year",
     fa_cp_complet = "Couple module completed",
@@ -1079,7 +1046,8 @@ M4_E4 <- M4_E3 %>%
     fa_sf_fratrie_adopte_nb = "76 Number of adopted siblings",
     fa_commentaires = "Family module comments",
     fa_date_creation = "Family module date"
-  )
+  ) %>% 
+    relocate(id_anonymat, id_sexe, id_date_nais, id_age)
 
 ```
 
