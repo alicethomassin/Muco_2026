@@ -532,3 +532,93 @@ write_csv(M5_D3, "../../data_hors_git/to_tag/thoa_logement_tt.csv")
 
 ```
 
+
+# Codebook Peter
+
+```{r}
+library(dplyr)
+library(questionr)
+library(labelled)
+library(polyglotr)
+
+M5_D3 <- readr::read_csv("data_hors_git/to_tag/thoa_logement_tt.csv",
+show_col_types = F)
+
+```
+
+## Retirer colonnes
+
+```{r}
+
+vars_libres <- M5_D3 %>% 
+  select(ends_with("_autre"), ends_with("_precis")) %>% 
+  colnames()
+
+M5_D4 <- M5_D3 %>% 
+  select(-id_date_creation, -id_doublon, -id_keep, -c(id_nom:id_prenom)) %>% 
+  mutate(
+    across(
+      all_of(vars_libres), ~ replace_when(
+        .x, str_starts(.x, "-\\d") ~ NA_character_
+      )
+    )
+  )
+    
+
+```
+
+## Traduire réponses libres
+Y revenir à 17h20
+```{r}
+library(dplyr)
+library(purrr)
+
+
+# 2. Valeurs uniques, non vides, sur les 6 variables à la fois
+textes_uniques <- M5_D4 %>%
+  select(all_of(vars_libres)) %>%
+  unlist(use.names = FALSE) %>%
+  unique() %>%
+  discard(~ is.na(.x) || trimws(.x) == "")
+
+fichier_dico <- "dico_traduction.rds"
+
+# Reprend là où on s'était arrêté, si une sauvegarde existe
+dico <- if (file.exists(fichier_dico)) readRDS(fichier_dico) else character(0)
+
+traduire <- function(x, essais = 5) {
+  for (i in seq_len(essais)) {
+    res <- tryCatch(
+      google_translate(x, target_language = "en",
+                                 source_language = "fr"),
+      error = function(e) NULL
+    )
+    if (length(res) == 1 && !is.na(res)) return(res)
+    attente <- 10 * 2^(i - 1)  # 10 s, 20 s, 40 s, 80 s, 160 s
+    message("Échec, nouvel essai dans ", attente, " s...")
+    Sys.sleep(attente)
+  }
+  NA_character_
+}
+
+a_traduire <- setdiff(textes_uniques, names(dico))
+
+for (i in seq_along(a_traduire)) {
+  txt <- a_traduire[i]
+  dico[txt] <- traduire(txt)
+  Sys.sleep(1)  # pause entre chaque requête
+  if (i %% 20 == 0) {
+    saveRDS(dico, fichier_dico)
+    message(i, " / ", length(a_traduire), " traduits")
+  }
+}
+saveRDS(dico, fichier_dico)
+
+# 4. Application aux 6 colonnes
+M5_D5 <- M5_D4 %>%
+  mutate(across(all_of(vars_libres),
+                ~ unname(dico[.x]),
+                .names = "{.col}_en"))
+
+
+```
