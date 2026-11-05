@@ -561,6 +561,8 @@ write_csv(C4_E1, "../../data_hors_git/process_data/thoa_C4_E1_tt.csv")
 # Codebook Peter
 
 ```{r}
+library(tidyverse)
+library(questionr)
 
 C4_E1 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E1_tt.csv",
                          show_col_types = FALSE)
@@ -616,6 +618,7 @@ rm(vars_prenom)
 
 source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
 source("Muco_2026/Fonctions/rcd_levels_na.R")
+library(labelled)
 
 vars_dbl <- C4_E2 %>% 
   select(where(is.double)) %>% 
@@ -628,8 +631,7 @@ vars_dbl <- C4_E2 %>%
 
 C4_F0 <- C4_E2 %>%
   rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na)) %>% 
-  select(-contains("fa_cpl4_union_int_"))
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
 
 table(as_factor(C4_F0$fa_cpl1_union_enf), useNA = "ifany")
 
