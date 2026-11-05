@@ -141,3 +141,12 @@ write_csv(M1_A3, "../../data_hors_git/process_data/thoa_M1_A3.csv")
 
 ```
 
+# Codebook Peter
+
+
+```{r}
+
+M1_A2 <- readr::read_csv("data_hors_git/to_tag/thoa_identite_tt.csv",
+show_col_types = F)
+
+```
