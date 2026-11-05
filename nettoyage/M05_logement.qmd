@@ -620,15 +620,21 @@ M5_D5 <- M5_D4 %>%
                 ~ unname(dico[.x]),
                 .names = "{.col}_en"))
 
+for (v in vars_libres) {
+  M5_D5 <- relocate(M5_D5, all_of(paste0(v, "_en")), .after = all_of(v))
+}
 
+readr::write_csv(M5_D5, "/Users/alicethomassin/Muco 2026/data_hors_git/process_data/thoa_M5_D5_eng.csv")
 ```
 
+## RECOMMENCER ICI POUR PETER POST-TRADUCTION
 ## Passer de string à dbl
-
 
 ```{r}
 
-M5_D6 <- M5_D4 %>% 
+M5_D5 <- readr::read_csv("data_hors_git/process_data/thoa_M5_D5_eng.csv", show_col_types = F)
+
+M5_D6 <- M5_D5 %>% 
   mutate(
     lo_situ_cat = case_when(
       lo_situation_cor == "-2" ~ -2L,
