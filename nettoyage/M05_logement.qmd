@@ -622,3 +622,46 @@ M5_D5 <- M5_D4 %>%
 
 
 ```
+
+## Passer de string à dbl
+
+
+```{r}
+
+M5_D6 <- M5_D4 %>% 
+  mutate(
+    lo_situ_cat = case_when(
+      lo_situation_cor == "-2" ~ -2L,
+      lo_situation_cor == "-9" ~ -9L,
+      lo_situation_cor == "Meme departement" ~ 1L,
+      lo_situation_cor == "Departement different" ~ 2L,
+      TRUE ~ -57349
+    )
+  ) %>% 
+    select(-lo_situation_cor)
+
+```
+
+## Recoder NAs doubles Stata
+
+```{r}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
+
+vars_dbl <- M5_D6 %>% 
+  select(where(is.double)) %>% 
+  select(-lo_date_creation, -id_date_nais) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+M5_E0 <- M5_D6 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(M5_E0$lo_statut_occup), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
+```
