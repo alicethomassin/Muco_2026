@@ -595,7 +595,8 @@ E4_G1 <- E4_G0 %>%
   ) %>% 
     add_value_labels(
       fa_en_enfants = c(
-        "Yes" = 1
+        "Yes" = 1,
+        "No" = 0
       )) %>% 
         mutate(
           across(
@@ -686,5 +687,8 @@ E4_G2 <- E4_G1 %>%
 ```{r}
 
 haven::write_dta(E4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
+
+E4_G3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
+
 
 ```
