@@ -725,6 +725,14 @@ M5_E1 <- M5_E0 %>%
       "Not yet, but planned" = 2,
       "Yes" = 1,
       "No" = 0
+    ),
+    id_sexe = c(
+      "Male" = 1,
+      "Female" = 2
+    ),
+    id_lieu_nais = c(
+      "France (mainland or overseas)" = 1,
+      "Abroad" = 2
     )
   ) %>% 
     mutate(
@@ -742,6 +750,33 @@ table(as_factor(M5_E1$lo_demenag), useNA = "ifany")
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non", "etiq_dep",
 "list_deps"))
+
+
+```
+
+## Traduire commentaires
+
+
+```{r}
+library(polyglotr)
+library(purrr)
+
+M5_E2 <- M5_E1 %>% 
+  mutate(
+    lo_commentaires_en = map_chr(
+      lo_commentaires,
+      ~ if (is.na(.x) || .x == "") {
+          NA_character_
+        } else {
+          google_translate(
+            .x,
+            target_language = "en",
+            source_language = "fr"
+          )
+        }
+    ),
+    .after = lo_commentaires
+  )
 
 
 ```
