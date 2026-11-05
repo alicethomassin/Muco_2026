@@ -634,7 +634,7 @@ M5_D6 <- M5_D4 %>%
       lo_situation_cor == "-2" ~ -2L,
       lo_situation_cor == "-9" ~ -9L,
       lo_situation_cor == "Meme departement" ~ 1L,
-      lo_situation_cor == "Departement different" ~ 2L,
+      lo_situation_cor == "Departement different" ~ 0L,
       TRUE ~ -57349
     )
   ) %>% 
@@ -663,5 +663,79 @@ M5_E0 <- M5_D6 %>%
 table(as_factor(M5_E0$lo_statut_occup), useNA = "ifany")
 
 rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
+```
+
+## Labeliser les modalités
+
+
+```{r}
+
+source("Muco_2026/Fonctions/lbl_oui_non.R")
+source("Muco_2026/Fonctions/lbl_QCM.R")
+
+list_deps <- readxl::read_xlsx("Muco_2026/liste_dep_fr.xlsx")
+
+etiq_dep <- set_names(list_deps$dep_num, list_deps$dep_txt)
+
+vars_qcm <- M5_E0 %>% 
+  select(matches("cause_\\d+$"), matches("emprunt_\\d+$")) %>% 
+  colnames()
+
+vars_oui_non <- M5_E0 %>% 
+  select(lo_situ_cat, lo_demenag) %>% 
+  colnames()
+
+M5_E1 <- M5_E0 %>% 
+  select(-lo_situ_logement) %>%
+  relocate(lo_situ_cat, .after = lo_dep_centre1) %>% 
+  add_value_labels(
+    lo_situ_dep = etiq_dep,
+    lo_dep_centre1 = etiq_dep,
+    id_dep_nais = etiq_dep,
+    lo_situ_pays = c(
+      "France" = 1,
+      "Belgium" = 131,
+      "Ireland" = 136,
+      "Mexico" = 405
+    ),
+    lo_type_logement = c(
+      "Studio" = 1,
+      "Apartment" = 2,
+      "Detached house" = 3,
+      "Room in shared housing" = 4,
+      "Long-term hospital care" = 5,
+      "Other" = 999
+    ),
+    lo_statut_occup = c(
+      "Housed free of charge" = 1,
+      "Subtenant or flatmate" = 2,
+      "Tenant" = 3,
+      "Owner with mortgage" = 4,
+      "Outright owner" = 5,
+      "Other" = 999
+    ),
+    lo_amenag_logement = c(
+      "Not yet, but planned" = 2,
+      "Yes" = 1,
+      "No" = 0
+    )
+  ) %>% 
+    mutate(
+      across(
+        all_of(vars_qcm), ~ lbl_QCM(.)
+      ),
+      across(
+        all_of(vars_oui_non), ~ lbl_oui_non(.)
+      )
+    )
+
+
+table(as_factor(M5_E1$lo_demenag), useNA = "ifany")
+
+    
+rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non", "etiq_dep",
+"list_deps"))
+
 
 ```
