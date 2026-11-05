@@ -688,7 +688,7 @@ E4_G2 <- E4_G1 %>%
 
 haven::write_dta(E4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
 
-E4_G3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
+E4_G2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_78.dta")
 
 
 ```
