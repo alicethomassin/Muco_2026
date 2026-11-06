@@ -9,6 +9,8 @@ library(questionr)
 
 ```
 
+# Premier nettoyage
+## Aléatoires
 ```{r M1_A0 to M1_A1}
 # Importer la base brute de l'identité
 M1_A0 <- haven::read_sas("../../../raw_data/gb_ddb_identite_01.sas7bdat")
@@ -102,6 +104,7 @@ M1_A2 <- M1_A1 %>%
 rm(list = c("corr_chr", "corr_fact", "vars_id_rmv"))
 ```
 
+## Ajouter les doublons
 Ajouter les lignes pour les doublons aussi et faciliter les corrections des doublons dans les prochaines bases
 
 ```{r M1_A2 to M1_A3}
@@ -129,7 +132,7 @@ M1_A3 <- M1_A2 %>%
 
 ```
 
-
+## Export
 ```{r Export}
 
 write_csv(M1_A2, "../../data_hors_git/clean_data/aut26/thoa_M1_A2.csv")
@@ -141,7 +144,7 @@ write_csv(M1_A3, "../../data_hors_git/process_data/thoa_M1_A3.csv")
 
 ```
 
-# Codebook Peter
+# Deuxième nettoyage
 
 
 ```{r}
@@ -244,5 +247,101 @@ M1_B2 <- M1_B1 %>%
       is.na(.x) ~ get(str_remove(cur_column(), "dep_"))
     ))
   )
+
+```
+
+## EXPORT CSV
+
+Quand je vais vouloir faire le codebook pour la base R en français, je peux repartir du fichier thoa_identite2_tt.csv
+```{r}
+readr::write_csv(M1_B2, "data_hors_git/to_tag/thoa_identite2_tt.csv")
+```
+
+# Codebook R
+
+```{r}
+library(tidyverse)
+library(questionr)
+
+M1_B2 <- readr::read_csv("data_hors_git/to_tag/thoa_identite2_tt.csv", show_col_types = F)
+```
+
+# Codebook Peter
+
+```{r}
+library(tidyverse)
+library(questionr)
+library(labelled)
+library(polyglotr)
+
+M1_B2 <- readr::read_csv("data_hors_git/to_tag/thoa_identite2_tt.csv", show_col_types = F)
+```
+
+## Recoder NAs doubles Stata
+
+```{r}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
+
+vars_dbl <- M1_B2 %>% 
+  select(where(is.double)) %>% 
+  select(-id_date_creation, -id_date_nais) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+M1_C0 <- M1_B2 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(M1_C0$id_nb_centres), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
+```
+
+## Labeliser les modalités
+
+
+```{r}
+
+list_deps_en <- readr::read_csv("Muco_2026/list_dep_en.csv", show_col_types = F)
+
+etiq_dep <- set_names(list_deps_en$dep_num, list_deps_en$dep_txt)
+
+M1_C1 <- M1_C0 %>% 
+  add_value_labels(
+    id_dep_nais = etiq_dep,
+    id_dep_centre1 = etiq_dep,
+    id_dep_centre2 = etiq_dep,
+    id_dep_centre3 = etiq_dep,
+    id_sexe = c(
+      "Male" = 1,
+      "Female" = 2
+    ),
+    id_lieu_nais = c(
+      "France (mainland or overseas)" = 1,
+      "Abroad" = 2
+    ),
+    id_age_cat1 = c(
+      "Minor (under 18)" = 1,
+      "Adult (18 and over)" = 2
+    ),
+    id_age_cat2 = c(
+      "Under 18" = 1,
+      "18-24" = 2,
+      "25-34" = 3,
+      "35-44" = 4,
+      "45 and over" = 5
+    )
+  )
+
+
+table(as_factor(M1_C1$id_dep_nais), useNA = "ifany")
+
+    
+rm(list = c("etiq_dep", "list_deps_en"))
+
 
 ```
