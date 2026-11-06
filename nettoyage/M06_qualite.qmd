@@ -542,10 +542,68 @@ M6_E1 <- M6_E0 %>%
       across(
         all_of(vars_oui_non), ~ lbl_oui_non(.)
       )
-    )
+    ) %>% 
+      add_value_labels(
+        qv_sa_etat = c(
+          "Very good" = 1,
+          "Good" = 2,
+          "Fair" = 3,
+          "Poor" = 4,
+          "Very poor" = 5
+        ),
+        qv_sa_mobilite = c(
+          "No problems walking" = 1,
+          "Some problems walking" = 2,
+          "Confined to bed" = 3
+        ),
+        qv_sa_autonomie = c(
+          "No problems" = 1,
+          "Problems washing or dressing" = 2,
+          "Unable to wash or dress" = 3
+        ),
+        qv_sa_activites = c(
+          "No problems" = 1,
+          "Some problems" = 2,
+          "Unable to perform" = 3
+        ),
+        qv_sa_douleurs = c(
+          "None" = 1,
+          "Moderate" = 2,
+          "Extreme" = 3
+        ),
+        qv_sa_anxiete = c(
+          "None" = 1,
+          "Moderate" = 2,
+          "Extreme" = 3
+        ),
+        qv_ad_type = c(
+          "Family member" = 1,
+          "Professional" = 2,
+          "Other (friend, neighbour)" = 3
+        ),
+        qv_ad_lien = c(
+          "Partner" = 1,
+          "Parent" = 2,
+          "Child(ren)" = 3,
+          "Sibling" = 4,
+          "Uncle, aunt" = 5,
+          "Grandparent" = 6,
+          "Other" = 999
+        ),
+        qv_am_regime = c(
+          "General scheme" = 1,
+          "Agricultural scheme" = 2,
+          "Self-employed scheme" = 3,
+          "Civil servant scheme" = 4,
+          "Public company employee scheme" = 5,
+          "CMU (universal coverage)" = 6,
+          "Student scheme" = 7,
+          "Other" = 999
+        )
+      )
 
 
-table(as_factor(M6_E1$qv_am_type_1), useNA = "ifany")
+table(as_factor(M6_E1$qv_ad_lien), useNA = "ifany")
 
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non"))
