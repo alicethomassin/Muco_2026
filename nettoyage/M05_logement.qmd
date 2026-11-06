@@ -860,3 +860,25 @@ M5_E3 <- M5_E2 %>%
 haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
 
 ```
+
+## Retirer variables identité
+
+```{r}
+M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
+```
+
+
+```{r}
+
+M5_E4 <- M5_E3 %>% 
+  select(-(id_centre1:id_age), -lo_dep_centre1) %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    lo_date_creation = "Housing module completion date"
+  )
+```
+
+
+```{r}
+haven::write_dta(M5_E4, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
+```
