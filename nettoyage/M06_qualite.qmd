@@ -603,10 +603,105 @@ M6_E1 <- M6_E0 %>%
       )
 
 
-table(as_factor(M6_E1$qv_ad_lien), useNA = "ifany")
+table(as_factor(M6_E1$qv_am_rac_montant), useNA = "ifany")
 
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non"))
 
 
+```
+
+### Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- M6_E1 %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- M6_E1 %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
+
+## Ajouter étiquette des variables
+
+
+```{r}
+
+M6_E2 <- M6_E1 %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    qv_complet = "Quality of life module completed",
+    qv_date_creation = "Quality of life module completion date",
+    qv_sa_etat = "V01 Self-rated general health",
+    qv_sa_mobilite = "V02 EQ-5D mobility",
+    qv_sa_autonomie = "V02 EQ-5D self-care",
+    qv_sa_activites = "V02 EQ-5D usual activities",
+    qv_sa_douleurs = "V02 EQ-5D pain/discomfort",
+    qv_sa_anxiete = "V02 EQ-5D anxiety/depression",
+    qv_sa_compl = "V03 Refused in past 12 months: nutritional supplement",
+    qv_sa_medic = "V03 Refused in past 12 months: essential medication",
+    qv_sa_antibio = "V03 Refused in past 12 months: antibiotic course",
+    qv_sa_kine = "V03 Refused in past 12 months: physiotherapy session",
+    qv_sa_hospi = "V03 Refused in past 12 months: hospitalisation",
+    qv_sa_transp = "V03 Refused in past 12 months: transplantation",
+    qv_ad_besoin = "V04 Needs help with daily activities",
+    qv_ad_act01 = "V05 Caregiver helps (MR): medication",
+    qv_ad_act02 = "V05 Caregiver helps (MR): bathing, showering",
+    qv_ad_act03 = "V05 Caregiver helps (MR): washing, dressing",
+    qv_ad_act04 = "V05 Caregiver helps (MR): meals",
+    qv_ad_act05 = "V05 Caregiver helps (MR): housework",
+    qv_ad_act06 = "V05 Caregiver helps (MR): supervision (falls)",
+    qv_ad_act07 = "V05 Caregiver helps (MR): mobility, transport",
+    qv_ad_act08 = "V05 Caregiver helps (MR): shopping",
+    qv_ad_act09 = "V05 Caregiver helps (MR): finances, paperwork",
+    qv_ad_act10 = "V05 Caregiver helps (MR): social, leisure activities",
+    qv_ad_act999 = "V05 Caregiver helps (MR): other",
+    qv_ad_act_autre = "V05 Caregiver helps: detailed response",
+    qv_ad_act_autre_en = "V05 Caregiver helps: detailed response (Google translation)",
+    qv_ad_type = "V06 Main caregiver",
+    qv_ad_lien = "V07 Family caregiver relationship",
+    qv_sc_travailleur = "V08 Sees a social worker",
+    qv_sc_difficultes = "V09 Monthly periods of financial hardship",
+    qv_sc_sport = "V10 Did sport in past 12 months",
+    qv_sc_spectacle = "V11 Attended a show in past 12 months",
+    qv_sc_vacances = "V12 Went on holiday in past 12 months",
+    qv_sc_contacts = "V13 Contact with extended family in past 6 months",
+    qv_sc_heberger = "V14 Someone could provide housing if needed",
+    qv_sc_aide_materielle = "V15 Someone could provide material help",
+    qv_am_regime = "V16 Health insurance scheme",
+    qv_am_regime_autre = "V16 Health insurance scheme: detailed response",
+    qv_am_regime_autre_en = "V16 Health insurance scheme: detailed response (Google translation)",
+    qv_am_complement = "V17 Complementary health insurance",
+    qv_am_type_1 = "V18 Complementary insurer (MR): mutual insure",
+    qv_am_type_2 = "V18 Complementary insurer (MR): insurance company",
+    qv_am_type_999 = "V18 Complementary insurer (MR): other",
+    qv_am_type_autre = "V18 Complementary insurer: detailed response",
+    qv_am_type_autre_en = "V18 Complementary insurer: detailed response (Google translation)",
+    qv_am_ald = "V19 ALD coverage for CF (long-term condition)",
+    qv_am_rac = "V20 Pays out-of-pocket costs",
+    qv_am_rac_montant = "V21 Monthly out-of-pocket costs (EUR)",
+    qv_am_rac_pour_1 = "V22 Out-of-pocket costs (MR): medication",
+    qv_am_rac_pour_2 = "V22 Out-of-pocket costs (MR): care (consultations, hospital, physio)",
+    qv_am_rac_pour_3 = "V22 Out-of-pocket costs (MR): tests, imaging",
+    qv_am_rac_pour_4 = "V22 Out-of-pocket costs (MR): medical equipment",
+    qv_am_rac_pour_5 = "V22 Out-of-pocket costs (MR): medical transport",
+    qv_am_rac_pour_6 = "V22 Out-of-pocket costs (MR): dietary supplements",
+    qv_am_rac_pour_7 = "V22 Out-of-pocket costs (MR): hygiene, household products",
+    qv_am_rac_pour_8 = "V22 Out-of-pocket costs (MR): deductibles, flat-rate fees",
+    qv_am_rac_pour_9 = "V22 Out-of-pocket costs (MR): extra-billing",
+    qv_am_rac_pour_999 = "V22 Out-of-pocket costs (MR): other",
+    qv_am_rac_pour_autre = "V22 Out-of-pocket costs: detailed response",
+    qv_am_rac_pour_autre_en = "V22 Out-of-pocket costs: detailed response (Google translation)",
+    qv_commentaires = "Quality of life module comments",
+    qv_commentaires_en = "Quality of life module comments (Google translation)"
+  )
+```
+
+
+```{r}
+
+haven::write_dta(M6_E2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Quality_454.dta")
 ```
