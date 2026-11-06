@@ -364,3 +364,134 @@ write_csv(M6_C2, "../../data_hors_git/to_tag/thoa_qualite_tt.csv")
 
 ```
 
+# Codebook Peter
+
+
+```{r}
+library(dplyr)
+library(questionr)
+library(labelled)
+library(polyglotr)
+M6_C2 <- readr::read_csv("data_hors_git/to_tag/thoa_qualite_tt.csv", show_col_types = F)
+```
+
+## Retirer colonnes
+
+```{r}
+
+vars_libres <- M6_C2 %>% 
+  select(ends_with("_autre"), ends_with("_precis"), qv_commentaires) %>% 
+  colnames()
+
+M6_D0 <- M6_C2 %>% 
+  select(-id_date_creation, -id_doublon, -id_keep, -c(id_nom:id_prenom)) %>% 
+  mutate(
+    across(
+      all_of(vars_libres), ~ replace_when(
+        .x, str_starts(.x, "-\\d") ~ NA_character_
+      )
+    )
+  )
+    
+
+```
+
+## Traduire réponses libres
+Y revenir à 17h20
+```{r}
+library(dplyr)
+library(purrr)
+
+
+# 2. Valeurs uniques, non vides, sur les 6 variables à la fois
+textes_uniques <- M6_D0 %>%
+  select(all_of(vars_libres)) %>%
+  unlist(use.names = FALSE) %>%
+  unique() %>%
+  discard(~ is.na(.x) || trimws(.x) == "")
+
+fichier_dico <- "dico_QDV_traduction.rds"
+
+# Reprend là où on s'était arrêté, si une sauvegarde existe
+dico <- if (file.exists(fichier_dico)) readRDS(fichier_dico) else character(0)
+
+traduire <- function(x, essais = 5) {
+  for (i in seq_len(essais)) {
+    res <- tryCatch(
+      google_translate(x, target_language = "en",
+                                 source_language = "fr"),
+      error = function(e) NULL
+    )
+    if (length(res) == 1 && !is.na(res)) return(res)
+    attente <- 10 * 2^(i - 1)  # 10 s, 20 s, 40 s, 80 s, 160 s
+    message("Échec, nouvel essai dans ", attente, " s...")
+    Sys.sleep(attente)
+  }
+  NA_character_
+}
+
+a_traduire <- setdiff(textes_uniques, names(dico))
+
+for (i in seq_along(a_traduire)) {
+  txt <- a_traduire[i]
+  dico[txt] <- traduire(txt)
+  Sys.sleep(1)  # pause entre chaque requête
+  if (i %% 20 == 0) {
+    saveRDS(dico, fichier_dico)
+    message(i, " / ", length(a_traduire), " traduits")
+  }
+}
+saveRDS(dico, fichier_dico)
+
+# 4. Application aux 6 colonnes
+
+
+M6_D1 <- M6_D0 %>%
+  mutate(across(all_of(vars_libres),
+                ~ unname(dico[.x]),
+                .names = "{.col}_en"))
+
+for (v in vars_libres) {
+  M6_D1 <- relocate(M6_D1, all_of(paste0(v, "_en")), .after = all_of(v))
+}
+
+readr::write_csv(M6_D1, "/Users/alicethomassin/Muco 2026/data_hors_git/process_data/thoa_M6_D1_eng.csv")
+```
+
+
+```{r}
+M6_D1 <- readr::read_csv("/Users/alicethomassin/Muco 2026/data_hors_git/process_data/thoa_M6_D1_eng.csv", 
+show_col_types = F)
+```
+
+## Retirer vars identité
+
+```{r}
+M6_D2 <- M6_D1 %>% 
+  select(-c("id_centre1", "id_centre2", "id_centre3", "id_date_nais",
+  "id_dep_nais", "id_lieu_nais", "id_sexe", "id_age"))
+```
+
+## Recoder NAs doubles Stata
+
+```{r}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_levels_na.R")
+
+vars_dbl <- M6_D2 %>% 
+  select(where(is.double)) %>% 
+  select(-qv_date_creation) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+M6_E0 <- M6_D2 %>%
+  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  mutate(across(all_of(vars_dbl), rcd_levels_na))
+
+table(as_factor(M6_E0$qv_ad_lien), useNA = "ifany")
+
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+
+```
