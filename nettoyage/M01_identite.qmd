@@ -150,3 +150,99 @@ M1_A2 <- readr::read_csv("data_hors_git/to_tag/thoa_identite_tt.csv",
 show_col_types = F)
 
 ```
+
+## Retrait et ajout de colonnes
+
+
+```{r}
+
+M1_B0 <- M1_A2 %>% 
+  select(-id_doublon, -id_keep) %>% 
+  mutate(
+    id_age_cat1 = if_else(id_age < 18, 1, 2),
+    id_age_cat2 = case_when(
+      id_age < 18 ~ 1,
+      id_age < 25 ~ 2,
+      id_age < 35 ~ 3,
+      id_age < 45 ~ 4,
+      id_age >= 45 ~ 5,
+      TRUE ~ 999
+    ),
+    .after = id_age
+  )
+
+```
+
+### Base dep centres
+
+```{r}
+
+id_centres <- readxl::read_xlsx("/Users/alicethomassin/Documents/Scolarité/[03] Master/[M1S2]/[M1S2] Stage/id_centres.xlsx")
+
+id_centres_dist <- id_centres %>% 
+  distinct(id_centre1, .keep_all = TRUE)
+
+M5_D3 <- readr::read_csv("data_hors_git/to_tag/thoa_logement_tt.csv",
+show_col_types = F)
+
+dep_centre1 <- M5_D3 %>% 
+  select(id_anonymat, lo_dep_centre1)
+
+id_dep_centre <- left_join(
+  dep_centre1,
+  M1_B0 %>% select(id_anonymat, id_centre1),
+  by = "id_anonymat"
+)
+
+
+centres_presents <- id_dep_centre %>% 
+  select(-id_anonymat) %>% 
+  filter_out(if_any(where(is.numeric), ~ . < 0)) %>% 
+  distinct()
+
+complete_id_centres <- left_join(
+  id_centres_dist,
+  centres_presents,
+  by = "id_centre1"
+) %>% 
+  rename("dep_centre" = "lo_dep_centre1",
+  "id_centre" = "id_centre1") %>% 
+  select(-TYPE)
+
+```
+
+```{r}
+
+M1_B1 <- M1_B0 %>% 
+  left_join(
+    complete_id_centres %>% select(-CRCM),
+    by = c("id_centre1" = "id_centre")
+  ) %>% 
+    rename("id_dep_centre1" = "dep_centre") %>% 
+    relocate(id_dep_centre1, .after = id_centre1) %>% 
+    left_join(
+    complete_id_centres %>% select(-CRCM),
+    by = c("id_centre2" = "id_centre")
+  ) %>% 
+    rename("id_dep_centre2" = "dep_centre") %>% 
+    relocate(id_dep_centre2, .after = id_centre2) %>% 
+    left_join(
+    complete_id_centres %>% select(-CRCM),
+    by = c("id_centre3" = "id_centre")
+  ) %>% 
+    rename("id_dep_centre3" = "dep_centre") %>% 
+    relocate(id_dep_centre3, .after = id_centre3)
+
+all_dep_centres <- M1_B1 %>% 
+  select(matches("dep_centre\\d")) %>% 
+  colnames()
+
+M1_B2 <- M1_B1 %>% 
+  mutate(
+    across(all_of(all_dep_centres), ~ replace_when(
+      .x,
+      is.na(.x) ~ get(str_remove(cur_column(), "dep_"))
+    ))
+  )
+
+```
