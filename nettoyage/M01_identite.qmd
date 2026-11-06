@@ -345,3 +345,58 @@ rm(list = c("etiq_dep", "list_deps_en"))
 
 
 ```
+
+## Enlever accents prénoms
+
+
+```{r}
+
+M1_C1 <- M1_C1 %>% 
+  mutate(
+    id_prenom = str_replace(id_prenom, "Ù", "U"),
+    id_prenom = str_replace(id_prenom, "É", "E")
+  ) %>% 
+    mutate(
+      across(
+        .cols = id_nom:id_prenom,
+        ~ str_to_upper(.)
+      )
+    )
+
+```
+
+## Variable labels
+
+
+```{r}
+
+M1_C2 <- M1_C1 %>% 
+  set_variable_labels(
+    id_date_creation = "Identity module completion date",
+    id_anonymat = "Respondent unique identifier",
+    id_nom = "I01 Resp. last name (first 3 letters)",
+    id_nom_jeune = "I02 Resp. maiden name (first 3 letters)",
+    id_prenom = "I03 Resp. first name (first 2 letters)",
+    id_sexe = "I04 Resp. sex",
+    id_date_nais = "I05 Resp. DOB (YYYY-MM-DD)",
+    id_age = "Resp. age when Identity module was completed",
+    id_age_cat1 = "Resp. legal age status",
+    id_age_cat2 = "Resp. age group",
+    id_lieu_nais = "I06 Resp. place of birth",
+    id_dep_nais = "I06 Resp. department of birth",
+    id_centre1 = "I08 Resp. CF care center 1 ID (main)",
+    id_dep_centre1 = "Resp. CF care center 1 department (main)",
+    id_centre2 = "I09 Resp. CF care center 2 ID",
+    id_dep_centre2 = "Resp. CF care center 2 department",
+    id_centre3 = "I10 Resp. CF care center 3 ID",
+    id_dep_centre3 = "Resp. CF care center 3 department"
+  ) %>% 
+    select(-id_nb_centres)
+
+```
+
+## EXPORT STATA
+
+```{r}
+haven::write_dta(M1_C2, "data_hors_git/Peter/thoa_Identity_454.dta")
+```
