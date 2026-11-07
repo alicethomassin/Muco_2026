@@ -787,3 +787,25 @@ rm(to_verif)
 haven::write_dta(C4_F2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
 
 ```
+
+# Revoir la base pour Peter
+```{r}
+
+C4_F2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
+```
+
+## Retirer colonnes inutiles
+
+```{r}
+
+C4_G0 <- C4_F2 %>% 
+  select(-(id_date_nais:id_sexe), -(fa_en_complet:fa_cp_complet), -fa_commentaires) %>% 
+  relocate(fa_cp_date_creation, .after = id_anonymat) %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    fa_cp_date_creation = "Couple module completion date",
+    fa_cp_nb_cpl = "No. of relationships per resp."
+  )
+
+```
+
