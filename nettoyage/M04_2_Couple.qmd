@@ -417,7 +417,7 @@ C4_D0 <- left_join(
 
 ```{r}
 
-C4_D0 <- readr::read_csv("../../data_hors_git/process_data/thoa_C4_D0.csv",
+C4_D0 <- readr::read_csv("data_hors_git/process_data/thoa_C4_D0.csv",
                          show_col_types = F)
 
 ```
@@ -531,12 +531,14 @@ C4_E0 <- C4_D3 %>%
   mutate(
     across(
       starts_with("fa_cpl") & where(is.character), ~ replace_when(
-        .x, is.na(.x) ~ "-1"
+        # Nouveau code pour ceux qui n'ont pas eu de N evenement
+        .x, is.na(.x) ~ "-7"
       )
     ),
     across(
       starts_with("fa_cpl") & where(is.numeric), ~ replace_when(
-        .x, is.na(.x) ~ -1
+        # Nouveau code pour ceux qui n'ont pas eu de N evenement
+        .x, is.na(.x) ~ -7
       )
     )
   )
@@ -554,7 +556,7 @@ C4_E1 <- C4_E0 %>%
 
 ```{r}
 
-write_csv(C4_E1, "../../data_hors_git/process_data/thoa_C4_E1_tt.csv")
+write_csv(C4_E1, "data_hors_git/process_data/thoa_C4_E1_tt.csv")
 
 ```
 
@@ -601,11 +603,12 @@ C4_E2 <- C4_E1 %>%
   ) %>% 
     rename(
     "fa_commentaires" = "commentaires_fam",
-    "fa_cp_complet" = "cp_complet",
-    "fa_en_complet" = "en_complet",
-    "fa_fr_complet" = "fr_complet"
+    "fa_cp_nb_cpl" = "nb_rlt",
+    "fa_cp_date_creation" = "couple_date_creation"
   ) %>% 
-  relocate(c("id_date_nais", "id_sexe", "nb_rlt"), .after = id_anonymat)
+    relocate(fa_cp_date_creation, .after = id_anonymat) %>% 
+    select(-(id_date_nais:id_sexe), -(en_complet:fa_commentaires), -fa_cp_couple_1an)
+  
     
 
 rm(vars_prenom)
@@ -618,6 +621,9 @@ rm(vars_prenom)
 
 source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
 source("Muco_2026/Fonctions/rcd_levels_na.R")
+
+source("Muco_2026/Fonctions/rcd_tagged_na_wide_1rep.R")
+source("Muco_2026/Fonctions/rcd_levels_na_wide.R")
 library(labelled)
 
 vars_dbl <- C4_E2 %>% 
@@ -735,10 +741,6 @@ rm(list = c("verif_ch", "verif_db"))
 source("Muco_2026/Fonctions/etiquettes_repeted.R")
 
 C4_F2 <- C4_F1 %>% 
-  rename(
-    "fa_cp_nb_cpl" = "nb_rlt",
-    "fa_cp_date_creation" = "couple_date_creation"
-  ) %>% 
   set_variable_labels(
     id_anonymat = "Unique identifier",
     id_date_nais = "PCF date of birth",
@@ -799,7 +801,8 @@ C4_F2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/th
 ```{r}
 
 C4_G0 <- C4_F2 %>% 
-  select(-(id_date_nais:id_sexe), -(fa_en_complet:fa_cp_complet), -fa_commentaires) %>% 
+  select(-(id_date_nais:id_sexe), -(fa_en_complet:fa_cp_complet), -fa_commentaires,
+  -fa_cp_couple_1an) %>% 
   relocate(fa_cp_date_creation, .after = id_anonymat) %>% 
   set_variable_labels(
     id_anonymat = "Respondent unique identifier",
@@ -809,3 +812,45 @@ C4_G0 <- C4_F2 %>%
 
 ```
 
+
+```{r}
+
+haven::write_dta(C4_G0, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
+```
+
+## Ajouter un NA pour ceux qui n'ont pas de N relations
+```{r}
+C4_G0 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
+```
+
+
+```{r}
+
+
+
+```
+
+
+# Pivot longer
+```{r}
+C4_G0 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
+```
+
+## Retirer les tagged NAs pour 
+```{r}
+
+vars_to_pivot <- C4_G0 %>% 
+  select(starts_with("fa_cpl")) %>% 
+  colnames()
+
+var_label(C4_G0) <- NULL
+
+couple0_long <- C4_G0 %>%  
+  pivot_longer(
+    cols = all_of(vars_to_pivot),
+    names_to = c("rang_cpl", ".value"),
+    names_pattern = "fa_cpl(.)_(\\w+)",
+    values_drop_na = TRUE
+  )
+
+```
