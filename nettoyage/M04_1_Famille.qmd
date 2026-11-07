@@ -657,7 +657,7 @@ M4_D2 <- M4_D1 %>%
     ),
     .after = fa_fo_revenus_corr
     ) %>% 
-  select(-fa_fo_revenus_corr)  
+  select(-fa_fo_revenus_corr, -(id_centre1:id_age), -id_doublon, -id_keep, -id_date_creation)  
 
 # Pour vérifier
 M4_D1 %>% 
@@ -678,16 +678,12 @@ rm(vars_char_to_rcd)
 library(labelled)
 
 M4_D3 <- M4_D2 %>% 
-  select(-id_doublon, -id_keep, -id_date_creation) %>% 
   rename(
     "fa_commentaires" = "commentaires_fam",
     "fa_cp_complet" = "cp_complet",
     "fa_en_complet" = "en_complet",
     "fa_fr_complet" = "fr_complet"
-  ) %>% 
-  relocate(fa_date_creation, .after = fa_commentaires) %>% 
-  relocate(c("id_age", "id_date_nais", "id_sexe"), .after = fa_date_creation) %>% 
-  select(-(id_centre1:id_prenom))
+  )
 
 ```
 
@@ -736,7 +732,7 @@ source("Muco_2026/Fonctions/rcd_levels_na.R")
 
 vars_dbl <- M4_D3 %>% 
   select(where(is.double)) %>% 
-  select(-contains("complet"), -id_date_nais, -fa_date_creation) %>% 
+  select(-contains("complet"), -fa_date_creation) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
@@ -960,10 +956,6 @@ M4_E3 <- M4_E2 %>%
       "[17.170 - <28.000]" = 2,
       "[28.000 - <45.400]" = 3,
       "[45.400 - >104.550]" = 4
-    ),
-    id_sexe = c(
-      "Male" = 1,
-      "Female" = 2
     )
   )
 
@@ -991,11 +983,9 @@ rm(list = c("verif_ch", "verif_db"))
 
 M4_E4 <- M4_E3 %>% 
   set_variable_labels(
-    id_anonymat = "Unique identifier",
-    id_date_nais = "PCF date of birth",
-    id_sexe = "PCF sex",
-    id_age = "PCQ age",
+    id_anonymat = "Respondent unique identifier",
     fa_complet = "Family module completed",
+    fa_date_creation = "Family module completion date",
     fa_cp_couple_1an = "F01 Ever lived with a partner for 1+ year",
     fa_cp_complet = "Couple module completed",
     fa_en_enfants = "F02 Has biological or adopted children",
@@ -1054,46 +1044,96 @@ M4_E4 <- M4_E3 %>%
     fa_sf_rang_nais = "F74 Birth order among biological siblings",
     fa_sf_fratrie_demi_nb = "75 Number of half-siblings",
     fa_sf_fratrie_adopte_nb = "76 Number of adopted siblings",
-    fa_commentaires = "Family module comments",
-    fa_date_creation = "Family module date"
-  ) %>% 
-    relocate(id_anonymat, id_sexe, id_date_nais, id_age)
+    fa_commentaires = "Family module comments"
+  )
 
 ```
 
-Export
+
+## Traduire réponses libres
 
 ```{r}
 
-haven::write_dta(M4_E4, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
+vars_libres <- M4_E5 %>% 
+  select(where(is.character)) %>% 
+  select(-id_anonymat, -ends_with("prenom")) %>% 
+  colnames()
 
-# Il y a un commentaire trop long (plus de 2045 caractères)
+library(dplyr)
+library(purrr)
 
-commentaire <- M4_E4 %>% 
-  filter(str_length(fa_commentaires) > 2045) %>% 
-  pull(fa_commentaires)
 
-file_commentaire <- file("../../data_hors_git/commentaire_fam.txt")
+# 2. Valeurs uniques, non vides, sur les 6 variables à la fois
+textes_uniques <- M4_E5 %>%
+  select(all_of(vars_libres)) %>%
+  unlist(use.names = FALSE) %>%
+  unique() %>%
+  discard(~ is.na(.x) || trimws(.x) == "")
 
-writeLines(strwrap(commentaire , width = 80), file_commentaire)
-writeLines(commentaire, file_commentaire)
+fichier_dico <- "dico_fam_traduction.rds"
 
-# Il faut transformer les NAs de la colonne des commentaires en "" pour que
-# l'export vers .dta fonctionne
+# Reprend là où on s'était arrêté, si une sauvegarde existe
+dico <- if (file.exists(fichier_dico)) readRDS(fichier_dico) else character(0)
 
-M4_E5 <- M4_E4 %>% 
+traduire <- function(x, essais = 5) {
+  for (i in seq_len(essais)) {
+    res <- tryCatch(
+      google_translate(x, target_language = "en",
+                                 source_language = "fr"),
+      error = function(e) NULL
+    )
+    if (length(res) == 1 && !is.na(res)) return(res)
+    attente <- 10 * 2^(i - 1)  # 10 s, 20 s, 40 s, 80 s, 160 s
+    message("Échec, nouvel essai dans ", attente, " s...")
+    Sys.sleep(attente)
+  }
+  NA_character_
+}
+
+a_traduire <- setdiff(textes_uniques, names(dico))
+
+for (i in seq_along(a_traduire)) {
+  txt <- a_traduire[i]
+  dico[txt] <- traduire(txt)
+  Sys.sleep(1)  # pause entre chaque requête
+  if (i %% 20 == 0) {
+    saveRDS(dico, fichier_dico)
+    message(i, " / ", length(a_traduire), " traduits")
+  }
+}
+saveRDS(dico, fichier_dico)
+
+# 4. Application aux 6 colonnes
+
+
+M4_E6 <- M4_E5 %>%
+  mutate(across(all_of(vars_libres),
+                ~ unname(dico[.x]),
+                .names = "{.col}_en"))
+
+for (v in vars_libres) {
+  M4_E6 <- relocate(M4_E6, all_of(paste0(v, "_en")), .after = all_of(v))
+}
+
+```
+
+```{r}
+
+M4_E7 <- M4_E6 %>% 
   mutate(
     fa_commentaires = replace_when(
       fa_commentaires,
       is.na(fa_commentaires) ~ ""
+    ),
+    fa_commentaires_en = replace_when(
+      fa_commentaires_en,
+      is.na(fa_commentaires_en) ~ ""
     )
   )
 
-haven::write_dta(M4_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
+
+haven::write_dta(M4_E7, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Family_454.dta")
 ```
-
-
-
 
 
 
