@@ -642,9 +642,10 @@ M5_D6 <- M5_D5 %>%
       lo_situation_cor == "Meme departement" ~ 1L,
       lo_situation_cor == "Departement different" ~ 0L,
       TRUE ~ -57349
-    )
+    ),
+    .after = lo_situation_cor
   ) %>% 
-    select(-lo_situation_cor)
+    select(-lo_situation_cor, -c(id_centre1:id_age), -lo_dep_centre1)
 
 ```
 
@@ -653,22 +654,43 @@ M5_D6 <- M5_D5 %>%
 ```{r}
 
 source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
+source("Muco_2026/Fonctions/rcd_tagged_na_QCM.R")
 source("Muco_2026/Fonctions/rcd_levels_na.R")
 
-vars_dbl <- M5_D6 %>% 
+qcm_occup <- M5_D6 %>% 
+  select(matches("occup_cause_\\d+$")) %>% 
+  colnames()
+
+qcm_emprunt <- M5_D6 %>% 
+  select(matches("emprunt_\\d$")) %>% 
+  colnames()
+
+qcm_demenag <- M5_D6 %>% 
+  select(matches("demenag_cause_\\d+$")) %>% 
+  colnames()
+
+vars_1rep <- M5_D6 %>% 
   select(where(is.double)) %>% 
-  select(-lo_date_creation, -id_date_nais) %>% 
+  select(-lo_date_creation, -all_of(qcm_occup), -all_of(qcm_emprunt), -all_of(qcm_demenag)) %>% 
+  colnames()
+
+vars_dbl <- M5_D6 %>% 
+  select(where(is.numeric)) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
 
 M5_E0 <- M5_D6 %>%
-  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
+  rcd_tagged_na_QCM(all_of(qcm_occup)) %>% 
+  rcd_tagged_na_QCM(all_of(qcm_emprunt)) %>% 
+  rcd_tagged_na_QCM(all_of(qcm_demenag)) %>% 
+  rcd_tagged_na_dbl(all_of(vars_1rep)) %>% 
   mutate(across(all_of(vars_dbl), rcd_levels_na))
 
-table(as_factor(M5_E0$lo_statut_occup), useNA = "ifany")
+table(as_factor(M5_E0$lo_occup_cause_1), useNA = "ifany")
 
-rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl", "qcm_occup",
+"qcm_emprunt", "qcm_demenag", "vars_1rep", "rcd_tagged_na_QCM"))
 
 ```
 
@@ -694,11 +716,8 @@ vars_oui_non <- M5_E0 %>%
 
 M5_E1 <- M5_E0 %>% 
   select(-lo_situ_logement) %>%
-  relocate(lo_situ_cat, .after = lo_dep_centre1) %>% 
   add_value_labels(
     lo_situ_dep = etiq_dep,
-    lo_dep_centre1 = etiq_dep,
-    id_dep_nais = etiq_dep,
     lo_situ_pays = c(
       "France" = 1,
       "Belgium" = 131,
@@ -725,14 +744,6 @@ M5_E1 <- M5_E0 %>%
       "Not yet, but planned" = 2,
       "Yes" = 1,
       "No" = 0
-    ),
-    id_sexe = c(
-      "Male" = 1,
-      "Female" = 2
-    ),
-    id_lieu_nais = c(
-      "France (mainland or overseas)" = 1,
-      "Abroad" = 2
     )
   ) %>% 
     mutate(
@@ -745,7 +756,7 @@ M5_E1 <- M5_E0 %>%
     )
 
 
-table(as_factor(M5_E1$lo_demenag), useNA = "ifany")
+table(as_factor(M5_E1$lo_amenag_logement), useNA = "ifany")
 
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non", "etiq_dep",
@@ -802,14 +813,13 @@ rm(list = c("verif_ch", "verif_db"))
 
 M5_E3 <- M5_E2 %>% 
   set_variable_labels(
-    id_anonymat = "Unique identifier",
+    id_anonymat = "Respondent unique identifier",
     lo_complet = "Housing module completed",
-    lo_date_creation = "Date Housing module completed",
+    lo_date_creation = "Housing module completion date",
     lo_an_logement = "L01 Year moved into current home",
     lo_situ_dep = "L02 Current home department",
     lo_situ_pays = "L02 Current home country",
-    lo_dep_centre1 = "Main CF care center department",
-    lo_situ_cat = "Lives in CF care center department",
+    lo_situ_cat = "Resp. lives in CF care center department",
     lo_type_logement = "L03 Housing type",
     lo_type_logement_autre = "L03 Other housing type specified",
     lo_type_logement_autre_en = "L03 Other housing type specified (Google translation)",
@@ -839,20 +849,10 @@ M5_E3 <- M5_E2 %>%
     lo_demenag_cause_999 = "L11 Reason to move (MR): other",
     lo_demenag_cause_autre = "L11 Reason to move: detailed response",
     lo_demenag_cause_autre_en = "L11 Reason to move: detailed response (Google translation)",
-    lo_commentaires = "Comments on the housing module",
-    lo_commentaires_en = "Comments on the housing module (Google translation)",
-    id_centre1 = "Identifier of main CF care center",
-    id_centre2 = "Identifier of second CF care center",
-    id_centre3 = "Identifier of third CF care center",
-    id_date_nais = "PCF date of birth",
-    id_dep_nais = "PCF department of birth ",
-    id_lieu_nais = "PCF place of birth",
-    id_sexe = "PCF sex",
-    id_age = "PCQ age"
+    lo_commentaires = "Comments on the Housing module",
+    lo_commentaires_en = "Comments on the Housing module (Google translation)"
   )
 ```
-
-## Fin de journée
 
 
 ```{r}
@@ -861,24 +861,7 @@ haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 
 ```
 
-## Retirer variables identité
-
 ```{r}
 M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
 ```
 
-
-```{r}
-
-M5_E4 <- M5_E3 %>% 
-  select(-(id_centre1:id_age), -lo_dep_centre1) %>% 
-  set_variable_labels(
-    id_anonymat = "Respondent unique identifier",
-    lo_date_creation = "Housing module completion date"
-  )
-```
-
-
-```{r}
-haven::write_dta(M5_E4, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
-```
