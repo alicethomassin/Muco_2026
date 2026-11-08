@@ -17,3 +17,37 @@ M1_A3 <- readr::read_csv("data_hors_git/process_data/thoa_M1_A3.csv",
 M2_A0 <- haven::read_sas("data_hors_git/raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 
 ```
+
+### Corriger données d'identité
+
+```{r}
+
+# Ajouter id_doublon
+M2_A1 <- M2_A0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -id_type, -tab_db, -(id_centre1:id_centre3), -(id_dep_nais:id_age), 
+  -(sc_type:id_age_cat_3)) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  ))
+
+# Remplir les données manquantes de l'identité
+
+M2_A2 <- M2_A1 %>% 
+  rows_patch(
+    M1_A3 %>% 
+      select(any_of(colnames(M2_A1))),
+    by = "id_anonymat",
+    unmatched = "ignore"
+  )
+
+
+```
