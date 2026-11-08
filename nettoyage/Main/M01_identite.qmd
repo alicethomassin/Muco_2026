@@ -398,5 +398,5 @@ M1_C2 <- M1_C1 %>%
 ## EXPORT STATA
 
 ```{r}
-haven::write_dta(M1_C2, "data_hors_git/Peter/thoa_Identity_454.dta")
+haven::write_dta(M1_C2, "data_hors_git/Peter/thoa1_Identity_454.dta")
 ```
