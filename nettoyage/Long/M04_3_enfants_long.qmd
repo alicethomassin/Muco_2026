@@ -1,0 +1,17 @@
+
+
+```{r}
+library(tidyverse)
+library(labelled)
+library(questionr)
+
+E4_F2 <- readr::read_csv("data_hors_git/process_data/thoa_E4_F2_pour_long.csv",
+                            show_col_types = F)
+
+```
+
+
+```{r}
+
+
+```
