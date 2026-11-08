@@ -37,3 +37,19 @@ fratrie0_long <- F4_F3 %>%
 
 
 ```
+
+# Renommer variables
+
+```{r}
+
+vars_module <- fratrie0_long %>% 
+  select(prenom:deces_an) %>% 
+  colnames()
+
+fratrie1_long <- fratrie0_long %>% 
+  rename_with( ~ paste0("fa_frt_", .x), all_of(vars_module)) %>% 
+  rename("fa_fr_rang" = "rang_frt")
+
+rm(list = c("vars_module", "vars_num", "vars_to_pivot"))
+
+```
