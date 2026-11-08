@@ -1,0 +1,6 @@
+
+```{r}
+
+
+F4_F2 <- readr::read_csv(F4_F2, "data_hors_git/process_data/thoa_F4_F2_pour_long.csv")
+```
