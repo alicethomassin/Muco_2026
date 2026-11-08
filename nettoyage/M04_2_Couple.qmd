@@ -744,7 +744,7 @@ C4_F2 <- C4_F1 %>%
 
 ```{r}
 
-haven::write_dta(C4_F2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_235.dta")
+haven::write_dta(C4_F2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_W235.dta")
 
 ```
 
