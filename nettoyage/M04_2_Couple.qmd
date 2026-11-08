@@ -794,3 +794,22 @@ couple0_long <- C4_E3 %>%
 ```{r}
 write_csv(couple0_long, "data_hors_git/process_data/thoa_couple0_long.csv")
 ```
+
+
+```{r}
+couple0_long <- readr::read_csv("data_hors_git/process_data/thoa_couple0_long.csv", show_col_types = F)
+```
+
+## Renommer variables
+
+```{r}
+
+vars_module <- couple0_long %>% 
+  select(conjt_prenom:union_enf) %>% 
+  colnames()
+
+couple1_long <- couple0_long %>% 
+  rename_with( ~ paste0("fa_cpl_", .x), all_of(vars_module)) %>% 
+  rename("fa_cp_rang" = "rang_cpl")
+
+```
