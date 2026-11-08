@@ -636,7 +636,7 @@ source("Muco_2026/Fonctions/etiquettes_repeted_regex.R")
 E4_G2 <- E4_G1 %>% 
   set_variable_labels(
     id_anonymat = "Respondent unique identifier",
-    fa_en_nb_enfants = "No. of children per reps.",
+    fa_en_nb_enfants = "No. of children per resp.",
     fa_en_date_creation = "Children module completion date"
   ) %>% 
     etiquettes_repeted(., "prenom_conjt", "F14 Child ", " other parent's name") %>% 
@@ -665,4 +665,15 @@ haven::write_dta(E4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 E4_G2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_W78.dta")
 
 
+```
+
+
+```{r}
+
+E4_G3 <- E4_G2 %>% 
+  set_variable_labels(
+    fa_en_nb_enfants = "No. of children per resp."
+  )
+
+haven::write_dta(E4_G3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_W78.dta")
 ```
