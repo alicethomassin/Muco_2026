@@ -7,8 +7,6 @@ library(questionr)
 
 # PRÉ NETTOYAGE
 
-## BASE UNIQUE
-
 ```{r}
 
 M1_A3 <- readr::read_csv("data_hors_git/process_data/thoa_M1_A3.csv",
@@ -18,7 +16,7 @@ M2_A0 <- haven::read_sas("data_hors_git/raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 
 ```
 
-### Corriger données d'identité
+## Corriger données d'identité
 
 ```{r}
 
@@ -30,7 +28,7 @@ M2_A1 <- M2_A0 %>%
     by = "id_anonymat"
   ) %>% 
   relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
-  select(-id_sep, -id_type, -tab_db, -(id_centre1:id_centre3), -(id_dep_nais:id_age), 
+  select(-id_sep, -id_type, -tab_db, -id_date_creation, -(id_centre1:id_centre3), -(id_dep_nais:id_age), 
   -(sc_type:id_age_cat_3)) %>% 
   haven::zap_label() %>% 
   haven::zap_formats() %>% 
@@ -48,6 +46,42 @@ M2_A2 <- M2_A1 %>%
     by = "id_anonymat",
     unmatched = "ignore"
   )
+
+rm(list = c("M2_A0", "M2_A1"))
+```
+
+## Réordonner et renommer
+
+
+```{r}
+
+rm_ps <- M2_A2 %>% 
+    select(starts_with("ps_")) %>% 
+    colnames()
+
+rm_fa_plan <- M2_A2 %>% 
+    select(starts_with("fa_plan")) %>% 
+    colnames()
+
+M2_B0 <- M2_A2 %>% 
+        rename_with(~ gsub("^ps", "sc", .x), all_of(rm_ps)) %>%
+        rename_with(~ gsub("^fa", "sc", .x), all_of(rm_fa_plan)) %>%
+        rename(
+        "sc_commentaires" = "commentaires_scol",
+        "sc_debut_an" = "sc_an_debut",
+        "sc_fin_etudes" = "fa_fin_etudes",
+        "sc_formation" = "fa_formation",
+        "sc_formation_autre" = "fa_formation_autre",
+        "sc_diplome" = "fa_diplome",
+        "sc_diplome_autre" = "fa_diplome_autre",
+        "sc_diplome_an" = "fa_an_diplome"
+    ) %>%  
+        relocate(c("sc_debut", "sc_debut_autre", "sc_debut_an", "sc_redoubl",
+        "sc_interromp", "sc_plan", "sc_plan_an"), .after = sc_date_creation) %>% 
+            relocate(c(sc_plan_ets1_1:sc_plan_notification_autre), .after = sc_plan_an) %>% 
+            relocate(c("sc_plan_demande", "sc_fin_etudes", "sc_formation", "sc_formation_autre",
+            "sc_diplome", "sc_diplome_autre", "sc_diplome_an"), .after = sc_plan_notification_autre) %>% 
+            relocate(sc_commentaires, .after = sc_diplome_an)
 
 
 ```
