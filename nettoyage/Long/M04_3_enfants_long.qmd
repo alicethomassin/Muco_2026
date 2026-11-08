@@ -58,3 +58,29 @@ rm(list = c("vars_module", "vars_num", "vars_to_pivot"))
 
 ```
 
+# Introduire tagged_na
+
+```{r}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_1rep.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
+library(labelled)
+
+vars_1rep <- enfant1_long %>% 
+  select(where(is.double)) %>% 
+  select(-fa_en_date_creation) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+enfant2_long <- enfant1_long %>%
+  rcd_tagged_na_1rep(all_of(vars_1rep)) %>% 
+  mutate(across(all_of(vars_1rep), lbl_levels_na))
+
+table(as_factor(enfant2_long$fa_enf_decd_mois), useNA = "ifany")
+
+rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
+
+
+
+```
