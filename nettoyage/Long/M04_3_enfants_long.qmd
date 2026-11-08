@@ -11,7 +11,33 @@ E4_F2 <- readr::read_csv("data_hors_git/process_data/thoa_E4_F2_pour_long.csv",
 ```
 
 
+# Pivot longer
 ```{r}
+
+vars_num <- E4_F2 %>% 
+  select(starts_with("fa_enf")) %>%
+  select(-where(is.character)) %>% 
+  colnames()
+
+E4_F3 <- E4_F2 %>% 
+  mutate(
+    across(
+      .cols = all_of(vars_num),
+      .fns = ~ if_else(.x == -7, NA_integer_, .x)
+    )
+  )
+
+vars_to_pivot <- E4_F3 %>% 
+  select(starts_with("fa_enf")) %>% 
+  colnames()
+
+enfant0_long <- E4_F3 %>%  
+  pivot_longer(
+    cols = all_of(vars_to_pivot),
+    names_to = c("rang_enf", ".value"),
+    names_pattern = "fa_enf(.)_(\\w+)",
+    values_drop_na = TRUE
+  )
 
 
 ```
