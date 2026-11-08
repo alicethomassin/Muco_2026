@@ -128,3 +128,38 @@ verif_db <- fratrie3_long %>%
 rm(list = c("verif_ch", "verif_db"))
 
 ```
+
+# Ajouter variable labels
+
+```{r}
+fratrie4_long <- fratrie3_long %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    fa_fr_nb_frt = "No. of siblings per resp.",
+    fa_fr_date_creation = "Siblings module completion date",
+    fa_fr_rang = "Siblings order",
+    fa_frt_prenom = "F49 Sibling name",
+    fa_frt_sexe = "F50 Sibling sex",
+    fa_frt_nais_mois = "F51 Sibling DOB (month)",
+    fa_frt_nais_an = "F51 Sibling DOB (year)",
+    fa_frt_issu = "F52 How this sibling joined the family",
+    fa_frt_adpt_mois = "F53 Sibling date of adoption (month)",
+    fa_frt_adpt_an = "F53 Sibling date of adoption (year)",
+    fa_frt_diag_avt_nais = "F54 Sibling had prenatal CF diagnosis",
+    fa_frt_muco = "F55 Sibling has/had CF",
+    fa_frt_decede = "F56 Sibling deceased",
+    fa_frt_deces_mois = "F57 Sibling date of death (month)",
+    fa_frt_deces_an = "F57 Sibling date of death (year)"
+  ) %>% 
+    mutate(
+        fa_fr_rang = as.integer(fa_fr_rang)
+    )
+```
+
+
+```{r}
+
+haven::write_dta(fratrie4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_L573.dta")
+
+```
+
