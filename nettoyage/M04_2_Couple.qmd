@@ -635,10 +635,6 @@ C4_F0 <- C4_E2 %>%
   rcd_tagged_na_wide_1rep(all_of(vars_1rep)) %>% 
   mutate(across(all_of(vars_1rep), rcd_levels_na_wide))
 
-
-  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na))
-
 table(as_factor(C4_F0$fa_cpl2_union_int_par), useNA = "ifany")
 
 rm(list = c("vars_1rep", "rcd_levels_na_wide", "rcd_tagged_na_wide_1rep"))
@@ -753,70 +749,3 @@ haven::write_dta(C4_F2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 ```
 
 
-# Pivot longer
-
-```{r}
-C4_E2 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E2_pour_long.csv")
-```
-
-```{r}
-
-vars_num <- C4_E2 %>% 
-  select(starts_with("fa_cpl")) %>%
-  select(-where(is.character)) %>% 
-  colnames()
-
-C4_E3 <- C4_E2 %>% 
-  mutate(
-    across(
-      .cols = all_of(vars_num),
-      .fns = ~ if_else(.x == -7, NA_integer_, .x)
-    )
-  )
-
-vars_to_pivot <- C4_E3 %>% 
-  select(starts_with("fa_cpl")) %>% 
-  colnames()
-
-couple0_long <- C4_E3 %>%  
-  pivot_longer(
-    cols = all_of(vars_to_pivot),
-    names_to = c("rang_cpl", ".value"),
-    names_pattern = "fa_cpl(.)_(\\w+)",
-    values_drop_na = TRUE
-  )
-
-
-```
-
-# REPRENDRE ICI POUR RECODER NAS ET ÉTIQUETTER FORMAT LONG
-
-```{r}
-write_csv(couple0_long, "data_hors_git/process_data/thoa_couple0_long.csv")
-```
-
-
-```{r}
-couple0_long <- readr::read_csv("data_hors_git/process_data/thoa_couple0_long.csv", show_col_types = F)
-```
-
-## Renommer variables
-
-```{r}
-
-vars_module <- couple0_long %>% 
-  select(conjt_prenom:union_enf) %>% 
-  colnames()
-
-couple1_long <- couple0_long %>% 
-  rename_with( ~ paste0("fa_cpl_", .x), all_of(vars_module)) %>% 
-  rename("fa_cp_rang" = "rang_cpl")
-
-```
-
-## Recoder NAs pour Stata
-
-```{r}
-
-
-```
