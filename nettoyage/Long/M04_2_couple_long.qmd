@@ -132,3 +132,51 @@ table(as_factor(couple3_long$fa_cpl_union_int_mois), useNA = "ifany")
 
 rm(list = c("rcd_mois", "lbl_oui_non", "all_mois", "vars_bin"))
 ```
+
+## Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- couple3_long %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- couple3_long %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
+
+# Ajouter variable labels
+
+
+```{r}
+
+
+couple4_long <- couple3_long %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    fa_cp_nb_cpl = "No. of relationships per resp.",
+    fa_cp_date_creation = "Couple module completion date",
+    fa_cp_rang = "Relationship rank",
+    fa_cpl_conjt_prenom = "F02 Partner name",
+    fa_cpl_conjt_sexe = "F03 Partner sex",
+    fa_cpl_conjt_nais_mois = "F04 Partner DOB (month)",
+    fa_cpl_conjt_nais_an = "F04 Partner DOB (year)",
+    fa_cpl_union_nature = "F05 Relationship type",
+    fa_cpl_union_mois = "F06 Relationship start date (month)",
+    fa_cpl_union_an = "F06 Relationship start date (year)",
+    fa_cpl_conjt_muco = "F07 Partner has CF",
+    fa_cpl_union_int = "F08 Relationship ended",
+    fa_cpl_union_int_par = "F09 Relationship end type",
+    fa_cpl_union_int_mois = "F10 Relationship end date (month)",
+    fa_cpl_union_int_an = "F10 Relationship end date (year)",
+    fa_cpl_union_int_muco = "F11 Relationship end due to CF",
+    fa_cpl_union_enf = "F12 Had children during relationship"
+  )
+```
+
+
+```{r}
+haven::write_dta(couple4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_L322.dta")
+```
