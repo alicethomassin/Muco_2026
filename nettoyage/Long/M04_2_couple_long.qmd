@@ -65,7 +65,7 @@ rm(vars_module)
 
 ```
 
-# Recoder NAs pour Stata
+# Introduire tagged_na
 
 ```{r}
 
@@ -90,4 +90,45 @@ rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 
 
 
+```
+
+# Ajouter value labels
+
+```{r}
+source("Muco_2026/Fonctions/rcd_mois.R")
+source("Muco_2026/Fonctions/lbl_oui_non.R")
+
+all_mois <- couple2_long %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+vars_bin <- couple2_long %>% 
+    select(fa_cpl_conjt_muco, fa_cpl_union_int, fa_cpl_union_int_muco, fa_cpl_union_enf) %>% 
+    colnames()
+
+couple3_long <- couple2_long %>% 
+  mutate(
+    across(all_of(all_mois), rcd_mois),
+    across(all_of(vars_bin), lbl_oui_non)
+  ) %>%
+    add_value_labels(
+        fa_cpl_conjt_sexe = c(
+            "Male" = 1,
+            "Female" = 2
+        ),
+        fa_cpl_union_nature = c(
+            "Married" = 1,
+            "Cohabiting/PACS, not married" = 2,
+            "Never lived together" = 3
+        ),
+        fa_cpl_union_int_par = c(
+            "Divorce" = 1,
+            "Separation" = 2,
+            "Widowhood" = 3
+        )
+    )
+
+table(as_factor(couple3_long$fa_cpl_union_int_mois), useNA = "ifany")
+
+rm(list = c("rcd_mois", "lbl_oui_non", "all_mois", "vars_bin"))
 ```
