@@ -119,3 +119,49 @@ table(as_factor(enfant3_long$fa_enf_sexe), useNA = "ifany")
 
 rm(list = c("rcd_mois", "lbl_oui_non", "all_mois", "vars_bin"))
 ```
+
+## Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- enfant3_long %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- enfant3_long %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
+
+# Ajouter variable labels
+
+```{r}
+enfant4_long <- enfant3_long %>% 
+    rename("fa_en_nb_enf" = "fa_en_nb_enfants") %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    fa_en_nb_enf = "No. of children per resp.",
+    fa_en_date_creation = "Children module completion date",
+    fa_en_rang = "Children order",
+    fa_enf_prenom_conjt = "F14 Child's other parent name",
+    fa_enf_prenom = "F15 Child name",
+    fa_enf_sexe = "F16 Child sex",
+    fa_enf_nais_mois = "F17 Child DOB (month)",
+    fa_enf_nais_an = "F17 Child DOB (year)",
+    fa_enf_issu = "F18 How the child joined the family",
+    fa_enf_adpt_mois = "F19 Child adoption date (month)",
+    fa_enf_adpt_an = "F19 Child adoption date (year)",
+    fa_enf_diag_avt = "F20 Child had prenatal CF diagnosis",
+    fa_enf_muco = "F21 Child has/had CF",
+    fa_enf_decede = "F22 Child deceased",
+    fa_enf_decd_mois = "F23 Child date of death (month)",
+    fa_enf_decd_an = "F23 Child date of death (year)"
+  )
+```
+
+
+```{r}
+
+haven::write_dta(enfant4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_L113.dta")
+```
