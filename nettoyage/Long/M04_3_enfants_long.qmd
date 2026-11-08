@@ -41,3 +41,20 @@ enfant0_long <- E4_F3 %>%
 
 
 ```
+
+# Renommer variables
+
+```{r}
+
+vars_module <- enfant0_long %>% 
+  select(prenom_conjt:decd_an) %>% 
+  colnames()
+
+enfant1_long <- enfant0_long %>% 
+  rename_with( ~ paste0("fa_enf_", .x), all_of(vars_module)) %>% 
+  rename("fa_en_rang" = "rang_enf")
+
+rm(list = c("vars_module", "vars_num", "vars_to_pivot"))
+
+```
+
