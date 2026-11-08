@@ -165,3 +165,17 @@ enfant4_long <- enfant3_long %>%
 
 haven::write_dta(enfant4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_L113.dta")
 ```
+
+
+
+```{r}
+
+enfant4_long <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_L113.dta")
+
+enfant5_long <- enfant4_long %>% 
+  set_variable_labels(
+    fa_enf_issu = "F18 How this child joined the family"
+  )
+
+haven::write_dta(enfant5_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_L113.dta")
+```
