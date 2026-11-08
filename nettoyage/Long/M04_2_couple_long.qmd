@@ -1,9 +1,14 @@
  Pivot longer
 
 ```{r}
-C4_E2 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E2_pour_long.csv")
+library(tidyverse)
+library(questionr)
+library(labelled)
+
+C4_E2 <- readr::read_csv("data_hors_git/process_data/thoa_C4_E2_pour_long.csv", show_col_types = F)
 ```
 
+# Pivot longer
 ```{r}
 
 vars_num <- C4_E2 %>% 
@@ -34,7 +39,6 @@ couple0_long <- C4_E3 %>%
 
 ```
 
-# REPRENDRE ICI POUR RECODER NAS ET ÉTIQUETTER FORMAT LONG
 
 ```{r}
 write_csv(couple0_long, "data_hors_git/process_data/thoa_couple0_long.csv")
@@ -45,7 +49,7 @@ write_csv(couple0_long, "data_hors_git/process_data/thoa_couple0_long.csv")
 couple0_long <- readr::read_csv("data_hors_git/process_data/thoa_couple0_long.csv", show_col_types = F)
 ```
 
-## Renommer variables
+# Renommer variables
 
 ```{r}
 
@@ -57,11 +61,33 @@ couple1_long <- couple0_long %>%
   rename_with( ~ paste0("fa_cpl_", .x), all_of(vars_module)) %>% 
   rename("fa_cp_rang" = "rang_cpl")
 
+rm(vars_module)
+
 ```
 
-## Recoder NAs pour Stata
+# Recoder NAs pour Stata
 
 ```{r}
+
+source("Muco_2026/Fonctions/rcd_tagged_na_1rep.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
+library(labelled)
+
+vars_1rep <- couple1_long %>% 
+  select(where(is.double)) %>% 
+  select(-fa_cp_date_creation) %>% 
+  colnames()
+
+# Les deux fonctions fonctionnent!
+
+couple2_long <- couple1_long %>%
+  rcd_tagged_na_1rep(all_of(vars_1rep)) %>% 
+  mutate(across(all_of(vars_1rep), lbl_levels_na))
+
+table(as_factor(couple2_long$fa_cpl_union_enf), useNA = "ifany")
+
+rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
+
 
 
 ```
