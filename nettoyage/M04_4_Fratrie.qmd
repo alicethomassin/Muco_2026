@@ -315,7 +315,7 @@ F4_D1 <- F4_D0 %>%
 # NETTOYAGE
 ```{r}
 
-F4_D1 <- readr::read_csv("../../data_hors_git/process_data/thoa_F4_D1.csv",
+F4_D1 <- readr::read_csv("data_hors_git/process_data/thoa_F4_D1.csv",
                          show_col_types = F)
 ```
 
@@ -502,12 +502,12 @@ F4_F0 <- F4_E0 %>%
   mutate(
     across(
       starts_with("fa_frt") & where(is.character), ~ replace_when(
-        .x, is.na(.x) ~ "-1"
+        .x, is.na(.x) ~ "-7"
       )
     ),
     across(
       starts_with("fa_frt") & where(is.numeric), ~ replace_when(
-        .x, is.na(.x) ~ -1
+        .x, is.na(.x) ~ -7
       )
     )
   )
@@ -534,7 +534,7 @@ rm(list = c("vars_adpt", "vars_decd", "vars_simple", "vars_wider", "rcdSM_vars_b
 
 ```{r}
 
-write_csv(F4_F1, "../../data_hors_git/process_data/thoa_F4_F1_tt.csv")
+write_csv(F4_F1, "data_hors_git/process_data/thoa_F4_F1_tt.csv")
 
 ```
 
@@ -580,54 +580,46 @@ F4_F2 <- F4_F1 %>%
     )
   ) %>% 
     rename(
-    "fa_commentaires" = "commentaires_fam",
-    "fa_cp_complet" = "cp_complet",
-    "fa_en_complet" = "en_complet",
-    "fa_fr_complet" = "fr_complet",
-    "fa_fr_nb_siblings" = "nb_frt",
+    "fa_fr_nb_frt" = "nb_frt",
     "fa_fr_date_creation" = "fratrie_date_creation"
   ) %>% 
-  relocate(c("id_date_nais", "id_sexe", "fa_fr_nb_siblings"), .after = id_anonymat) %>% 
+  relocate(fa_fr_date_creation, .after = id_anonymat) %>% 
+    select(-(commentaires_fam:fa_fr_fratrie)) %>% 
     mutate(
-    fa_commentaires = replace_when(
-      fa_commentaires,
-      is.na(fa_commentaires) ~ ""
-    ),
-    across(
-      all_of(vars_prenom), ~ replace_when(
-        .x,
-        str_detect(., "\\d") ~ NA_character_
+      across(
+        all_of(vars_prenom), ~ replace_when(
+          .x,
+          str_detect(., "\\d") ~ NA_character_
       )
     )
   )
     
 rm(list = c("vars_prenom"))
 
+# readr::write_csv(F4_F2, "data_hors_git/process_data/thoa_F4_F2_pour_long.csv")
 ```
 
 ## Recoder les NAs double pour Stata
 
 ```{r F4_F2 to F4_G0}
 
-source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
-source("Muco_2026/Fonctions/rcd_levels_na.R")
+source("Muco_2026/Fonctions/rcd_tagged_na_1rep.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
 
-vars_dbl <- F4_F2 %>% 
+vars_1rep <- F4_F2 %>% 
   select(where(is.double)) %>% 
-  select(
-    -contains("complet"), -id_date_nais, -fa_fr_date_creation, -id_sexe,
-    -fa_fr_nb_siblings, -fa_fr_fratrie) %>% 
+  select(-fa_fr_date_creation) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
 
 F4_G0 <- F4_F2 %>%
-  rcd_tagged_na_dbl(all_of(vars_dbl)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na))
+  rcd_tagged_na_1rep(all_of(vars_1rep)) %>% 
+  mutate(across(all_of(vars_1rep), lbl_levels_na))
 
-table(as_factor(F4_G0$fa_frt06_muco), useNA = "ifany")
+table(as_factor(F4_G0$fa_frt02_diag_avt_nais), useNA = "ifany")
 
-rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl"))
+rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 
 ```
 
@@ -647,15 +639,8 @@ all_mois <- F4_G0 %>%
 F4_G1 <- F4_G0 %>% 
   mutate(
     across(all_of(all_mois), rcd_mois)
-  ) %>% 
-    add_value_labels(
-      fa_fr_fratrie = c(
-        "Yes" = 1,
-        "No" = 0
-      )) %>% 
-        mutate(
-          across(
-            contains("complet"), ~ lbl_oui_non(.)),
+  ) %>%
+    mutate(
         across(
           contains("sexe"), ~ rcd_precis_SM(
             ., "Male" = 1, "Female" = 2
@@ -671,6 +656,8 @@ F4_G1 <- F4_G0 %>%
         ),
         across(fa_frt01_diag_avt_nais:fa_frt11_decede, ~ lbl_oui_non(.))
       )
+
+table(as_factor(F4_G1$fa_frt02_issu), useNA = "ifany")
 
 rm(list = c("all_mois", "lbl_oui_non", "rcd_mois", "rcd_precis_SM"))
 
@@ -701,17 +688,9 @@ source("Muco_2026/Fonctions/etiquettes_repeted_regex.R")
 
 F4_G2 <- F4_G1 %>% 
   set_variable_labels(
-    id_anonymat = "Unique identifier",
-    id_date_nais = "PCF date of birth",
-    id_sexe = "PCF sex",
-    fa_fr_nb_siblings = "PCF siblings count",
-    fa_fr_fratrie = "F48 Has siblings",
-    fa_en_complet = "Children module completed",
-    fa_fr_complet = "Siblings module completed",
-    fa_cp_complet = "Couple module completed",
-    fa_complet = "Family module completed",
-    fa_commentaires = "Family module comments",
-    fa_fr_date_creation = "Children module date"
+    id_anonymat = "Respondent unique identifier",
+    fa_fr_nb_frt = "No. of siblings per resp.",
+    fa_fr_date_creation = "Sibling module completion date"
   ) %>% 
     etiquettes_repeted(., "prenom", "F49 Sibling ", " name") %>% 
     etiquettes_repeted_regex(., "\\d_sexe", "F50 Sibling ", " sex") %>% 
@@ -720,7 +699,7 @@ F4_G2 <- F4_G1 %>%
     etiquettes_repeted(., "_issu", "F52 How sibling ", " joined the family") %>% 
     etiquettes_repeted(., "adpt_mois", "F53 Sibling ", " date of adoption (month)") %>% 
     etiquettes_repeted(., "adpt_an", "F53 Sibling ", " date of adoption (year)") %>% 
-    etiquettes_repeted(., "avt_nais", "F54 Sibling ", " prenatal CF diagnosis") %>% 
+    etiquettes_repeted(., "avt_nais", "F54 Sibling ", " had prenatal CF diagnosis") %>% 
     etiquettes_repeted(., "_muco", "F55 Sibling ", " has/had CF") %>% 
     etiquettes_repeted(., "decede", "F56 Sibling ", " deceased") %>% 
     etiquettes_repeted(., "deces_mois", "F57 Sibling ", " date of death (month)") %>% 
@@ -733,7 +712,7 @@ F4_G2 <- F4_G1 %>%
 
 ```{r}
 
-haven::write_dta(F4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_295.dta")
+haven::write_dta(F4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_W295.dta")
 
 ```
 
