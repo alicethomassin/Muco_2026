@@ -813,3 +813,10 @@ couple1_long <- couple0_long %>%
   rename("fa_cp_rang" = "rang_cpl")
 
 ```
+
+## Recoder NAs pour Stata
+
+```{r}
+
+
+```
