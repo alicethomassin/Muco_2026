@@ -81,6 +81,41 @@ table(as_factor(enfant2_long$fa_enf_decd_mois), useNA = "ifany")
 
 rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 
+```
 
+# Ajouter value labels
 
+```{r}
+source("Muco_2026/Fonctions/rcd_mois.R")
+source("Muco_2026/Fonctions/lbl_oui_non.R")
+
+all_mois <- enfant2_long %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+vars_bin <- enfant2_long %>% 
+    select(fa_enf_diag_avt, fa_enf_muco, fa_enf_decede) %>% 
+    colnames()
+
+enfant3_long <- enfant2_long %>% 
+  mutate(
+    across(all_of(all_mois), rcd_mois),
+    across(all_of(vars_bin), lbl_oui_non)
+  ) %>%
+    add_value_labels(
+        fa_enf_sexe = c(
+            "Male" = 1,
+            "Female" = 2
+        ),
+        fa_enf_issu = c(
+            "Natural conception" = 1,
+            "Assisted reproduction" = 2,
+            "Partner's previous relationship" = 3,
+            "Adoption" = 4
+        )
+    )
+
+table(as_factor(enfant3_long$fa_enf_sexe), useNA = "ifany")
+
+rm(list = c("rcd_mois", "lbl_oui_non", "all_mois", "vars_bin"))
 ```
