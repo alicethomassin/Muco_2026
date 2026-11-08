@@ -78,3 +78,53 @@ table(as_factor(fratrie2_long$fa_frt_sexe), useNA = "ifany")
 rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 
 ```
+
+# Ajouter value labels
+
+```{r}
+source("Muco_2026/Fonctions/rcd_mois.R")
+source("Muco_2026/Fonctions/lbl_oui_non.R")
+
+all_mois <- fratrie2_long %>% 
+  select(contains("mois")) %>% 
+  colnames()
+
+vars_bin <- fratrie2_long %>% 
+    select(fa_frt_diag_avt_nais, fa_frt_muco, fa_frt_decede) %>% 
+    colnames()
+
+fratrie3_long <- fratrie2_long %>% 
+  mutate(
+    across(all_of(all_mois), rcd_mois),
+    across(all_of(vars_bin), lbl_oui_non)
+  ) %>%
+    add_value_labels(
+        fa_frt_sexe = c(
+            "Male" = 1,
+            "Female" = 2
+        ),
+        fa_frt_issu = c(
+            "Full sibling" = 1,
+            "Half-sibling" = 2,
+            "Adopted sibling" = 3
+        )
+    )
+
+table(as_factor(fratrie3_long$fa_frt_decede), useNA = "ifany")
+
+rm(list = c("rcd_mois", "lbl_oui_non", "all_mois", "vars_bin"))
+```
+
+## Verifier qu'il ne reste plus de neg
+
+```{r verif rcd}
+
+verif_ch <- fratrie3_long %>%
+  filter(if_any(where(is.character), ~ grepl("^-\\d", .)))
+
+verif_db <- fratrie3_long %>% 
+  filter(if_any(where(is.numeric), ~ . < 0))
+
+rm(list = c("verif_ch", "verif_db"))
+
+```
