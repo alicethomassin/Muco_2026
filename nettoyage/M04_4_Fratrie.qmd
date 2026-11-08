@@ -712,7 +712,7 @@ F4_G2 <- F4_G1 %>%
 
 ```{r}
 
-haven::write_dta(F4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_W295.dta")
+haven::write_dta(F4_G2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_4Siblings_W295.dta")
 
 ```
 

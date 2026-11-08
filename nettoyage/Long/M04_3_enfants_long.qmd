@@ -163,7 +163,7 @@ enfant4_long <- enfant3_long %>%
 
 ```{r}
 
-haven::write_dta(enfant4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Children_L113.dta")
+haven::write_dta(enfant4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_3Children_L113.dta")
 ```
 
 

@@ -178,5 +178,5 @@ couple4_long <- couple3_long %>%
 
 
 ```{r}
-haven::write_dta(couple4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Couple_L322.dta")
+haven::write_dta(couple4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_2Couple_L322.dta")
 ```

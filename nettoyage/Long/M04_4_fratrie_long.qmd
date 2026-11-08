@@ -159,7 +159,7 @@ fratrie4_long <- fratrie3_long %>%
 
 ```{r}
 
-haven::write_dta(fratrie4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Siblings_L573.dta")
+haven::write_dta(fratrie4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_4Siblings_L573.dta")
 
 ```
 

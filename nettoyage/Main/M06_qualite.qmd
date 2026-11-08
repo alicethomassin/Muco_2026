@@ -703,5 +703,5 @@ M6_E2 <- M6_E1 %>%
 
 ```{r}
 
-haven::write_dta(M6_E2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Quality_454.dta")
+haven::write_dta(M6_E2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa6_Quality_454.dta")
 ```
