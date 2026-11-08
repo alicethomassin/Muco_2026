@@ -1,6 +1,39 @@
 
 ```{r}
+library(tidyverse)
+library(labelled)
+library(questionr)
+
+F4_F2 <- readr::read_csv("data_hors_git/process_data/thoa_F4_F2_pour_long.csv", show_col_types = F)
+```
+
+# Pivot longer
+```{r}
+
+vars_num <- F4_F2 %>% 
+  select(starts_with("fa_frt")) %>%
+  select(-where(is.character)) %>% 
+  colnames()
+
+F4_F3 <- F4_F2 %>% 
+  mutate(
+    across(
+      .cols = all_of(vars_num),
+      .fns = ~ if_else(.x == -7, NA_integer_, .x)
+    )
+  )
+
+vars_to_pivot <- F4_F3 %>% 
+  select(starts_with("fa_frt")) %>% 
+  colnames()
+
+fratrie0_long <- F4_F3 %>%  
+  pivot_longer(
+    cols = all_of(vars_to_pivot),
+    names_to = c("rang_frt", ".value"),
+    names_pattern = "fa_frt(.\\d+)_(\\w+)",
+    values_drop_na = TRUE
+  )
 
 
-F4_F2 <- readr::read_csv(F4_F2, "data_hors_git/process_data/thoa_F4_F2_pour_long.csv")
 ```
