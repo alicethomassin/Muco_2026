@@ -88,3 +88,82 @@ I2_A2 <- I2_A1 %>%
 
 rm(vars_check)
 ```
+
+## Retirer les doublons
+
+```{r}
+
+# Identifier les doublons
+doublons_1 <- I2_A2 %>% 
+  group_by(id_keep) %>% 
+  filter(any(id_anonymat == id_doublon)) %>% 
+  ungroup() %>% 
+  
+  # Ajouter variable pour identifier doublons et permettre d'ordonner les lignes
+  
+  mutate(
+    is_og = if_else(
+      id_anonymat == id_doublon, 0, 1
+    ),
+    .after = sc_int_date_creation
+  ) %>% 
+  
+  arrange(id_keep, is_og, sc_int_classe, sc_int_an) %>% 
+    relocate(
+            c("ps_interromp", "int_ps_interromp", "sc_int_classe_autre"), .after = last_col()
+        ) %>% 
+            relocate(id_anonymat, .after = id_keep)
+  
+
+# Garder que les lignes différentes ------------------------------------------------
+
+vars_verif <- doublons_1 %>% 
+    select(sc_int_classe:sc_int_an, sc_int_repr:sc_int_non_repr) %>% 
+    colnames()
+
+# REPRENDRE ICI, DÉDOUBLONNER LA BASE DES INTERRUPTIONS
+
+doublons_2 <- doublons_1 %>% 
+  group_by(id_keep) %>% 
+  
+  # Retirer les lignes pareilles
+  distinct(
+    pick(all_of(vars_verif)),
+    .keep_all = TRUE
+  ) %>% 
+  
+  # Trouver ceux qui ont plus d'une ligne pour la même année
+  group_by(id_keep, sc_rdb_an) %>% 
+  mutate(
+    n = n()
+  ) %>% 
+  ungroup() %>% 
+  filter_out(is.na(sc_rdb_an))
+
+# Trier parmis ceux qui ont renseigné plus d'une fois une meme relation --------
+
+doublons_3 <- doublons_2 %>%
+  group_by(id_keep) %>% 
+  # Garder la date de saisie la plus ancienne
+  filter(rdb_date_creation == min(rdb_date_creation)) %>% 
+  ungroup() %>% 
+  select(-is_og, -n)
+
+
+# Corriger id_anonymat des doublons --------------------------------------------
+
+doublons_corr <- doublons_3 %>%  
+  mutate(
+    id_anonymat = id_keep
+  )
+
+# Joindre les données propres
+R2_B0 <- R2_A2 %>% 
+  filter_out(id_keep %in% doublons_1$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat, sc_rdb_classe, sc_rdb_an)
+
+rm(list = c("doublons_1", "doublons_2", "doublons_3", 
+            "doublons_corr"))
+
+```
