@@ -104,6 +104,7 @@ rm(list = c("rm_fa_plan", "rm_ps"))
 
 ## Identifier les absents
 
+Ici, on va exclure les variables des questions S1 et S2 parce que tout le monde y a répondu, mais 53 personnes ont arrêté de participer au questionnaire à partir de ce point. Donc ces personnes seront comptées comme n'ayant pas participé au module, même si elles ont répondu à deux questions.
 ```{r}
 
 vars_check <- M2_B1 %>%
@@ -128,4 +129,49 @@ M2_B2 <- M2_B1 %>%
   select(-absent)
 
 rm(vars_check)
+```
+
+## Retirer les doublons
+ 
+```{r}
+
+# Identifier les doublons
+doublons <- M2_B2 %>% 
+  group_by(id_keep) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  relocate(c("id_doublon", "id_keep"), .after = id_anonymat) %>% 
+  arrange(id_keep)
+
+# Corriger les données d'identité issues du questionnaire
+
+doublons_corr <- doublons %>% 
+  group_by(id_keep) %>%
+  fill(c("add_sc_debut_corr", "add_sc_debut_age"), .direction = "up") %>% 
+  mutate(
+    id_anonymat = id_keep
+  ) %>% 
+  filter(sc_complet == 1)
+
+# Joindre les données propres
+M2_C0 <- M2_B2 %>% 
+  filter_out(id_keep %in% doublons$id_keep) %>% 
+  bind_rows(doublons_corr) %>% 
+  arrange(id_anonymat)
+
+rm(list = c("doublons", "doublons_corr"))
+rm(list = c("M2_A2", "M2_B0", "M2_B1", "M2_B2"))
+
+```
+ 
+
+```{r M4_C0_bornes0}
+
+# write_csv(M4_C0, "../../data_hors_git/process_data/thoa_M4_C0.csv")
+
+M4_C0_bornes0 <- M4_C0 %>% 
+  select(id_anonymat:id_keep, fa_complet, fa_date_creation, fa_cp_couple_1an,
+         fa_en_enfants, fa_fr_fratrie)
+
+# write_csv(M4_C0_bornes0, "../../data_hors_git/process_data/thoa_M4_C0_bornes0.csv")
 ```
