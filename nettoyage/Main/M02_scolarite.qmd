@@ -81,7 +81,22 @@ M2_B0 <- M2_A2 %>%
             relocate(c(sc_plan_ets1_1:sc_plan_notification_autre), .after = sc_plan_an) %>% 
             relocate(c("sc_plan_demande", "sc_fin_etudes", "sc_formation", "sc_formation_autre",
             "sc_diplome", "sc_diplome_autre", "sc_diplome_an"), .after = sc_plan_notification_autre) %>% 
-            relocate(sc_commentaires, .after = sc_diplome_an)
+            relocate(sc_commentaires, .after = sc_diplome_an) %>% 
+            relocate(sc_debut_corr, .after = sc_debut_autre) %>% 
+            relocate(c(sc_date_debut:sc_age_debut), .after = sc_debut_an) %>% 
+            relocate(etspps, .after = sc_plan_an) %>% 
+            relocate(c(fa_diplome_cat:sc_age_diplome), .before = sc_commentaires)
+
+M2_B1 <- M2_B0 %>%
+    rename(
+      "add_sc_debut_corr" = "sc_debut_corr",
+      "add_sc_debut_date" = "sc_date_debut",
+      "add_sc_debut_age" = "sc_age_debut",
+      "add_sc_etspps" = "etspps",
+      "add_sc_diplome_cat" = "fa_diplome_cat",
+      "add_sc_diplome_date" = "sc_date_diplome",
+      "add_sc_diplome_age" = "sc_age_diplome"
+    )          
 
 
 ```
