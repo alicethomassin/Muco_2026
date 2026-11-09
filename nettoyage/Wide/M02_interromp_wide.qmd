@@ -58,6 +58,33 @@ I2_A1 <- I2_A0 %>%
             "sc_int_repr_mois", "sc_int_repr_an", "sc_int_duree_cat", "sc_int_duree_j"), .after = sc_int_date_creation
         )
 
+rm(change_it)
+```
 
+## Identifier les absents
 
+```{r}
+
+vars_check <- I2_A1 %>%
+  select(sc_int_classe:sc_int_non_repr) %>%
+  colnames()
+
+I2_A2 <- I2_A1 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    sc_it_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+rm(vars_check)
 ```
