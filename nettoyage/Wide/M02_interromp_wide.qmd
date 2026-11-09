@@ -17,3 +17,47 @@ M2_C1_bornes0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C1_bornes0.
                                 show_col_types = F)
 
 ```
+
+## Garder colonnes module
+
+```{r}
+change_it <- I2_A0 %>% 
+    select(starts_with("it_")) %>% 
+    colnames()
+
+# Ajouter id_doublon
+I2_A1 <- I2_A0 %>%
+  left_join(
+    M1_A3 %>% 
+      select(id_anonymat:id_keep),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(id_doublon:id_keep, .after = id_anonymat) %>% 
+  select(-id_sep, -id_type, -tab_db) %>% 
+  haven::zap_label() %>% 
+  haven::zap_formats() %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>% 
+    select(-c(id_date_creation:ps_debut_autre), -c(ps_redoubl:sc_int_cat), -int_type) %>%
+    rename_with(~ gsub("^it", "sc_int", .x), any_of(change_it)) %>% 
+    rename(
+        "sc_int_date_creation" = "int_date_creation",
+        "sc_int_repr_classe" = "sc_int_classe_repr",
+        "sc_int_repr_classe_autre" = "sc_int_classe_repr_autre",
+        "sc_int_repr_classe_cat" = "sc_int_classerepr_cat",
+        "sc_int_repr_mois" = "sc_int_mois_repr",
+        "sc_int_repr_an" = "sc_int_an_repr",
+        "sc_int_duree_cat" = "sc_int_interromp_duree"
+    ) %>% 
+        relocate(
+            c("ps_interromp", "int_ps_interromp", "sc_int_classe", "sc_int_classe_autre", "sc_int_classe_cat", "sc_int_mois",
+            "sc_int_an", "sc_int_cause_1", "sc_int_cause_2", "sc_int_cause_3", "sc_int_cause_4", "sc_int_cause_999",
+            "sc_int_cause_autre", "sc_int_repr", "sc_int_repr_classe", "sc_int_repr_classe_autre", "sc_int_repr_classe_cat",
+            "sc_int_repr_mois", "sc_int_repr_an", "sc_int_duree_cat", "sc_int_duree_j"), .after = sc_int_date_creation
+        )
+
+
+
+```
