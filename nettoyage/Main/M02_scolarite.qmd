@@ -96,7 +96,36 @@ M2_B1 <- M2_B0 %>%
       "add_sc_diplome_cat" = "fa_diplome_cat",
       "add_sc_diplome_date" = "sc_date_diplome",
       "add_sc_diplome_age" = "sc_age_diplome"
-    )          
+    ) 
 
+rm(list = c("rm_fa_plan", "rm_ps"))
 
+```
+
+## Identifier les absents
+
+```{r}
+
+vars_check <- M2_B1 %>%
+  select(starts_with("sc_"), -sc_date_creation, -starts_with("sc_debut")) %>%
+  colnames()
+
+M2_B2 <- M2_B1 %>%
+  mutate(
+    absent = if_all(all_of(vars_check), is.na),
+    .after = id_anonymat
+  ) %>% 
+  
+  # Identifier ceux qui ont participé au module
+  mutate(
+    sc_complet = case_when(
+      absent ~ 0L,
+      !absent ~ 1L,
+      TRUE ~ -99L
+    ),
+    .after = id_anonymat
+  ) %>% 
+  select(-absent)
+
+rm(vars_check)
 ```
