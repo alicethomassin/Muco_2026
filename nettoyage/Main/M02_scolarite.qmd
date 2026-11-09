@@ -179,3 +179,35 @@ M2_C0_bornes0 <- M2_C0 %>%
 
 # write_csv(M2_C0_bornes0, "data_hors_git/process_data/thoa_M2_C0_bornes0.csv")
 ```
+
+## AJOUTER REDOUBLEMENT
+### Ajouter borne pour les redoublement
+
+```{r Import2}
+
+M2_C0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C0.csv",
+                         show_col_types = F)
+
+M2_C0_bornes2 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C0_bornes2.csv",
+                                 show_col_types = F)
+
+```
+
+```{r M4_C0 to M4_C1}
+
+M2_C1 <- M2_C0 %>% 
+  select(-sc_rd_redoubl) %>% 
+  left_join(
+    M2_C0_bornes2 %>% 
+      select(id_anonymat, sc_rd_redoubl, sc_rd_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("sc_rd_redoubl", "sc_rd_complet"), .after = sc_date_creation)
+
+M2_C1_bornes0 <- M2_C1 %>% 
+  select(colnames(M2_C0_bornes2))
+
+# write_csv(M2_C1, "data_hors_git/process_data/thoa_M2_C1.csv")
+# write_csv(M2_C1_bornes0, "data_hors_git/process_data/thoa_M2_C1_bornes0.csv")
+
+```
