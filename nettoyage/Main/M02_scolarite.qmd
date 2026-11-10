@@ -414,6 +414,11 @@ readr::write_csv(M2_E0, "data_hors_git/process_data/thoa_M2_E0.csv")
 Le faire après avoir recodé les NAs
 
 ```{r}
+M2_E0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_E0.csv", show_col_types = F)
+```
+
+
+```{r}
 
 elementaire <- M2_E0 %>% 
   select(starts_with("sc_plan_ets")) %>%
@@ -430,6 +435,83 @@ lycee <- M2_E0 %>%
   select(matches("_1[2-4]$")) %>% 
   colnames()
 
+sc_plan_niveau <- function(df, var_niv, vars_QCM_niv){
 
+  df %>% 
+    mutate(
+      {{var_niv}} := case_when(
+        sc_plan == -2 ~ -2,
+      sc_plan == 0 ~ -1,
+      sc_plan == -9 | if_all(starts_with("sc_plan_ets"), ~ .x == -9) ~ -9,
+      sc_plan == 1 & if_any({{vars_QCM_niv}}, ~ .x == 1) ~ 1,
+      sc_plan == 1 & if_all({{vars_QCM_niv}}, ~ .x == 0) ~ 0,
+      TRUE ~ -3456436
+      ),
+      .before = sc_etspps
+    )
+  
+}
+
+M2_E1 <- M2_E0 %>% 
+  sc_plan_niveau("sc_plan_elementaire", all_of(elementaire)) %>% 
+  sc_plan_niveau("sc_plan_college", all_of(college)) %>% 
+  sc_plan_niveau("sc_plan_lycee", all_of(lycee))
+
+etspps_long <- M2_E1 %>% 
+  select(id_keep, sc_plan:sc_plan_ets5_14) %>% 
+  pivot_longer(
+    cols = starts_with("sc_plan_ets"),
+    names_to = c("ets", "niveau"),
+    names_pattern = "sc_plan_ets(.)_(.*)"
+  ) %>% 
+    mutate(across(ets:niveau, as.integer))
+
+etspps_long2 <- etspps_long %>% 
+  group_by(id_keep) %>% 
+  mutate(
+    sc_plan_ets_debut = case_when(
+      value == 1 & niveau == min(niveau[value == 1], na.rm = TRUE) ~ ets,
+      value == -9 ~ -9,
+      value == -2 ~ -2,
+      value == -1 ~ -1,
+      value == 0 ~ NA_integer_,
+      value == 1 & niveau != min(niveau[value == 1], na.rm = TRUE) ~ NA_integer_,
+      TRUE ~ -93486793
+    ),
+    sc_plan_ets_fin = case_when(
+      value == 1 & niveau == max(niveau[value == 1], na.rm = TRUE) ~ ets,
+      value == -9 ~ -9,
+      value == -2 ~ -2,
+      value == -1 ~ -1,
+      value == 0 ~ NA_integer_,
+      value == 1 & niveau != max(niveau[value == 1], na.rm = TRUE) ~ NA_integer_,
+      TRUE ~ -93486793
+    )
+  )
+
+clean <- etspps_long2 %>% 
+  ungroup() %>% 
+  select(id_keep, sc_plan, sc_plan_ets_debut, sc_plan_ets_fin) %>% 
+  group_by(id_keep) %>% 
+  fill(sc_plan_ets_debut, .direction = "downup") %>% 
+  fill(sc_plan_ets_fin, .direction = "downup") %>% 
+  ungroup() %>% 
+  distinct(id_keep, .keep_all = TRUE) %>% 
+  select(-sc_plan)
+
+
+M2_E2 <- M2_E1 %>% 
+  left_join(
+    clean,
+    by = "id_keep"
+  ) %>% 
+    relocate(c("sc_plan_ets_debut", "sc_plan_ets_fin"), .after = sc_plan_lycee) %>% 
+    select(-sc_etspps)
+```
+
+
+```{r}
+
+readr::write_csv(M2_E2, "data_hors_git/process_data/thoa_M2_E2.csv")
 
 ```
