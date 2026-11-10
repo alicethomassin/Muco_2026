@@ -184,3 +184,92 @@ rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4", "clean",
             "doublons_corr", "vars_verif"))
 
 ```
+
+## Vérifier la variable borne 
+
+```{r}
+
+I2_B1 <- left_join(
+  I2_B0,
+  M2_C1_bornes0 %>% 
+    select(id_keep, sc_complet, sc_in_interromp),
+  by = "id_keep"
+) %>% 
+  relocate(c("sc_complet", "sc_it_complet", "sc_in_interromp"), .after = sc_int_date_creation) 
+
+I2_B2 <- I2_B1 %>%
+  rename(
+    "sc_it_interromp" = "sc_in_interromp",
+    "sc_it_date_creation" = "sc_int_date_creation"
+  ) %>% 
+  mutate(
+    sc_it_interromp = 1
+  ) %>% 
+  select(-ps_interromp, -int_ps_interromp)
+
+```
+
+## Mettre à jour variable borne
+
+```{r}
+
+M2_C1_bornes1 <- M2_C1_bornes0 %>% 
+  rename(
+    "sc_it_interromp" = "sc_in_interromp"
+  ) %>% 
+  rows_update(
+    I2_B2 %>% 
+      select(id_keep, sc_it_interromp) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  left_join(
+    I2_B2 %>% 
+      select(id_keep, sc_it_complet) %>% 
+      distinct(id_keep, .keep_all = T),
+    by = "id_keep"
+  ) %>% 
+  relocate(sc_it_complet, .after = sc_it_interromp)
+
+M2_C1_bornes2 <- M2_C1_bornes1 %>% 
+  mutate(
+    sc_it_interromp = case_when(
+      !is.na(sc_it_interromp) ~ sc_it_interromp,
+      is.na(sc_it_interromp) & sc_complet == 0 ~ -2,
+      is.na(sc_it_interromp) & sc_complet == 1 ~ -9,
+      TRUE ~ -999
+    ),
+    sc_it_complet = replace_when(
+      sc_it_complet,
+      is.na(sc_it_complet) ~ 0
+    )
+  )
+
+
+```
+
+```{r Export1}
+
+# write_csv(M2_C1_bornes2, "data_hors_git/process_data/thoa_M2_C1_bornes2.csv")
+
+rm(list = c("M2_C0_bornes0", "M2_C0_bornes1", "M2_C0_bornes2", "R2_A0",
+"R2_A1", "R2_A2", "R2_A3"))
+
+```
+
+## Garder que les participants
+
+```{r}
+
+I2_C0 <- I2_B2 %>% 
+  filter(sc_it_complet == 1)
+
+# write_csv(I2_C0, "data_hors_git/process_data/thoa_I2_C0.csv")
+```
+
+# REPRENDRE ICI
+
+
+```{r}
+I2_C0 <- readr::read_csv("data_hors_git/process_data/thoa_I2_C0.csv", show_col_types = F)
+```
