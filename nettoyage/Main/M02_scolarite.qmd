@@ -211,3 +211,42 @@ M2_C1_bornes0 <- M2_C1 %>%
 # write_csv(M2_C1_bornes0, "data_hors_git/process_data/thoa_M2_C1_bornes0.csv")
 
 ```
+
+## AJOUTER INTERRUPTIONS
+### Ajouter borne pour les enfants
+
+```{r}
+
+M2_C1 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C1.csv",
+                         show_col_types = F)
+
+M2_C1_bornes2 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C1_bornes2.csv",
+                                 show_col_types = F)
+
+```
+
+```{r}
+
+M2_B0 <- M2_C1 %>% 
+  select(-sc_in_interromp) %>% 
+  left_join(
+    M2_C1_bornes2 %>% 
+      select(id_anonymat, sc_it_interromp, sc_it_complet),
+    by = "id_anonymat"
+  ) %>% 
+  relocate(c("sc_rd_redoubl", "sc_rd_complet", "sc_it_interromp", "sc_it_complet"), .after = add_sc_debut_age) %>% 
+  relocate(sc_complet, .after = sc_date_creation)
+
+
+
+write_csv(M2_B0, "data_hors_git/process_data/thoa_M2_B0.csv")
+
+
+```
+
+# NETTOYAGE
+
+
+```{r}
+M2_B0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_B0.csv", show_col_types = F)
+```
