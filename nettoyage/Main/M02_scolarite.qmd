@@ -180,8 +180,8 @@ M2_C0_bornes0 <- M2_C0 %>%
 # write_csv(M2_C0_bornes0, "data_hors_git/process_data/thoa_M2_C0_bornes0.csv")
 ```
 
-## AJOUTER REDOUBLEMENT
-### Ajouter borne pour les redoublement
+## Ajout des variables des sous-modules
+### Redoublement
 
 ```{r Import2}
 
@@ -212,8 +212,8 @@ M2_C1_bornes0 <- M2_C1 %>%
 
 ```
 
-## AJOUTER INTERRUPTIONS
-### Ajouter borne pour les enfants
+
+### Interruption
 
 ```{r}
 
@@ -227,7 +227,7 @@ M2_C1_bornes2 <- readr::read_csv("data_hors_git/process_data/thoa_M2_C1_bornes2.
 
 ```{r}
 
-M2_B0 <- M2_C1 %>% 
+M2_D0 <- M2_C1 %>% 
   select(-sc_in_interromp) %>% 
   left_join(
     M2_C1_bornes2 %>% 
@@ -239,14 +239,197 @@ M2_B0 <- M2_C1 %>%
 
 
 
-write_csv(M2_B0, "data_hors_git/process_data/thoa_M2_B0.csv")
+write_csv(M2_D0, "data_hors_git/process_data/thoa_M2_D0.csv")
 
 
 ```
 
 # NETTOYAGE
 
+```{r}
+M2_D0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_D0.csv", show_col_types = F)
+```
+
+## Corriger variables générées
 
 ```{r}
-M2_B0 <- readr::read_csv("data_hors_git/process_data/thoa_M2_B0.csv", show_col_types = F)
+
+M2_D1 <- M2_D0 %>% 
+  mutate(
+    sc_debut_age = year(as.period(interval(id_date_nais, add_sc_debut_date))),
+    .before = add_sc_debut_age
+  ) %>% 
+    mutate(
+      sc_diplome_age = if_else(is.na(sc_diplome_an), NA_integer_,
+      year(as.period(interval(id_date_nais, add_sc_diplome_date)))),
+      .before = add_sc_diplome_age
+    ) %>% 
+      select(-add_sc_debut_age, -add_sc_diplome_age) %>% 
+      rename_with(~ gsub("^add_", "", .x), starts_with("add")) %>% 
+      mutate(
+        sc_diplome_cat = replace_when(
+          sc_diplome_cat,
+          sc_diplome_autre == "CESS art de l'espace" ~ "3-Baccalauréat",
+          sc_diplome_autre == "CAPES" ~ "5-Diplôme du supérieur long (bac+3,4,5)",
+          sc_diplome_autre == "Diplome niveau IV technicien électronique" ~ "3-Baccalauréat",
+          sc_diplome_autre == "Licence professionnel en Ressources Humaine" ~ "5-Diplôme du supérieur long (bac+3,4,5)",
+          sc_diplome_autre == "Bp préparateur en pharmacie" ~ "3-Baccalauréat",
+          sc_diplome_autre == "Bac + 6" ~ "5-Diplôme du supérieur long (bac+3,4,5)",
+          sc_diplome_autre == "equivalent au brevet des collége" ~ "1-Sans diplôme ou brevet des collèges",
+          sc_diplome_autre == "Diplômé de niveau Bac +1 (BTS)" ~ "3-Baccalauréat",
+          sc_diplome_autre == "diplome auxiliaire puériculture" ~ "2-CAP ou BEP"
+         )
+      ) %>% 
+        select(-sc_debut_corr)
+
+```
+
+## Passer de charactère à integer
+
+```{r}
+
+M2_D2 <- M2_D1 %>% 
+  mutate(
+    sc_diplome_cat_b = case_when(
+      sc_diplome_cat == "1-Sans diplôme ou brevet des collèges" ~ 1L,
+      sc_diplome_cat == "2-CAP ou BEP" ~ 2L,
+      sc_diplome_cat == "3-Baccalauréat" ~ 3L,
+      sc_diplome_cat == "4-Diplôme du supérieur court (bac+2)" ~ 4L,
+      sc_diplome_cat == "5-Diplôme du supérieur long (bac+3,4,5)" ~ 5L,
+      is.na(sc_diplome_cat) ~ NA_integer_,
+      TRUE ~ -999L
+    ),
+    .after = sc_diplome_cat
+  ) %>% 
+    select(-sc_diplome_cat) %>% 
+    rename("sc_diplome_cat" = "sc_diplome_cat_b")
+
+```
+
+
+## Recoder NAs
+
+```{r}
+
+rcd_na_1rep_simple <- function(df, complet, vars_1rep_simple){
+  df %>% 
+    mutate(
+      across(
+        {{vars_1rep_simple}},
+        ~ case_when(
+          . == 99 ~ -8,
+          . == 88 ~ -9,
+          !is.na(.) ~ .,
+          is.na(.) & {{complet}} == 1 ~ -9,
+          is.na(.) & {{complet}} == 0 ~ -2,
+          TRUE ~ -999
+        )
+      )
+    )
+}
+
+rcd_na_1rep_borne_bin <- function(df, borne, concerned, vars_1rep_borne){
+
+  if ({{concerned}} == 1){
+    skip  <-  0
+  } else if ({{concerned}} == 0){
+    skip  <-  1
+  }
+
+  df %>% 
+    mutate(
+      across(
+        all_of({{vars_1rep_borne}}), ~ replace_when(
+          .x,
+          is.na(.x) & {{borne}} == -2 ~ -2,
+          is.na(.x) & {{borne}} == -9 ~ -9,
+          is.na(.x) & {{borne}} == {{concerned}} ~ -9,
+          is.na(.x) & {{borne}} == skip ~ -1
+        )
+      )
+    )
+}
+
+rcd_na_QCM_borne_bin <- function(df, borne, concerned, vars_QCM_borne){
+
+  if ({{concerned}} == 1){
+    skip  <-  0
+  } else if ({{concerned}} == 0){
+    skip  <-  1
+  }
+
+  df %>% 
+    mutate(
+      none_selected = if_all({{vars_QCM_borne}}, is.na)
+    ) %>% 
+      mutate(
+        across(
+          all_of({{vars_QCM_borne}}), ~ replace_when(
+            .x,
+            is.na(.x) & !none_selected ~ 0,
+            none_selected & {{borne}} == -2 ~ -2,
+            none_selected & {{borne}} == -9 ~ -9,
+            none_selected & {{borne}} == {{concerned}} ~ -9,
+            none_selected & {{borne}} == skip ~ -1
+          )
+        )
+      ) %>% 
+        select(-none_selected)
+}
+
+
+```
+
+
+```{r}
+
+vars_1rep_simple <- M2_D2 %>% 
+  select(sc_plan, sc_plan_demande, sc_fin_etudes, sc_diplome, sc_diplome_an,
+  sc_diplome_age, sc_diplome_cat) %>% 
+    colnames()
+
+vars_S20 <- M2_D2 %>% 
+  select(starts_with("sc_plan_ets")) %>% 
+  colnames()
+
+vars_S21 <- M2_D2 %>% 
+  select(starts_with("sc_plan_notif")) %>% 
+  select(where(is.numeric)) %>% 
+  colnames()
+
+M2_E0 <- M2_D2 %>% 
+  rcd_na_1rep_simple(sc_complet, all_of(vars_1rep_simple)) %>% 
+  rcd_na_1rep_borne_bin(sc_plan, 1, "sc_plan_an") %>% 
+  rcd_na_1rep_borne_bin(sc_fin_etudes, 0, "sc_formation") %>% 
+  mutate(across(all_of(vars_S20), as.integer)) %>% 
+  rcd_na_QCM_borne_bin(sc_plan, 1, all_of(vars_S20)) %>% 
+  rcd_na_QCM_borne_bin(sc_plan, 1, all_of(vars_S21))
+
+
+readr::write_csv(M2_E0, "data_hors_git/process_data/thoa_M2_E0.csv")
+
+```
+
+## Ajouter variable etspps
+Le faire après avoir recodé les NAs
+
+```{r}
+
+elementaire <- M2_E0 %>% 
+  select(starts_with("sc_plan_ets")) %>%
+  select(matches("_[1-5]$")) %>% 
+  colnames()
+
+college <- M2_E0 %>% 
+  select(starts_with("sc_plan_ets")) %>% 
+  select(matches("_[5-9]$")) %>% 
+  colnames()
+
+lycee <- M2_E0 %>% 
+  select(starts_with("sc_plan_ets")) %>% 
+  select(matches("_1[2-4]$")) %>% 
+  colnames()
+
+
+
 ```
