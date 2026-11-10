@@ -124,6 +124,7 @@ vars_verif <- doublons_1 %>%
 # REPRENDRE ICI, DÉDOUBLONNER LA BASE DES INTERRUPTIONS
 
 doublons_2 <- doublons_1 %>% 
+  filter_out(is.na(sc_int_date_creation)) %>% 
   group_by(id_keep) %>% 
   
   # Retirer les lignes pareilles
@@ -131,39 +132,55 @@ doublons_2 <- doublons_1 %>%
     pick(all_of(vars_verif)),
     .keep_all = TRUE
   ) %>% 
-  
-  # Trouver ceux qui ont plus d'une ligne pour la même année
-  group_by(id_keep, sc_rdb_an) %>% 
+    mutate(
+      n = n(),
+      .after = is_og
+    ) %>% 
+      ungroup()
+
+clean <- doublons_2 %>% 
+  filter(n == 1)
+
+doublons_3 <- doublons_2 %>% 
+  filter(!id_keep %in% clean$id_keep) %>% 
+  group_by(id_keep, sc_int_date_creation) %>% 
   mutate(
-    n = n()
+    n_par_quest = n(),
+    .after = n
   ) %>% 
+    relocate(c("sc_int_repr_mois", "sc_int_repr_an"), .after = sc_int_an)
+
+doublons_4 <- doublons_3 %>% 
   ungroup() %>% 
-  filter_out(is.na(sc_rdb_an))
+  filter_out(
+    id_anonymat == "WYONK"
+  ) %>% 
+    mutate(
+      across(c("sc_int_cause_1", "sc_int_cause_999", "sc_int_cause_autre"), 
+      ~ replace_when(
+        .x,
+        is.na(.x) & id_anonymat == "WCNVO" & sc_int_an == 2010 ~ vctrs::vec_fill_missing(.x, direction = "up")
+      ))
+    ) %>% 
+      filter_out(id_anonymat == "YASAA") %>% 
+      select(-n_par_quest)
 
-# Trier parmis ceux qui ont renseigné plus d'une fois une meme relation --------
-
-doublons_3 <- doublons_2 %>%
-  group_by(id_keep) %>% 
-  # Garder la date de saisie la plus ancienne
-  filter(rdb_date_creation == min(rdb_date_creation)) %>% 
-  ungroup() %>% 
-  select(-is_og, -n)
-
-
-# Corriger id_anonymat des doublons --------------------------------------------
-
-doublons_corr <- doublons_3 %>%  
+doublons_corr <- bind_rows(
+  clean,
+  doublons_4
+) %>% 
+  select(-n) %>% 
   mutate(
     id_anonymat = id_keep
   )
 
 # Joindre les données propres
-R2_B0 <- R2_A2 %>% 
+I2_B0 <- I2_A2 %>% 
   filter_out(id_keep %in% doublons_1$id_keep) %>% 
   bind_rows(doublons_corr) %>% 
-  arrange(id_anonymat, sc_rdb_classe, sc_rdb_an)
+  arrange(id_anonymat, sc_int_classe, sc_int_an, sc_int_mois)
 
-rm(list = c("doublons_1", "doublons_2", "doublons_3", 
-            "doublons_corr"))
+rm(list = c("doublons_1", "doublons_2", "doublons_3", "doublons_4", "clean", 
+            "doublons_corr", "vars_verif"))
 
 ```
