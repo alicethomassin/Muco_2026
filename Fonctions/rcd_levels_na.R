@@ -5,7 +5,7 @@ rcd_levels_na <- function(x){
     "Module not completed" = tagged_na("b"),
     "Don't know" = tagged_na("c"),
     "No answer" = tagged_na("d"),
-    "None selected" = tagged_na("e")
+    "No entry at this rank" = tagged_na("e")
   )
   
   etiq <- c(val_labels(x), etiq_na)

@@ -10,7 +10,7 @@ rcd_tagged_na <- function(df, vars){
             .x == -2 ~ tagged_na("b"),
             .x == -8 ~ tagged_na("c"),
             .x == -9 ~ tagged_na("d"),
-            .x == -7 ~ tagged_na("f")
+            .x == -7 ~ tagged_na("e")
           )
         )
       )
