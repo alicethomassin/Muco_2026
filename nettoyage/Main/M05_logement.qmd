@@ -287,7 +287,7 @@ write_csv(M5_T0, "../../data_hors_git/process_data/thoa_M5_T0.csv")
 
 ```{r}
 
-M5_C0 <- readr::read_csv("../../data_hors_git/process_data/thoa_M5_C0.csv",
+M5_C0 <- readr::read_csv("data_hors_git/process_data/thoa_M5_C0.csv",
                          show_col_types = F)
 
 ```
@@ -653,44 +653,22 @@ M5_D6 <- M5_D5 %>%
 
 ```{r}
 
-source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
-source("Muco_2026/Fonctions/rcd_tagged_na_QCM.R")
+source("Muco_2026/Fonctions/rcd_tagged_na.R")
 source("Muco_2026/Fonctions/rcd_levels_na.R")
 
-qcm_occup <- M5_D6 %>% 
-  select(matches("occup_cause_\\d+$")) %>% 
-  colnames()
-
-qcm_emprunt <- M5_D6 %>% 
-  select(matches("emprunt_\\d$")) %>% 
-  colnames()
-
-qcm_demenag <- M5_D6 %>% 
-  select(matches("demenag_cause_\\d+$")) %>% 
-  colnames()
-
-vars_1rep <- M5_D6 %>% 
-  select(where(is.double)) %>% 
-  select(-lo_date_creation, -all_of(qcm_occup), -all_of(qcm_emprunt), -all_of(qcm_demenag)) %>% 
-  colnames()
-
-vars_dbl <- M5_D6 %>% 
-  select(where(is.numeric)) %>% 
+vars_rcd <- M5_D6 %>% 
+  select(where(is.numeric), -contains("date")) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
 
 M5_E0 <- M5_D6 %>%
-  rcd_tagged_na_QCM(all_of(qcm_occup)) %>% 
-  rcd_tagged_na_QCM(all_of(qcm_emprunt)) %>% 
-  rcd_tagged_na_QCM(all_of(qcm_demenag)) %>% 
-  rcd_tagged_na_dbl(all_of(vars_1rep)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na))
+  rcd_tagged_na(all_of(vars_rcd)) %>% 
+  mutate(across(all_of(vars_rcd), rcd_levels_na))
 
-table(as_factor(M5_E0$lo_occup_cause_1), useNA = "ifany")
+table(as_factor(M5_E0$lo_demenag_cause_1), useNA = "ifany")
 
-rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl", "qcm_occup",
-"qcm_emprunt", "qcm_demenag", "vars_1rep", "rcd_tagged_na_QCM"))
+rm(list = c("vars_rcd", "rcd_levels_na", "rcd_tagged_na"))
 
 ```
 
@@ -862,6 +840,12 @@ haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 ```
 
 ```{r}
-M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa_Housing_454.dta")
+M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+```
+
+```{r}
+
+
+table(as_factor(M5_E3$lo_occup_cause_1), useNA = "ifany")
 ```
 
