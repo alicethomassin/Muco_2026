@@ -734,7 +734,7 @@ M5_E1 <- M5_E0 %>%
     )
 
 
-table(as_factor(M5_E1$lo_amenag_logement), useNA = "ifany")
+table(as_factor(M5_E1$lo_demenag_cause_1), useNA = "ifany")
 
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non", "etiq_dep",
@@ -843,9 +843,4 @@ haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 ```
 
-```{r}
-
-
-table(as_factor(M5_E3$lo_occup_cause_1), useNA = "ifany")
-```
 
