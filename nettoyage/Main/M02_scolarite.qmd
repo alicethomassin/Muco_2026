@@ -387,7 +387,7 @@ rcd_na_QCM_borne_bin <- function(df, borne, concerned, vars_QCM_borne){
 ```{r}
 
 vars_1rep_simple <- M2_D2 %>% 
-  select(sc_plan, sc_plan_demande, sc_fin_etudes, sc_diplome, sc_diplome_an,
+  select(sc_plan, sc_fin_etudes, sc_diplome, sc_diplome_an,
   sc_diplome_age, sc_diplome_cat) %>% 
     colnames()
 
@@ -406,9 +406,17 @@ M2_E0 <- M2_D2 %>%
   rcd_na_1rep_borne_bin(sc_fin_etudes, 0, "sc_formation") %>% 
   mutate(across(all_of(vars_S20), as.integer)) %>% 
   rcd_na_QCM_borne_bin(sc_plan, 1, all_of(vars_S20)) %>% 
-  rcd_na_QCM_borne_bin(sc_plan, 1, all_of(vars_S21))
+  rcd_na_QCM_borne_bin(sc_plan, 1, all_of(vars_S21)) %>% 
+  rcd_na_1rep_borne_bin(sc_plan, 0, "sc_plan_demande") %>% 
+  mutate(
+    sc_plan_demande = replace_when(
+      sc_plan_demande, 
+      sc_plan == 1 ~ -1
+    )
+  )
+  
 
-table(as_factor(M2_E0$sc_plan_ets1_1), useNA = "ifany")
+table(as_factor(M2_E0$sc_plan_demande), useNA = "ifany")
 
 
 readr::write_csv(M2_E0, "data_hors_git/process_data/thoa_M2_E0.csv")
@@ -651,7 +659,7 @@ M2_D0 <- M2_F1 %>%
   rcd_tagged_na(all_of(vars_rcd)) %>%
   mutate(across(all_of(vars_rcd), lbl_levels_na))
 
-table(as_factor(M2_D0$sc_fin_etudes), useNA = "ifany")
+table(as_factor(M2_D0$sc_plan_demande), useNA = "ifany")
 
 rm(list = c("vars_rcd", "lbl_levels_na", "rcd_tagged_na"))
 
@@ -676,10 +684,136 @@ vars_QCM <- M2_D0 %>%
 
 M2_D1 <- M2_D0 %>% 
   mutate(across(all_of(vars_bin), lbl_oui_non)) %>% 
-  mutate(across(all_of(vars_QCM), lbl_QCM))
+  mutate(across(all_of(vars_QCM), lbl_QCM)) %>% 
+  add_value_labels(
+    sc_debut = c(
+      "CP (grade 1)" = 1,
+      "CE1 (grade 2)" = 2,
+      "CE2 (grade 3)" = 3,
+      "Other" = 999
+    ),
+    sc_formation = c(
+      "Lower secondary, grade 7 (5ème)" = 7,
+      "Lower secondary, grade 8 (4ème)" = 8,
+      "Lower secondary, grade 9 (3ème)" = 9,
+      "Vocational certificate (CAP)" = 10,
+      "Vocational diploma (BEP)" = 11,
+      "Upper secondary, grade 10 (seconde)" = 12,
+      "Upper secondary, grade 11 (première)" = 13,
+      "Upper secondary, grade 12 (terminale)" = 14,
+      "Health/social training school, year 1 (école spécialisée)" = 15,
+      "Health/social training school, year 2 (école spécialisée)" = 16,
+      "Preparatory class, year 1 (CPGE)" = 17,
+      "Preparatory class, year 2 (CPGE)" = 18,
+      "Short-cycle higher education, year 1 (IUT/BTS)" = 19,
+      "Short-cycle higher education, year 2 (IUT/BTS)" = 20,
+      "University, year 1 (L1)" = 21,
+      "University, year 2 (L2)" = 22,
+      "Bachelor’s, year 3 (L3)" = 23,
+      "Master’s, year 1 (M1)" = 24,
+      "Master’s, year 2 (M2)" = 25,
+      "Doctorate (doctorat)" = 26,
+      "Elite higher education school (grande école)" = 27,
+      "Other" = 999
+    ),
+    sc_diplome = c(
+      "No qualification" = 1,
+      "Lower secondary certificate (brevet)" = 2,
+      "Vocational certificate or diploma (CAP/BEP)" = 3,
+      "Technological or vocational upper secondary diploma (bac techno/pro)" = 4,
+      "General upper secondary diploma (bac général)" = 5,
+      "2-year higher education degree (bac+2)" = 6,
+      "3-4-year higher education degree (bac+3/4)" = 7,
+      "5+ year higher education degree (bac+5 or higher)" = 8,
+      "Other" = 999
+    ),
+    sc_diplome_cat = c(
+      "No qualification or lower secondary certificate (brevet)" = 1,
+      "Vocational certificate or diploma (CAP/BEP)" = 2,
+      "Upper secondary diploma (bac)" = 3,
+      "Short-cycle higher education degree (bac+2)" = 4,
+      "Long-cycle higher education degree (bac+3 to 5)" = 5
+    ),
+    sc_plan_ets_debut = c(
+      "Mainstream class (classe ordinaire)" = 1,
+      "Special needs class or unit (CLIS/ULIS)" = 2,
+      "Health or medico-social facility (IME, IEM, ITEP, UE)" = 3,
+      "Adapted section in mainstream school (SEGPA)" = 4,
+      "Taught at home during school hours" = 5
+    ) ,
+    sc_plan_ets_fin = c(
+      "Mainstream class (classe ordinaire)" = 1,
+      "Special needs class or unit (CLIS/ULIS)" = 2,
+      "Health or medico-social facility (IME, IEM, ITEP, UE)" = 3,
+      "Adapted section in mainstream school (SEGPA)" = 4,
+      "Taught at home during school hours" = 5
+    )
+  )
 
 
-table(as_factor(M2_D1$sc_plan_notification_1), useNA = "ifany")
+table(as_factor(M2_D1$sc_fin_etudes), useNA = "ifany")
+
+rm(list = c("vars_bin", "vars_QCM", "lbl_oui_non", "lbl_QCM"))
 
 
+```
+
+## Ajouter étiquette des variables
+
+
+```{r}
+
+M2_D2 <- M2_D1 %>% 
+  select(-sc_debut_date, -sc_diplome_date) %>% 
+  relocate(sc_diplome_cat, .after = sc_diplome) %>% 
+  set_variable_labels(
+    id_anonymat = "Respondent unique identifier",
+    sc_date_creation = "Education module completion date",
+    sc_complet = "Education module completed",
+    sc_debut = "S01 First school grade (excl. preschool)",
+    sc_debut_autre = "S01 First school grade (excl. preschool): other specified",
+    sc_debut_autre_en = "S01 First school grade (excl. preschool): other specified (Google translation)",
+    sc_debut_an = "S02 Year entered first school grade",
+    sc_debut_age = "Age at school entry",
+    sc_rd_redoubl = "S03 Repeated a school year",
+    sc_rd_complet = "Grade repetition module completed",
+    sc_it_interromp = "S07 Education interrupted for 1+ month due to CF",
+    sc_it_complet = "Interrupted education module completed",
+    sc_plan = "S18 Had a personalised schooling plan (PPS)",
+    sc_plan_an = "S19 Year of first PPS",
+    sc_plan_elementaire = "Had a PPS in elementary school (CP to CM2)",
+    sc_plan_college = "Had a PPS in lower secondary (collège)",
+    sc_plan_lycee = "Had a PPS in upper secondary (lycée)",
+    sc_plan_ets_debut = "Schooling setting at first PPS year",
+    sc_plan_ets_fin = "Schooling setting at last PPS year",
+    sc_plan_notification_1 = "S21 MDPH provided (MR): full-time school aide (AVS)",
+    sc_plan_notification_2 = "S21 MDPH provided (MR): part-time school aide (AVS)",
+    sc_plan_notification_3 = "S21 MDPH provided (MR): RASED special needs teacher",
+    sc_plan_notification_4 = "S21 MDPH provided (MR): SESSAD professional",
+    sc_plan_notification_5 = "S21 MDPH provided (MR): CMP, CMPP",
+    sc_plan_notification_6 = "S21 MDPH provided (MR): private paramedical professionals",
+    sc_plan_notification_7 = "S21 MDPH provided (MR): home care service",
+    sc_plan_notification_8 = "S21 MDPH provided (MR): adapted teaching materials",
+    sc_plan_notification_999 = "S21 MDPH provided (MR): other",
+    sc_plan_notification_autre = "S21 MDPH provided other: detailed response",
+    sc_plan_notification_autre_en = "S21 MDPH provided other: detailed response (Google translation)",
+    sc_plan_demande = "S22 PPS requested by Resp., parents or other",
+    sc_fin_etudes = "S23 Completed initial education",
+    sc_formation = "S24 Current education level",
+    sc_formation_autre = "S24 Current education level other: detailed response",
+    sc_formation_autre_en = "S24 Current education level other: detailed response (Google translation)",
+    sc_diplome = "S25 Highest qualification",
+    sc_diplome_autre = "S25 Highest qualification other: detailed response",
+    sc_diplome_autre_en = "S25 Highest qualification other: detailed response (Google translation)",
+    sc_diplome_an = "S26 Year highest qualification obtained",
+    sc_diplome_cat = "Highest qualification grouped",
+    sc_diplome_age = "Age highest qualification obtained",
+    sc_commentaires = "Education module comments",
+    sc_commentaires_en = "Education module comments (Google translation)"
+  )
+```
+
+
+```{r}
+haven::write_dta(M2_D2, "data_hors_git/Peter/thoa2_Education_454.dta")
 ```
