@@ -476,44 +476,22 @@ M6_D2 <- M6_D1 %>%
 
 ```{r}
 
-source("Muco_2026/Fonctions/rcd_tagged_na_dbl.R")
-source("Muco_2026/Fonctions/rcd_tagged_na_QCM.R")
+source("Muco_2026/Fonctions/rcd_tagged_na.R")
 source("Muco_2026/Fonctions/rcd_levels_na.R")
 
-qcm_act <- M6_D2 %>% 
-  select(matches("act\\d+$")) %>% 
-  colnames()
-
-qcm_type <- M6_D2 %>% 
-  select(matches("type_\\d+$")) %>% 
-  colnames()
-
-qcm_pour <- M6_D2 %>% 
-  select(matches("pour_\\d+$")) %>% 
-  colnames()
-
-vars_1rep <- M6_D2 %>% 
-  select(where(is.double)) %>% 
-  select(-qv_date_creation, -all_of(qcm_act), -all_of(qcm_type), -all_of(qcm_pour)) %>% 
-  colnames()
-
-vars_dbl <- M6_D2 %>% 
-  select(where(is.numeric)) %>% 
+vars_rcd <- M6_D2 %>% 
+  select(where(is.numeric), -contains("date")) %>% 
   colnames()
 
 # Les deux fonctions fonctionnent!
 
 M6_E0 <- M6_D2 %>%
-  rcd_tagged_na_QCM(all_of(qcm_act)) %>% 
-  rcd_tagged_na_QCM(all_of(qcm_type)) %>% 
-  rcd_tagged_na_QCM(all_of(qcm_pour)) %>% 
-  rcd_tagged_na_dbl(all_of(vars_1rep)) %>% 
-  mutate(across(all_of(vars_dbl), rcd_levels_na))
+  rcd_tagged_na(all_of(vars_rcd)) %>% 
+  mutate(across(all_of(vars_rcd), rcd_levels_na))
 
-table(as_factor(M6_E0$qv_am_rac_pour_3), useNA = "ifany")
+table(as_factor(M6_E0$qv_am_rac), useNA = "ifany")
 
-rm(list = c("vars_dbl", "rcd_levels_na", "rcd_tagged_na_dbl", "rcd_tagged_na_QCM",
-"vars_1rep", "qcm_pour", "qcm_act", "qcm_type"))
+rm(list = c("vars_rcd", "rcd_levels_na", "rcd_tagged_na"))
 
 ```
 
@@ -603,7 +581,7 @@ M6_E1 <- M6_E0 %>%
       )
 
 
-table(as_factor(M6_E1$qv_am_rac_montant), useNA = "ifany")
+table(as_factor(M6_E1$qv_am_rac_pour_1), useNA = "ifany")
 
     
 rm(list = c("lbl_oui_non", "lbl_QCM", "vars_qcm", "vars_oui_non"))
