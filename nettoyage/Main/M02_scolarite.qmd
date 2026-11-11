@@ -515,3 +515,115 @@ M2_E2 <- M2_E1 %>%
 readr::write_csv(M2_E2, "data_hors_git/process_data/thoa_M2_E2.csv")
 
 ```
+
+
+```{r}
+
+M2_E2 <- readr::read_csv("data_hors_git/process_data/thoa_M2_E2.csv", show_col_types = F)
+```
+
+## Corriger des charactères
+
+
+```{r}
+
+M2_E3 <- M2_E2 %>% 
+  mutate(
+    across(where(~ is.character(.) && any(str_detect(.x, "\\?"), na.rm = T)), 
+    ~ str_replace_all(.x, "(?<!\\s)\\?(?!\\s)", "'"))
+  ) %>% 
+    select(-id_doublon, -id_keep, -id_date_nais)
+
+readr::write_csv(M2_E3, "data_hors_git/process_data/thoa_M2_E3.csv")
+
+```
+
+# CODEBOOK PETER
+
+```{r}
+M2_E3 <- readr::read_csv("data_hors_git/process_data/thoa_M2_E3.csv", show_col_types = F)
+```
+
+## Traduire réponses libres
+
+```{r}
+
+vars_libres <- M2_E3 %>% 
+  select(where(is.character)) %>% 
+  select(-id_anonymat) %>% 
+  colnames()
+
+library(dplyr)
+library(purrr)
+library(polyglotr)
+
+
+# 2. Valeurs uniques, non vides, sur les 6 variables à la fois
+textes_uniques <- M2_E3 %>%
+  select(all_of(vars_libres)) %>%
+  unlist(use.names = FALSE) %>%
+  unique() %>%
+  discard(~ is.na(.x) || trimws(.x) == "")
+
+fichier_dico <- "dico_sco_traduction.rds"
+
+# Reprend là où on s'était arrêté, si une sauvegarde existe
+dico <- if (file.exists(fichier_dico)) readRDS(fichier_dico) else character(0)
+
+traduire <- function(x, essais = 5) {
+  for (i in seq_len(essais)) {
+    res <- tryCatch(
+      google_translate(x, target_language = "en",
+                                 source_language = "fr"),
+      error = function(e) NULL
+    )
+    if (length(res) == 1 && !is.na(res)) return(res)
+    attente <- 10 * 2^(i - 1)  # 10 s, 20 s, 40 s, 80 s, 160 s
+    message("Échec, nouvel essai dans ", attente, " s...")
+    Sys.sleep(attente)
+  }
+  NA_character_
+}
+
+a_traduire <- setdiff(textes_uniques, names(dico))
+
+for (i in seq_along(a_traduire)) {
+  txt <- a_traduire[i]
+  dico[txt] <- traduire(txt)
+  Sys.sleep(1)  # pause entre chaque requête
+  if (i %% 20 == 0) {
+    saveRDS(dico, fichier_dico)
+    message(i, " / ", length(a_traduire), " traduits")
+  }
+}
+saveRDS(dico, fichier_dico)
+
+# 4. Application aux 6 colonnes
+
+
+M2_F0 <- M2_E3 %>%
+  mutate(across(all_of(vars_libres),
+                ~ unname(dico[.x]),
+                .names = "{.col}_en"))
+
+for (v in vars_libres) {
+  M2_F0 <- relocate(M2_F0, all_of(paste0(v, "_en")), .after = all_of(v))
+}
+
+
+
+M2_F1 <- M2_F0 %>% 
+  mutate(
+    across(where(~ is.character(.x) && any(str_detect(.x, "1/3 time|third time|third-time"), na.rm = TRUE)), 
+    ~ str_replace_all(
+      .x, "1/3 time exams|1/3 time|a third time|additional third time|third time|third-time work|third-time", "additional time"
+    ))
+  )
+
+readr::write_csv(M2_F1, "data_hors_git/process_data/thoa_M2_F1.csv")
+```
+
+
+```{r}
+M2_F1 <- readr::read_csv("data_hors_git/process_data/thoa_M2_F1.csv", show_col_types = FALSE)
+```
