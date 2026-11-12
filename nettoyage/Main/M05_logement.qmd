@@ -839,8 +839,64 @@ haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 
 ```
 
+# META DATA
+
 ```{r}
 M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+dico_HO <- generate_dictionary(M5_E3) %>% 
+  convert_list_columns_to_character() %>% 
+  select(variable, label, col_type, value_labels) %>% 
+  mutate(
+    origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
+    ref = if_else(col_type != "chr", str_extract(label, "^[A-Z]+\\d+"), paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"))
+  ) %>% 
+    relocate(ref, .after = variable) %>% 
+    group_by(ref, col_type) %>% 
+    mutate(
+      ref = replace_when(
+        ref,
+        str_detect(label, "(MR)") ~ paste0(ref, "_", row_number()),
+        ref == "L02" ~ paste0(ref, "_", row_number())
+      )
+    ) %>% 
+      ungroup()
 ```
 
 
+```{r}
+housing <- readr::read_csv("data_hors_git/meta_questions/housing.csv", show_col_types = FALSE)
+
+meta_HO <- housing %>% 
+  mutate(
+    ref = str_replace_all(variable, "-", "0"),
+    ref = str_replace_all(ref, "_([:alpha:]+)([^txt])", ""),
+    ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
+    ref = if_else(ref == "L09", "L09_txt", ref),
+    .before = variable
+  ) %>% 
+    filter_out(
+      variable == "L-2"
+    ) %>% 
+      group_by(ref) %>% 
+      mutate(
+        ref = if_else(ref == "L02", paste0(ref, "_", row_number()), ref)
+      ) %>% 
+        ungroup() %>% 
+    select(-variable) %>% 
+  left_join(
+    dico_HO %>% select(variable, ref),
+    by = "ref",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(variable) %>% 
+    filter(!is.na(variable)) %>% 
+    mutate(
+      notes_fr = NA_character_,
+      notes_en = NA_character_
+    ) 
+
+# write.csv(meta_HO, "data_hors_git/meta_updated/meta_HO.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
+
+
+```
