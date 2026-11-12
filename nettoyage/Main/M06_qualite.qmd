@@ -477,7 +477,7 @@ M6_D2 <- M6_D1 %>%
 ```{r}
 
 source("Muco_2026/Fonctions/rcd_tagged_na.R")
-source("Muco_2026/Fonctions/rcd_levels_na.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
 
 vars_rcd <- M6_D2 %>% 
   select(where(is.numeric), -contains("date")) %>% 
@@ -487,11 +487,11 @@ vars_rcd <- M6_D2 %>%
 
 M6_E0 <- M6_D2 %>%
   rcd_tagged_na(all_of(vars_rcd)) %>% 
-  mutate(across(all_of(vars_rcd), rcd_levels_na))
+  mutate(across(all_of(vars_rcd), lbl_levels_na))
 
 table(as_factor(M6_E0$qv_am_rac), useNA = "ifany")
 
-rm(list = c("vars_rcd", "rcd_levels_na", "rcd_tagged_na"))
+rm(list = c("vars_rcd", "lbl_levels_na", "rcd_tagged_na"))
 
 ```
 

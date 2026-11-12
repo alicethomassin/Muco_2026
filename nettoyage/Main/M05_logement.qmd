@@ -664,11 +664,11 @@ vars_rcd <- M5_D6 %>%
 
 M5_E0 <- M5_D6 %>%
   rcd_tagged_na(all_of(vars_rcd)) %>% 
-  mutate(across(all_of(vars_rcd), rcd_levels_na))
+  mutate(across(all_of(vars_rcd), lbl_levels_na))
 
 table(as_factor(M5_E0$lo_demenag_cause_1), useNA = "ifany")
 
-rm(list = c("vars_rcd", "rcd_levels_na", "rcd_tagged_na"))
+rm(list = c("vars_rcd", "lbl_levels_na", "rcd_tagged_na"))
 
 ```
 
