@@ -620,11 +620,11 @@ rm(vars_prenom)
 
 ```{r C4_E2 to C4_F0}
 
-source("Muco_2026/Fonctions/rcd_tagged_na_1rep.R")
+source("Muco_2026/Fonctions/rcd_tagged_na.R")
 source("Muco_2026/Fonctions/lbl_levels_na.R")
 library(labelled)
 
-vars_1rep <- C4_E2 %>% 
+vars_rcd <- C4_E2 %>% 
   select(where(is.double)) %>% 
   select(-fa_cp_date_creation) %>% 
   colnames()
@@ -632,12 +632,12 @@ vars_1rep <- C4_E2 %>%
 # Les deux fonctions fonctionnent!
 
 C4_F0 <- C4_E2 %>%
-  rcd_tagged_na_1rep(all_of(vars_1rep)) %>% 
-  mutate(across(all_of(vars_1rep), lbl_levels_na))
+  rcd_tagged_na(all_of(vars_rcd)) %>% 
+  mutate(across(all_of(vars_rcd), lbl_levels_na))
 
 table(as_factor(C4_F0$fa_cpl2_union_enf), useNA = "ifany")
 
-rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
+rm(list = c("vars_rcd", "lbl_levels_na", "rcd_tagged_na"))
 
 ```
 
@@ -647,7 +647,7 @@ rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 ```{r C4_F0 to C4_F1}
 
 source("Muco_2026/Fonctions/rcd_mois.R")
-source("Muco_2026/Fonctions/rcd_precis_SM.R")
+source("Muco_2026/Fonctions/lbl_precis_SM.R")
 
 all_mois <- C4_F0 %>% 
   select(contains("mois")) %>% 
@@ -659,31 +659,31 @@ C4_F1 <- C4_F0 %>%
   ) %>%
     mutate(
       across(contains("conjt_sexe"), 
-      ~ rcd_precis_SM(.x, "Male" = 1, "Female" = 2)),
+      ~ lbl_precis_SM(.x, "Male" = 1, "Female" = 2)),
       across(contains("union_nature"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Married" = 1,
       "Cohabiting/PACS, not married" = 2,
       "Never lived together" = 3)),
       across(contains("conjt_muco"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Yes" = 1,
       "No" = 0)),
       across(ends_with("union_int"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Yes" = 1,
       "No" = 0)),
       across(ends_with("int_par"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Divorce" = 1,
       "Separation" = 2,
       "Widowhood" = 3)),
       across(ends_with("int_muco"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Yes" = 1,
       "No" = 0)),
       across(ends_with("union_enf"),
-      ~ rcd_precis_SM(.x,
+      ~ lbl_precis_SM(.x,
       "Yes" = 1,
       "No" = 0))
       )
@@ -691,7 +691,7 @@ C4_F1 <- C4_F0 %>%
 
   table(as_factor(C4_F1$fa_cpl2_union_int_par), useNA = "ifany")
 
-rm(list = c("rcd_mois", "rcd_precis_SM", "all_mois"))
+rm(list = c("rcd_mois", "lbl_precis_SM", "all_mois"))
 
 ```
 
