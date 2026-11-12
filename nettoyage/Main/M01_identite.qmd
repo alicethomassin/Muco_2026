@@ -282,7 +282,7 @@ M1_B2 <- readr::read_csv("data_hors_git/to_tag/thoa_identite2_tt.csv", show_col_
 ```{r}
 
 source("Muco_2026/Fonctions/rcd_tagged_na.R")
-source("Muco_2026/Fonctions/rcd_levels_na.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
 
 vars_dbl <- M1_B2 %>% 
   select(where(is.double)) %>% 
