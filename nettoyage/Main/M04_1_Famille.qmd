@@ -1095,7 +1095,6 @@ M4_E6 <- M4_E5 %>%
     )
   )
 
-
 haven::write_dta(M4_E6, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_1Family_454.dta")
 ```
 
