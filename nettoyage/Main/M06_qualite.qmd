@@ -638,7 +638,7 @@ M6_E2 <- M6_E1 %>%
     qv_ad_act10 = "V05 Caregiver helps (MR): social, leisure activities",
     qv_ad_act999 = "V05 Caregiver helps (MR): other",
     qv_ad_act_autre = "V05 Caregiver helps: detailed response",
-    qv_ad_act_autre_en = "V05 Caregiver helps: detailed response (Google translation)",
+    qv_ad_act_autre_en = "V05 Caregiver helps: detailed response (machine-translated)",
     qv_ad_type = "V06 Main caregiver",
     qv_ad_lien = "V07 Family caregiver relationship",
     qv_sc_travailleur = "V08 Sees a social worker",
@@ -651,13 +651,13 @@ M6_E2 <- M6_E1 %>%
     qv_sc_aide_materielle = "V15 Someone could provide material help",
     qv_am_regime = "V16 Health insurance scheme",
     qv_am_regime_autre = "V16 Health insurance scheme: detailed response",
-    qv_am_regime_autre_en = "V16 Health insurance scheme: detailed response (Google translation)",
+    qv_am_regime_autre_en = "V16 Health insurance scheme: detailed response (machine-translated)",
     qv_am_complement = "V17 Complementary health insurance",
     qv_am_type_1 = "V18 Complementary insurer (MR): mutual insure",
     qv_am_type_2 = "V18 Complementary insurer (MR): insurance company",
     qv_am_type_999 = "V18 Complementary insurer (MR): other",
     qv_am_type_autre = "V18 Complementary insurer: detailed response",
-    qv_am_type_autre_en = "V18 Complementary insurer: detailed response (Google translation)",
+    qv_am_type_autre_en = "V18 Complementary insurer: detailed response (machine-translated)",
     qv_am_ald = "V19 ALD coverage for CF (long-term condition)",
     qv_am_rac = "V20 Pays out-of-pocket costs",
     qv_am_rac_montant = "V21 Monthly out-of-pocket costs (EUR)",
@@ -672,9 +672,9 @@ M6_E2 <- M6_E1 %>%
     qv_am_rac_pour_9 = "V22 Out-of-pocket costs (MR): extra-billing",
     qv_am_rac_pour_999 = "V22 Out-of-pocket costs (MR): other",
     qv_am_rac_pour_autre = "V22 Out-of-pocket costs: detailed response",
-    qv_am_rac_pour_autre_en = "V22 Out-of-pocket costs: detailed response (Google translation)",
+    qv_am_rac_pour_autre_en = "V22 Out-of-pocket costs: detailed response (machine-translated)",
     qv_commentaires = "Quality of life module comments",
-    qv_commentaires_en = "Quality of life module comments (Google translation)"
+    qv_commentaires_en = "Quality of life module comments (machine-translated)"
   )
 ```
 
@@ -682,4 +682,82 @@ M6_E2 <- M6_E1 %>%
 ```{r}
 
 haven::write_dta(M6_E2, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa6_Quality_454.dta")
+```
+
+# META DATA
+
+
+```{r}
+M6_E2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa6_Quality_454.dta")
+
+dico_qv <- generate_dictionary(M6_E2) %>% 
+  convert_list_columns_to_character() %>% 
+  select(variable, label, col_type, value_labels) %>% 
+  mutate(
+    origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
+    ref = if_else(
+      (col_type == "chr" & origin == "question" & !str_detect(variable, "(_nom)|(_prenom)")), 
+      paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"), 
+      str_extract(label, "^[A-Z]+\\d+"))
+  ) %>% 
+    relocate(ref, .after = variable) %>% 
+    group_by(ref, col_type) %>% 
+    mutate(
+      n_obs = n(),
+      ref = replace_when(
+        ref,
+        str_detect(label, "(MR)") ~ paste0(ref, "_", row_number()),
+        n_obs > 1 & col_type != "chr" ~ paste0(ref, "_", row_number())
+      )
+    ) %>% 
+      ungroup() %>% 
+      mutate(
+        order = row_number()
+      ) %>% 
+        relocate(order) %>% 
+        select(-n_obs)
+```
+
+
+```{r}
+quality <- readr::read_csv("data_hors_git/meta_questions/quality_of_life.csv", show_col_types = FALSE)
+
+meta_qv <- quality %>% 
+  mutate(
+    ref = str_replace_all(variable, "-", "0"),
+    ref = str_replace_all(ref, "_([:alpha:]+)([^txt])", ""),
+    ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
+    .before = variable
+  ) %>% 
+    group_by(ref) %>% 
+    mutate(
+      ref = if_else(ref == "V02", paste0(ref, "_", row_number()), ref)
+    ) %>% 
+      ungroup() %>% 
+    select(-variable) %>% 
+  right_join(
+    dico_qv %>% select(order, variable, ref),
+    by = "ref",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(variable) %>% 
+    filter(!is.na(variable)) %>% 
+    mutate(
+      notes_fr = NA_character_,
+      notes_en = NA_character_,
+      skip_pattern_en = skip_pattern,
+      skip_pattern_fr = NA_character_,
+      source_fr = NA_character_,
+      source_en = NA_character_
+    ) %>% 
+      relocate(order) %>% 
+      arrange(order) %>% 
+      select(-order) %>% 
+      relocate(c("skip_pattern_fr", "skip_pattern_en"), .after = question_en) %>%
+      relocate(c("source_fr", "source_en"), .after = skip_pattern_en) %>% 
+      select(-skip_pattern, -source)
+
+# write.csv(meta_qv, "data_hors_git/meta_updated/meta_qv.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
+
+
 ```
