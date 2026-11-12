@@ -837,19 +837,37 @@ M5_E3 <- M5_E2 %>%
 
 haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 
+M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+
+M5_E4 <- M5_E3 %>% 
+  set_variable_labels(
+    lo_type_logement_autre_en = "L03 Other housing type specified (machine-translated)",
+    lo_statut_occup_autre_en = "L04 Other housing tenure specified (machine-translated)",
+    lo_occup_cause_autre_en = "L05 Housing chosen: detailed response (machine-translated)",
+    lo_amenag_logement_precis_en = "L07 Specific CF related home adaptations (machine-translated)",
+    lo_emprunt_precis_en = "L09 Specific other home loan difficulties (machine-translated)",
+    lo_demenag_cause_autre_en = "L11 Reason to move: detailed response (machine-translated)",
+    lo_commentaires_en = "Comments on the Housing module (machine-translated)"
+  )
+
+haven::write_dta(M5_E4, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 ```
 
 # META DATA
 
 ```{r}
-M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+M5_E4 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 
-dico_ho <- generate_dictionary(M5_E3) %>% 
+dico_ho <- generate_dictionary(M5_E4) %>% 
   convert_list_columns_to_character() %>% 
   select(variable, label, col_type, value_labels) %>% 
   mutate(
     origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
-    ref = if_else(col_type != "chr", str_extract(label, "^[A-Z]+\\d+"), paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"))
+    ref = if_else(
+      (col_type == "chr" & origin == "question"), 
+      paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"), 
+      str_extract(label, "^[A-Z]+\\d+"))
   ) %>% 
     relocate(ref, .after = variable) %>% 
     group_by(ref, col_type) %>% 
@@ -860,7 +878,11 @@ dico_ho <- generate_dictionary(M5_E3) %>%
         ref == "L02" ~ paste0(ref, "_", row_number())
       )
     ) %>% 
-      ungroup()
+      ungroup() %>% 
+      mutate(
+        order = row_number()
+      ) %>% 
+        relocate(order)
 ```
 
 
@@ -873,6 +895,7 @@ meta_ho <- housing %>%
     ref = str_replace_all(ref, "_([:alpha:]+)([^txt])", ""),
     ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
     ref = if_else(ref == "L09", "L09_txt", ref),
+    ref = if_else(ref == "L07", "L07_txt", ref),
     .before = variable
   ) %>% 
     filter_out(
@@ -884,8 +907,8 @@ meta_ho <- housing %>%
       ) %>% 
         ungroup() %>% 
     select(-variable) %>% 
-  left_join(
-    dico_ho %>% select(variable, ref),
+  full_join(
+    dico_ho %>% select(order, variable, ref),
     by = "ref",
     relationship = "many-to-many"
   ) %>% 
@@ -893,8 +916,18 @@ meta_ho <- housing %>%
     filter(!is.na(variable)) %>% 
     mutate(
       notes_fr = NA_character_,
-      notes_en = NA_character_
-    ) 
+      notes_en = NA_character_,
+      skip_pattern_en = skip_pattern,
+      skip_pattern_fr = NA_character_,
+      source_fr = NA_character_,
+      source_en = NA_character_
+    ) %>% 
+      relocate(order) %>% 
+      arrange(order) %>% 
+      select(-order) %>% 
+      relocate(c("skip_pattern_fr", "skip_pattern_en"), .after = question_en) %>%
+      relocate(c("source_fr", "source_en"), .after = skip_pattern_en) %>% 
+      select(-skip_pattern, -source)
 
 # write.csv(meta_ho, "data_hors_git/meta_updated/meta_ho.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
 
