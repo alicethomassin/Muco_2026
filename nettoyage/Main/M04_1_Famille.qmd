@@ -692,7 +692,7 @@ M4_D3 <- M4_D2 %>%
 ```{r M4_D3 to M4_E0}
 
 source("Muco_2026/Fonctions/rcd_tagged_na.R")
-source("Muco_2026/Fonctions/rcd_levels_na.R")
+source("Muco_2026/Fonctions/lbl_levels_na.R")
 
 vars_dbl <- M4_D3 %>% 
   select(where(is.double)) %>% 
