@@ -423,7 +423,7 @@ dico_ID <- generate_dictionary(M1_C2) %>%
 
 
 ```{r}
-identity <- readr::read_csv("data_hors_git/files/identity.csv", show_col_types = FALSE)
+identity <- readr::read_csv("data_hors_git/meta_questions/identity.csv", show_col_types = FALSE)
 
 meta_id <- identity %>% 
   mutate(
@@ -445,13 +445,8 @@ meta_id <- identity %>%
       notes_en = NA_character_
     )
 
-# readr::write_csv(meta_id, "data_hors_git/files/meta_id.csv")
+write.csv(meta_id, "data_hors_git/meta_updated/meta_id.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
+# readr::write_csv(meta_id, "data_hors_git/meta_updated/meta_id.csv")
 
 ```
 
-
-```{r}
-
-meta_id <- readr::read_csv("data_hors_git/files/meta_id.csv", show_col_types = FALSE)
-
-```
