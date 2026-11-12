@@ -549,10 +549,10 @@ rm(list = c("vars_prenom"))
 
 ```{r E4_F2 to E4_G0}
 
-source("Muco_2026/Fonctions/rcd_tagged_na_1rep.R")
+source("Muco_2026/Fonctions/rcd_tagged_na.R")
 source("Muco_2026/Fonctions/lbl_levels_na.R")
 
-vars_1rep <- E4_F2 %>% 
+vars_rcd <- E4_F2 %>% 
   select(where(is.double)) %>% 
   select(-fa_en_date_creation, -fa_en_nb_enfants) %>% 
   colnames()
@@ -560,12 +560,12 @@ vars_1rep <- E4_F2 %>%
 # Les deux fonctions fonctionnent!
 
 E4_G0 <- E4_F2 %>%
-  rcd_tagged_na_1rep(all_of(vars_1rep)) %>% 
-  mutate(across(all_of(vars_1rep), lbl_levels_na))
+  rcd_tagged_na(all_of(vars_rcd)) %>% 
+  mutate(across(all_of(vars_rcd), lbl_levels_na))
 
 table(as_factor(E4_G0$fa_enf2_adpt_mois), useNA = "ifany")
 
-rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
+rm(list = c("vars_rcd", "lbl_levels_na", "rcd_tagged_na"))
 
 ```
 
@@ -575,7 +575,7 @@ rm(list = c("vars_1rep", "lbl_levels_na", "rcd_tagged_na_1rep"))
 ```{r E4_G0 to }
 
 source("Muco_2026/Fonctions/rcd_mois.R")
-source("Muco_2026/Fonctions/rcd_precis_SM.R")
+source("Muco_2026/Fonctions/lbl_precis_SM.R")
 source("Muco_2026/Fonctions/lbl_oui_non.R")
 
 all_mois <- E4_G0 %>% 
@@ -588,12 +588,12 @@ E4_G1 <- E4_G0 %>%
   ) %>%
     mutate(
         across(
-          contains("sexe"), ~ rcd_precis_SM(
+          contains("sexe"), ~ lbl_precis_SM(
             ., "Male" = 1, "Female" = 2
           )
         ),
         across(
-          contains("_issu"), ~ rcd_precis_SM(
+          contains("_issu"), ~ lbl_precis_SM(
             ., 
             "Natural conception" = 1,
             "Assisted reproduction" = 2,
@@ -606,7 +606,7 @@ E4_G1 <- E4_G0 %>%
 
 table(as_factor(E4_G1$fa_enf3_diag_avt), useNA = "ifany")
 
-rm(list = c("all_mois", "lbl_oui_non", "rcd_mois", "rcd_precis_SM"))
+rm(list = c("all_mois", "lbl_oui_non", "rcd_mois", "lbl_precis_SM"))
 
 
 ```
