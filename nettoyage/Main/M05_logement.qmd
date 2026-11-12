@@ -844,7 +844,7 @@ haven::write_dta(M5_E3, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/tho
 ```{r}
 M5_E3 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 
-dico_HO <- generate_dictionary(M5_E3) %>% 
+dico_ho <- generate_dictionary(M5_E3) %>% 
   convert_list_columns_to_character() %>% 
   select(variable, label, col_type, value_labels) %>% 
   mutate(
@@ -867,7 +867,7 @@ dico_HO <- generate_dictionary(M5_E3) %>%
 ```{r}
 housing <- readr::read_csv("data_hors_git/meta_questions/housing.csv", show_col_types = FALSE)
 
-meta_HO <- housing %>% 
+meta_ho <- housing %>% 
   mutate(
     ref = str_replace_all(variable, "-", "0"),
     ref = str_replace_all(ref, "_([:alpha:]+)([^txt])", ""),
@@ -885,7 +885,7 @@ meta_HO <- housing %>%
         ungroup() %>% 
     select(-variable) %>% 
   left_join(
-    dico_HO %>% select(variable, ref),
+    dico_ho %>% select(variable, ref),
     by = "ref",
     relationship = "many-to-many"
   ) %>% 
@@ -896,7 +896,7 @@ meta_HO <- housing %>%
       notes_en = NA_character_
     ) 
 
-# write.csv(meta_HO, "data_hors_git/meta_updated/meta_HO.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
+# write.csv(meta_ho, "data_hors_git/meta_updated/meta_ho.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
 
 
 ```
