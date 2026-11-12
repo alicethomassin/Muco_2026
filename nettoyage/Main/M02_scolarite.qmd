@@ -772,7 +772,7 @@ M2_D2 <- M2_D1 %>%
     sc_complet = "Education module completed",
     sc_debut = "S01 First school grade (excl. preschool)",
     sc_debut_autre = "S01 First school grade (excl. preschool): other specified",
-    sc_debut_autre_en = "S01 First school grade (excl. preschool): other specified (Google translation)",
+    sc_debut_autre_en = "S01 First school grade (excl. preschool): other specified (machine-translated)",
     sc_debut_an = "S02 Year entered first school grade",
     sc_debut_age = "Age at school entry",
     sc_rd_redoubl = "S03 Repeated a school year",
@@ -796,20 +796,20 @@ M2_D2 <- M2_D1 %>%
     sc_plan_notification_8 = "S21 MDPH provided (MR): adapted teaching materials",
     sc_plan_notification_999 = "S21 MDPH provided (MR): other",
     sc_plan_notification_autre = "S21 MDPH provided other: detailed response",
-    sc_plan_notification_autre_en = "S21 MDPH provided other: detailed response (Google translation)",
+    sc_plan_notification_autre_en = "S21 MDPH provided other: detailed response (machine-translated)",
     sc_plan_demande = "S22 PPS requested by Resp., parents or other",
     sc_fin_etudes = "S23 Completed initial education",
     sc_formation = "S24 Current education level",
     sc_formation_autre = "S24 Current education level other: detailed response",
-    sc_formation_autre_en = "S24 Current education level other: detailed response (Google translation)",
+    sc_formation_autre_en = "S24 Current education level other: detailed response (machine-translated)",
     sc_diplome = "S25 Highest qualification",
     sc_diplome_autre = "S25 Highest qualification other: detailed response",
-    sc_diplome_autre_en = "S25 Highest qualification other: detailed response (Google translation)",
+    sc_diplome_autre_en = "S25 Highest qualification other: detailed response (machine-translated)",
     sc_diplome_an = "S26 Year highest qualification obtained",
     sc_diplome_cat = "Highest qualification grouped",
     sc_diplome_age = "Age highest qualification obtained",
     sc_commentaires = "Education module comments",
-    sc_commentaires_en = "Education module comments (Google translation)"
+    sc_commentaires_en = "Education module comments (machine-translated)"
   )
 ```
 
