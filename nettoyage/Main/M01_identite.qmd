@@ -400,3 +400,58 @@ M1_C2 <- M1_C1 %>%
 ```{r}
 haven::write_dta(M1_C2, "data_hors_git/Peter/thoa1_Identity_454.dta")
 ```
+
+# METADATA
+
+```{r}
+library(labelled)
+library(tidyverse)
+```
+
+```{r}
+M1_C2 <- haven::read_dta("data_hors_git/Peter/thoa1_Identity_454.dta")
+
+dico_ID <- generate_dictionary(M1_C2) %>% 
+  convert_list_columns_to_character() %>% 
+  select(variable, label, col_type, value_labels) %>% 
+  mutate(
+    origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
+    ref = str_extract(label, "^[A-Z]+\\d+")
+  ) %>% 
+    relocate(ref, .after = variable)
+```
+
+
+```{r}
+identity <- readr::read_csv("data_hors_git/files/identity.csv", show_col_types = FALSE)
+
+meta_id <- identity %>% 
+  mutate(
+    ref = str_replace_all(variable, "-", "0"),
+    ref = str_replace_all(ref, "_\\w+$", ""),
+    ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
+    .before = variable
+  ) %>% 
+    select(-variable) %>% 
+  left_join(
+    dico_ID %>% select(variable, ref),
+    by = "ref",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(variable) %>% 
+    filter(!is.na(variable)) %>% 
+    mutate(
+      notes_fr = NA_character_,
+      notes_en = NA_character_
+    )
+
+# readr::write_csv(meta_id, "data_hors_git/files/meta_id.csv")
+
+```
+
+
+```{r}
+
+meta_id <- readr::read_csv("data_hors_git/files/meta_id.csv", show_col_types = FALSE)
+
+```
