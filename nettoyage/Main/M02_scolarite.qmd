@@ -817,3 +817,143 @@ M2_D2 <- M2_D1 %>%
 ```{r}
 haven::write_dta(M2_D2, "data_hors_git/Peter/thoa2_Education_454.dta")
 ```
+
+## Etiquettes multiples
+
+```{r}
+M2_D2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa2_Education_454.dta")
+
+```
+
+```{r}
+
+etiquettes_ets <- function(df, suffix, avant_n){
+  vars_repeted <- select(df, matches(suffix)) %>% names()
+  
+  if (length(vars_repeted) < 1){
+    stop(paste("suffix", suffix, "invalide"))
+  }
+  
+  etiq_classe <- c(
+    "Primary, grade 1 (CP)" = 1,
+    "Primary, grade 2 (CE1)" = 2,
+    "Primary, grade 3 (CE2)" = 3,
+    "Primary, grade 4 (CM1)" = 4,
+    "Primary, grade 5 (CM2)" = 5,
+    "Lower secondary, grade 6 (6ème)" = 6,
+    "Lower secondary, grade 7 (5ème)" = 7,
+    "Lower secondary, grade 8 (4ème)" = 8,
+    "Lower secondary, grade 9 (3ème)" = 9,
+    "Upper secondary, grade 10 (seconde)" = 12,
+    "Upper secondary, grade 11 (première)" = 13,
+    "Upper secondary, grade 12 (terminale)" = 14
+  )
+  
+  classe <- as.integer(str_extract(vars_repeted, "\\d+$"))
+  noms_classe <- names(etiq_classe)[match(classe, etiq_classe)]
+  
+  if (any(is.na(noms_classe))) {
+    stop(paste("Classe introuvable pour :", paste(vars_repeted[is.na(noms_classe)], collapse = ", ")))
+  }
+  
+  labels_repeted <- set_names(paste0(avant_n, noms_classe), vars_repeted)
+  
+  df %>% 
+    set_variable_labels(!!!labels_repeted)
+}
+
+
+M2_D3 <- M2_D2 %>% 
+  etiquettes_ets(., "sc_plan_ets1", "S20 PPS: Mainstream class (classe ordinaire) - ") %>% 
+  etiquettes_ets(., "sc_plan_ets2", "S20 PPS: Special needs class or unit (CLIS/ULIS) - ") %>% 
+  etiquettes_ets(., "sc_plan_ets3", "S20 PPS: Health or medico-social facility (IME, IEM, ITEP, UE) - ") %>% 
+  etiquettes_ets(., "sc_plan_ets4", "S20 PPS: Adapted section in mainstream school (SEGPA) - ") %>% 
+  etiquettes_ets(., "sc_plan_ets5", "S20 PPS: Taught at home during school hours - ")
+
+haven::write_dta(M2_D3, "data_hors_git/Peter/thoa2_Education_454.dta")
+
+```
+
+
+# META DATA
+
+
+```{r}
+M2_D2 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa2_Education_454.dta")
+
+dico_sc <- generate_dictionary(M2_D2) %>% 
+  convert_list_columns_to_character() %>% 
+  select(variable, label, col_type, value_labels) %>% 
+  mutate(
+    origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
+    ref = if_else(
+      (col_type == "chr" & origin == "question" & !str_detect(variable, "(_nom)|(_prenom)")), 
+      paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"), 
+      str_extract(label, "^[A-Z]+\\d+"))
+  ) %>% 
+    relocate(ref, .after = variable) %>% 
+    group_by(ref, col_type) %>% 
+    mutate(
+      n_obs = n(),
+      ref = replace_when(
+        ref,
+        str_detect(label, "(MR)") ~ paste0(ref, "_", row_number()),
+        !is.na(ref) & n_obs > 1 & col_type != "chr" ~ paste0(ref, "_", row_number())
+      )
+    ) %>% 
+      ungroup() %>% 
+      mutate(
+        order = row_number()
+      ) %>% 
+        relocate(order) %>% 
+        select(-n_obs)
+
+```
+
+```{r}
+education <- readr::read_csv("data_hors_git/meta_questions/education.csv", show_col_types = FALSE)
+
+meta_sc <- education %>% 
+  mutate(
+    ref = str_replace_all(variable, "-", "0"),
+    ref = str_replace_all(ref, "_(?!txt$)[[:alpha:]]+$", ""),
+    ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
+    .before = variable
+  ) %>% 
+    group_by(ref) %>% 
+    mutate(
+      n_obs = n(),
+      ref = if_else(n_obs > 1, paste0(ref, "_", row_number()), ref),
+      ref = if_else(ref == "F29", paste0(ref, "_txt"), ref),
+      ref = if_else(ref == "F38", paste0(ref, "_txt"), ref)
+    ) %>% 
+      ungroup() %>% 
+    select(-variable, -n_obs) %>% 
+  right_join(
+    dico_sc %>% select(order, variable, ref),
+    by = "ref",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(variable) %>% 
+    filter(!is.na(variable)) %>% 
+    mutate(
+      notes_fr = NA_character_,
+      notes_en = NA_character_,
+      skip_pattern_en = skip_pattern,
+      skip_pattern_fr = NA_character_,
+      source_fr = NA_character_,
+      source_en = NA_character_
+    ) %>% 
+      relocate(order) %>% 
+      arrange(order) %>% 
+      select(-order) %>% 
+      relocate(c("skip_pattern_fr", "skip_pattern_en"), .after = question_en) %>%
+      relocate(c("source_fr", "source_en"), .after = skip_pattern_en) %>% 
+      select(-skip_pattern, -source)
+
+
+
+# write.csv(meta_fa, "data_hors_git/meta_updated/meta_fa.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
+
+
+```
