@@ -933,3 +933,29 @@ meta_ho <- housing %>%
 
 
 ```
+
+
+# Brouillon
+
+TODO: Appliquer changement code lo_amenag_logement sur base pas pour Peter
+```{r}
+M5_E4 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+verif0 <- M5_E4 %>% 
+  select(id_anonymat, lo_amenag_logement:lo_amenag_logement_precis_en) %>% 
+  mutate(across(
+    where(is.character), ~ na_if(., "")
+  )) %>% 
+    filter(if_any(lo_amenag_logement_precis:lo_amenag_logement_precis_en, ~ !is.na(.x)))
+
+  M5_E5 <- M5_E4 %>% 
+    mutate(
+      lo_amenag_logement = replace_when(
+        lo_amenag_logement,
+        lo_amenag_logement == 0 & lo_amenag_logement_precis != "" ~ 1
+      )
+    )
+
+haven::write_dta(M5_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+```
