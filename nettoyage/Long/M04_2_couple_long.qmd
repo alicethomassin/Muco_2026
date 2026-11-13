@@ -180,3 +180,87 @@ couple4_long <- couple3_long %>%
 ```{r}
 haven::write_dta(couple4_long, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_2Couple_L322.dta")
 ```
+
+# META DATA
+
+
+```{r}
+couple_L <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_2Couple_L322.dta")
+
+dico_cp <- generate_dictionary(couple_L) %>% 
+  convert_list_columns_to_character() %>% 
+  select(variable, label, col_type, value_labels) %>% 
+  mutate(
+    origin = if_else(str_detect(label, "^[A-Z]+\\d+ "), "question", "derived"),
+    ref = if_else(
+      (col_type == "chr" & origin == "question" & !str_detect(variable, "(_nom)|(_prenom)")), 
+      paste0(str_extract(label, "^[A-Z]+\\d+"), "_txt"), 
+      str_extract(label, "^[A-Z]+\\d+"))
+  ) %>% 
+    relocate(ref, .after = variable) %>% 
+    group_by(ref, col_type) %>% 
+    mutate(
+      n_obs = n(),
+      ref = replace_when(
+        ref,
+        str_detect(label, "(MR)") ~ paste0(ref, "_", row_number()),
+        !is.na(ref) & n_obs > 1 & col_type != "chr" ~ paste0(ref, "_", row_number())
+      )
+    ) %>% 
+      ungroup() %>% 
+      mutate(
+        order = row_number()
+      ) %>% 
+        relocate(order) %>% 
+        select(-n_obs)
+
+```
+
+```{r}
+relationship <- readr::read_csv("data_hors_git/meta_questions/relationship.csv", show_col_types = FALSE)
+
+meta_cp <- relationship %>% 
+  mutate(
+    ref = str_replace_all(variable, "-", "0"),
+    ref = str_replace_all(ref, "_(?!txt$)[[:alpha:]]+$", ""),
+    ref = str_replace_all(ref, "0(?=\\d{2,})", ""),
+    .before = variable
+  ) %>% 
+    group_by(ref) %>% 
+    mutate(
+      n_obs = n(),
+      ref = if_else(n_obs > 1, paste0(ref, "_", row_number()), ref)
+    ) %>% 
+      ungroup() %>% 
+    select(-variable, -n_obs) %>% 
+  right_join(
+    dico_cp %>% select(order, variable, ref),
+    by = "ref",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(variable) %>% 
+    filter(!is.na(variable)) %>% 
+    mutate(
+      notes_fr = NA_character_,
+      notes_en = NA_character_,
+      skip_pattern_en = skip_pattern,
+      skip_pattern_fr = NA_character_,
+      filter_fr = NA_character_,
+      filter_en = NA_character_,
+      source_fr = NA_character_,
+      source_en = NA_character_
+    ) %>% 
+      relocate(order) %>% 
+      arrange(order) %>% 
+      select(-order) %>% 
+      relocate(c("skip_pattern_fr", "skip_pattern_en"), .after = question_en) %>%
+      relocate(c("filter_fr", "filter_en"), .after = skip_pattern_en) %>%
+      relocate(c("source_fr", "source_en"), .after = filter_en) %>% 
+      select(-skip_pattern, -source)
+
+
+
+# write.csv(meta_cp, "data_hors_git/meta_updated/meta_cp.csv", na = '""', row.names = FALSE, fileEncoding = "UTF-8")
+
+
+```
