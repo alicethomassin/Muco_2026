@@ -246,3 +246,68 @@ meta_fr <- siblings %>%
 
 
 ```
+
+# Ajouter rang fratrie
+
+
+```{r}
+fratrie_L <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_4Siblings_L573.dta")
+
+M1_C2 <- haven::read_dta("data_hors_git/Peter/thoa1_Identity_454.dta")
+```
+
+
+
+```{r}
+
+fratrie_L2 <- fratrie_L %>% 
+  left_join(
+    M1_C2 %>% select(id_anonymat, id_date_nais),
+    by = "id_anonymat",
+    relationship = "many-to-many"
+  ) %>% 
+    relocate(id_date_nais, .after = id_anonymat)
+
+
+fratrie_L3 <- fratrie_L2 %>% 
+  mutate(
+    an_nais = as.integer(str_sub(id_date_nais, 1,4)),
+    mois_nais = as.integer(str_sub(id_date_nais, 6,7)),
+    .after = id_date_nais
+  ) %>% 
+    mutate(
+      fa_fr_rang_naissance = case_when(
+        is.na(fa_frt_nais_an) | fa_frt_nais_an < an_nais ~ fa_fr_rang,
+        (fa_frt_nais_an == an_nais) & (fa_frt_nais_mois < mois_nais) ~ fa_fr_rang,
+        (fa_frt_nais_an == an_nais) & (fa_frt_nais_mois == mois_nais) ~ fa_fr_rang,
+        fa_frt_nais_an > an_nais ~ fa_fr_rang + 1,
+        TRUE ~ 555555
+      ),
+      .after = fa_fr_rang
+    )
+
+fratrie_L4 <- fratrie_L3 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    rcd = if_else(any(!is.na(fa_frt_nais_an)), 0, 1),
+    fa_fr_rang_naissance = replace_when(
+      fa_fr_rang_naissance,
+      rcd == 1 ~ tagged_na("d"),
+      id_anonymat == "NQTXR" ~ tagged_na("d")
+    ),
+    .after = fa_fr_rang
+  ) %>% 
+    ungroup() %>% 
+    add_value_labels(
+      fa_fr_rang_naissance = c(
+        "No answer" = tagged_na("d")
+      )
+    ) %>% 
+      select(-rcd, -id_date_nais) %>% 
+      set_variable_labels(
+        fa_fr_rang_naissance = "Siblings order including the resp."
+      )
+
+haven::write_dta(fratrie_L4, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_4Siblings_L573.dta")
+```
+
