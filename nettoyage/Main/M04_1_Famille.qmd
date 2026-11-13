@@ -1110,6 +1110,7 @@ M4_E7 <- M4_E6 %>%
     fa_commentaires_en = "Family module comments (machine-translated)",
     fa_sf_fratrie_demi_nb = "F75 Number of half-siblings",
     fa_sf_fratrie_adopte_nb = "F76 Number of adopted siblings",
+    fa_en_enfants = "F13 Has biological or adopted children"
   )
 
 haven::write_dta(M4_E7, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_1Family_454.dta")
@@ -1163,10 +1164,12 @@ meta_fa <- family %>%
     group_by(ref) %>% 
     mutate(
       n_obs = n(),
-      ref = if_else(n_obs > 1, paste0(ref, "_", row_number()), ref)
+      ref = if_else(n_obs > 1, paste0(ref, "_", row_number()), ref),
+      ref = if_else(ref == "F29", paste0(ref, "_txt"), ref),
+      ref = if_else(ref == "F38", paste0(ref, "_txt"), ref)
     ) %>% 
       ungroup() %>% 
-    select(-variable) %>% 
+    select(-variable, -n_obs) %>% 
   right_join(
     dico_fa %>% select(order, variable, ref),
     by = "ref",
@@ -1189,9 +1192,68 @@ meta_fa <- family %>%
       relocate(c("source_fr", "source_en"), .after = skip_pattern_en) %>% 
       select(-skip_pattern, -source)
 
-# AJOUTER VARIABLE ENFANTS, COUPLE, FRT
+
 
 # write.csv(meta_fa, "data_hors_git/meta_updated/meta_fa.csv", na = "", row.names = FALSE, fileEncoding = "UTF-8")
 
 
+```
+
+```{r}
+
+dossier <- "data_hors_git/meta_updated"
+fichiers <- list.files(dossier, pattern = "\\.csv$", full.names = TRUE)
+
+dir.create(file.path(dossier, "backup"), showWarnings = FALSE)
+file.copy(fichiers, file.path(dossier, "backup"))
+
+nouvelles <- c("filter_fr", "filter_en")
+
+for (f in fichiers) {
+  meta <- read.csv(f, colClasses = "character", fileEncoding = "UTF-8", check.names = FALSE)
+  
+  # Ajouter les colonnes seulement si elles n'existent pas encore
+  for (col in nouvelles) {
+    if (!col %in% names(meta)) meta[[col]] <- ""
+  }
+  
+  # Placer les nouvelles colonnes juste après skip_pattern
+  autres <- setdiff(names(meta), nouvelles)
+  meta <- meta[, append(autres, nouvelles, after = match("skip_pattern_en", autres))]
+  
+  a_deplacer <- grepl("^Asked if", meta$skip_pattern_en)
+  meta$filter_en[a_deplacer & meta$filter_en == ""] <- meta$skip_pattern_en[a_deplacer & meta$filter_en == ""]
+  meta$skip_pattern_en[a_deplacer] <- ""
+
+  write.csv(meta, f, na = "", row.names = FALSE, fileEncoding = "UTF-8")
+}
+
+```
+
+
+```{r}
+
+verif <- M4_E7 %>% 
+  select(id_anonymat, fa_fo_vie, fa_fo_parent_prof:fa_fo_vos_parents_ress) %>% 
+  filter(fa_fo_vie %in% c(4:5))
+
+```
+
+TODO: Appliquer le recodage de fa_fo_vie dans la base pas pour peter
+```{r}
+M4_E7 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_1Family_454.dta")
+
+M4_E8 <- M4_E7 %>% 
+  mutate(
+    fa_fo_vie = replace_when(
+      fa_fo_vie,
+      if_all(fa_fo_parent_prof:fa_fo_parent_ress, is.na) & fa_fo_vie == 4 ~ 5
+    )
+  )
+
+verif2 <- M4_E8 %>% 
+  select(id_anonymat, fa_fo_vie, fa_fo_parent_prof:fa_fo_vos_parents_ress) %>% 
+  filter(fa_fo_vie %in% c(4:5))
+
+haven::write_dta(M4_E8, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa4_1Family_454.dta")
 ```
