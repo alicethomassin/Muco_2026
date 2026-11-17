@@ -959,3 +959,43 @@ verif0 <- M5_E4 %>%
 haven::write_dta(M5_E5, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
 
 ```
+
+
+```{r}
+M5_E5 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+M5_E6 <- M5_E5 %>% 
+  add_value_labels(
+    lo_complet = c(
+      "Yes" = 1,
+      "No" = 0
+    )
+  )
+
+haven::write_dta(M5_E6, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+```
+
+
+```{r}
+meta_ho <- readr::read_csv("data_hors_git/meta_updated/meta_ho.csv", show_col_types = F)
+
+meta_h02 <- meta_ho %>% 
+  mutate(
+    linked_to = NA_character_
+  )
+
+# write.csv(meta_h02, "data_hors_git/meta_updated/meta_ho2.csv", na = '""', row.names = FALSE, fileEncoding = "UTF-8")
+```
+
+
+```{r}
+
+meta_ho2 <- readr::read_csv("data_hors_git/meta_updated/meta_ho2.csv", show_col_types = F)
+
+meta_ho3 <- meta_ho2 %>% 
+  mutate(
+    linked_codes = NA_character_
+  )
+
+# write.csv(meta_ho3, "data_hors_git/meta_updated/meta_ho3.csv", na = '""', row.names = FALSE, fileEncoding = "UTF-8")
+```
