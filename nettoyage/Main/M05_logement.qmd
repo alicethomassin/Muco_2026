@@ -999,3 +999,52 @@ meta_ho3 <- meta_ho2 %>%
 
 # write.csv(meta_ho3, "data_hors_git/meta_updated/meta_ho3.csv", na = '""', row.names = FALSE, fileEncoding = "UTF-8")
 ```
+
+
+```{r}
+
+M5_E6 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+library(dplyr)
+library(stringr)
+library(labelled)
+
+M5_E7 <- M5_E6 %>% 
+  relocate(lo_commentaires_en) %>% 
+  mutate(across(everything(), \(x) {
+    lab <- attr(x, "label")
+    if (!is.null(lab)) {
+      attr(x, "label") <- str_replace(lab, fixed("(machine-translated)"), "(MT)")
+    }
+    x
+  }))
+
+
+
+haven::write_dta(M5_E7, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+M5_E7 <- haven::read_dta("/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+
+M5_E8 <- M5_E7 %>% 
+  relocate(c("lo_commentaires", "lo_commentaires_en"), .after = last_col())
+
+haven::write_dta(M5_E8, "/Users/alicethomassin/Muco 2026/data_hors_git/Peter/thoa5_Housing_454.dta")
+```
+
+
+```{r}
+
+meta_ho3 <- readr::read_csv("data_hors_git/meta_updated/meta_ho3.csv", show_col_types = F)
+
+meta_ho4 <- meta_ho3 %>% 
+  select(-(skip_pattern_fr:filter_en)) %>% 
+  mutate(
+    skip_codes = NA_character_,
+    skip_to = NA_character_,
+    filter_var = NA_character_,
+    filter_codes = NA_character_,
+    .after = question_en
+  )
+
+# write.csv(meta_ho4, "data_hors_git/meta_updated/meta_ho4.csv", na = '""', row.names = FALSE, fileEncoding = "UTF-8")
+```
